@@ -96,21 +96,24 @@ Máximo 150 palabras.
 }
 
 # ---------------------------------------------------------------------------
-# INSTRUCCIÓN DE ANÁLISIS OBJETIVO (incluye detección de especialización)
+# INSTRUCCIÓN DE ANÁLISIS OBJETIVO (incluye detección de enfoque terapéutico)
 # ---------------------------------------------------------------------------
 
 instruccion_analisis_objetivo = """
-Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades:
-psicología clínica, psicología educativa, psicología forense, psicología organizacional,
-psicología de la salud y neuropsicología.
+Eres un supervisor clínico experto en psicología con conocimiento en múltiples enfoques y corrientes
+psicoterapéuticas: humanista, psicoanalítico/psicodinámico, cognitivo-conductual (TCC),
+sistémico/familiar, existencial, gestáltico, narrativo, integrativo, entre otros.
 
 Acabas de observar una sesión de práctica entre un psicólogo en formación y un paciente simulado.
 
 Analiza la sesión y entrega un reporte estructurado con los siguientes puntos:
 
-1. **Especialización detectada**: ¿Qué rama de la psicología aplicó predominantemente el estudiante?
-   Indica la especialización principal y, si aplica, una secundaria. Justifica brevemente con ejemplos
-   concretos de la sesión. Opciones: Clínica, Educativa, Forense, Organizacional, Salud, Neuropsicología, Mixta.
+1. **Enfoque terapéutico detectado**: ¿Qué corriente o enfoque psicoterapéutico aplicó predominantemente
+   el estudiante durante la sesión? Indica el enfoque principal y, si aplica, uno secundario.
+   Justifica brevemente con ejemplos concretos tomados de la conversación (frases, preguntas o
+   intervenciones específicas del estudiante).
+   Opciones de referencia: Humanista, Psicoanalítico/Psicodinámico, Cognitivo-Conductual (TCC),
+   Sistémico/Familiar, Existencial, Gestáltico, Narrativo, Integrativo, Otro (especificar).
 
 2. **Puntuación global** (0-100): Basada en empatía, técnica, manejo del silencio y alianza terapéutica.
 
@@ -120,10 +123,12 @@ Analiza la sesión y entrega un reporte estructurado con los siguientes puntos:
 
 5. **Momento clave**: El instante más importante de la sesión (positivo o negativo).
 
-6. **Coherencia con el perfil del paciente**: ¿El enfoque del estudiante fue adecuado para este tipo
-   de paciente? ¿Usó técnicas apropiadas al contexto (clínico, escolar, forense, etc.)?
+6. **Coherencia entre enfoque y paciente**: ¿El enfoque utilizado fue adecuado para el perfil de este
+   paciente y su motivo de consulta? ¿Las técnicas e intervenciones fueron congruentes con la corriente
+   detectada, o hubo mezclas inconsistentes?
 
-7. **Recomendación**: Una sugerencia concreta para la próxima sesión.
+7. **Recomendación**: Una sugerencia concreta para la próxima sesión, orientada a profundizar o ajustar
+   el enfoque terapéutico empleado.
 
 Sé directo, constructivo y específico. Basa todo en lo que realmente ocurrió en la conversación.
 """
@@ -249,7 +254,7 @@ def end_session(req: SessionResponse):
         ]
         feedback_paciente = model.invoke(feedback_msgs).content
 
-        # Análisis objetivo del supervisor (con detección de especialización)
+        # Análisis objetivo del supervisor (con detección de enfoque terapéutico)
         analisis_msgs = [
             SystemMessage(content=instruccion_analisis_objetivo),
             HumanMessage(content=(
