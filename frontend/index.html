@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SimPsi — Simulador de Consulta Psicológica</title>
+<title>PsicoIA — Simulador de Consulta Psicológica</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -16,6 +16,7 @@
     --green:     #34d399;
     --red:       #f87171;
     --yellow:    #fbbf24;
+    --orange:    #fb923c;
     --text:      #e2e8f0;
     --muted:     #64748b;
     --patient-bubble: #1e2a3a;
@@ -51,8 +52,13 @@
     color: var(--accent);
     letter-spacing: -0.5px;
   }
-
   .logo span { color: var(--accent2); font-style: italic; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
 
   .status-dot {
     width: 8px; height: 8px;
@@ -63,18 +69,44 @@
     box-shadow: 0 0 6px var(--green);
     animation: pulse 2s infinite;
   }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.4; }
-  }
-
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .status-label { font-size: 0.8rem; color: var(--muted); }
 
-  /* ── MAIN LAYOUT ── */
+  /* Role badge shown when logged in */
+  .role-badge {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .role-badge.visible { display: flex; }
+  .role-badge.estudiante { background: rgba(91,141,238,0.1); color: var(--accent); border-color: rgba(91,141,238,0.3); }
+  .role-badge.docente    { background: rgba(52,211,153,0.1); color: var(--green);  border-color: rgba(52,211,153,0.3); }
+  .role-badge.admin      { background: rgba(251,146,60,0.1); color: var(--orange); border-color: rgba(251,146,60,0.3); }
+
+  #logout-btn {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #logout-btn:hover { border-color: var(--red); color: var(--red); }
+  #logout-btn.visible { display: block; }
+
+  /* ── MAIN ── */
   main {
     width: 100%;
-    max-width: 820px;
+    max-width: 860px;
     padding: 32px 20px;
     flex: 1;
     display: flex;
@@ -82,30 +114,122 @@
     gap: 20px;
   }
 
-  /* ── SCREENS ── */
   .screen { display: none; flex-direction: column; gap: 20px; }
   .screen.active { display: flex; }
 
-  /* ── PATIENT SELECTION SCREEN ── */
+  @keyframes fadeDown { to { opacity: 1; transform: translateY(0); } }
+
+  /* ══════════════════════════════════════════
+     PANTALLA 0: SELECCIÓN DE ROL
+  ══════════════════════════════════════════ */
+  .role-screen-header {
+    text-align: center;
+    padding: 20px 0 8px;
+    opacity: 0;
+    animation: fadeDown 0.5s 0.05s forwards;
+  }
+  .role-screen-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .role-screen-header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    opacity: 0;
+    animation: fadeDown 0.5s 0.15s forwards;
+  }
+
+  .role-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 20px 28px;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .role-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .role-card:hover { transform: translateY(-4px); }
+  .role-card:hover::before { opacity: 1; }
+
+  .role-card.estudiante:hover { border-color: var(--accent); box-shadow: 0 8px 28px rgba(91,141,238,0.14); }
+  .role-card.estudiante::before { background: var(--accent); }
+
+  .role-card.docente:hover { border-color: var(--green); box-shadow: 0 8px 28px rgba(52,211,153,0.14); }
+  .role-card.docente::before { background: var(--green); }
+
+  .role-card.admin:hover { border-color: var(--orange); box-shadow: 0 8px 28px rgba(251,146,60,0.14); }
+  .role-card.admin::before { background: var(--orange); }
+
+  .role-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+  }
+  .role-card.estudiante .role-icon { background: linear-gradient(135deg, #1e3a5f, #5b8dee); }
+  .role-card.docente    .role-icon { background: linear-gradient(135deg, #0d3328, #34d399); }
+  .role-card.admin      .role-icon { background: linear-gradient(135deg, #3d1f08, #fb923c); }
+
+  .role-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    color: var(--text);
+  }
+  .role-card p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .role-enter {
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-top: 2px;
+  }
+  .role-card.estudiante .role-enter { color: var(--accent); }
+  .role-card.docente    .role-enter { color: var(--green); }
+  .role-card.admin      .role-enter { color: var(--orange); }
+  .role-card:hover .role-enter { opacity: 1; }
+
+  /* ══════════════════════════════════════════
+     PANTALLA 1: ESTUDIANTE (flujo original)
+  ══════════════════════════════════════════ */
   .selection-header {
     text-align: center;
     padding: 12px 0 4px;
     opacity: 0;
     animation: fadeDown 0.5s 0.05s forwards;
   }
-
   .selection-header h1 {
     font-family: 'Playfair Display', serif;
     font-size: 1.6rem;
     color: var(--text);
     margin-bottom: 8px;
   }
-
-  .selection-header p {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.6;
-  }
+  .selection-header p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
 
   .patients-grid {
     display: grid;
@@ -114,7 +238,6 @@
     opacity: 0;
     animation: fadeDown 0.5s 0.15s forwards;
   }
-
   .patient-option {
     background: var(--card);
     border: 1px solid var(--border);
@@ -128,13 +251,11 @@
     gap: 12px;
     text-align: center;
   }
-
   .patient-option:hover {
     border-color: var(--accent);
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(91, 141, 238, 0.12);
+    box-shadow: 0 8px 24px rgba(91,141,238,0.12);
   }
-
   .patient-option .avatar-lg {
     width: 64px; height: 64px;
     border-radius: 50%;
@@ -142,42 +263,18 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 1.8rem;
   }
-
-  .patient-option h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.05rem;
-    color: var(--text);
-  }
-
+  .patient-option h3 { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--text); }
   .patient-option .age-tag {
-    font-size: 0.78rem;
-    color: var(--muted);
+    font-size: 0.78rem; color: var(--muted);
     background: rgba(255,255,255,0.05);
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
+    padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border);
   }
-
-  .patient-option .start-label {
-    font-size: 0.78rem;
-    color: var(--accent);
-    opacity: 0;
-    transition: opacity 0.2s;
-    margin-top: 2px;
-  }
-
+  .patient-option .start-label { font-size: 0.78rem; color: var(--accent); opacity: 0; transition: opacity 0.2s; margin-top: 2px; }
   .patient-option:hover .start-label { opacity: 1; }
 
-  .selection-loading {
-    text-align: center;
-    padding: 40px;
-    color: var(--muted);
-    font-size: 0.88rem;
-    opacity: 0;
-    animation: fadeDown 0.4s 0.1s forwards;
-  }
+  .selection-loading { text-align: center; padding: 40px; color: var(--muted); font-size: 0.88rem; opacity: 0; animation: fadeDown 0.4s 0.1s forwards; }
 
-  /* ── CHAT SCREEN ── */
+  /* ── CHAT SHARED ── */
   .patient-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -187,327 +284,415 @@
     align-items: center;
     gap: 16px;
     opacity: 0;
-    transform: translateY(-12px);
     animation: fadeDown 0.5s 0.1s forwards;
   }
-
-  @keyframes fadeDown {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
   .avatar {
     width: 52px; height: 52px;
     border-radius: 50%;
     background: linear-gradient(135deg, #3b4f6e, #5b8dee);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem;
-    flex-shrink: 0;
+    font-size: 1.4rem; flex-shrink: 0;
   }
-
-  .patient-info h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
-    color: var(--text);
-  }
-
-  .patient-info p {
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-top: 3px;
-  }
-
+  .patient-info h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text); }
+  .patient-info p  { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
   .badge {
     margin-left: auto;
     padding: 5px 12px;
     border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 500;
-    background: rgba(247, 129, 129, 0.12);
+    font-size: 0.72rem; font-weight: 500;
+    background: rgba(247,129,129,0.12);
     color: var(--red);
-    border: 1px solid rgba(247, 129, 129, 0.25);
+    border: 1px solid rgba(247,129,129,0.25);
     white-space: nowrap;
   }
-
-  /* ── CHAT BOX ── */
   #chat-box {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 24px;
-    min-height: 360px;
-    max-height: 460px;
+    min-height: 360px; max-height: 460px;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: flex; flex-direction: column; gap: 16px;
     opacity: 0;
     animation: fadeDown 0.5s 0.2s forwards;
     scroll-behavior: smooth;
   }
-
   #chat-box::-webkit-scrollbar { width: 5px; }
   #chat-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
   .empty-state {
-    margin: auto;
-    text-align: center;
-    color: var(--muted);
-    font-size: 0.88rem;
-    line-height: 1.7;
+    margin: auto; text-align: center;
+    color: var(--muted); font-size: 0.88rem; line-height: 1.7;
   }
-
   .empty-state .icon { font-size: 2rem; margin-bottom: 8px; }
 
-  /* ── MESSAGES ── */
   .msg { display: flex; gap: 10px; align-items: flex-start; }
   .msg.psi { flex-direction: row-reverse; }
-
   .msg-avatar {
     width: 32px; height: 32px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.8rem;
-    flex-shrink: 0;
-    font-weight: 600;
+    font-size: 0.8rem; flex-shrink: 0; font-weight: 600;
   }
-
   .msg.patient .msg-avatar { background: linear-gradient(135deg, #3b4f6e, #5b8dee); color: #fff; }
   .msg.psi    .msg-avatar { background: linear-gradient(135deg, #1a3a1a, #34d399); color: #fff; }
-
   .msg-bubble {
     max-width: 75%;
     padding: 12px 16px;
     border-radius: 14px;
-    font-size: 0.88rem;
-    line-height: 1.65;
+    font-size: 0.88rem; line-height: 1.65;
   }
-
-  .msg.patient .msg-bubble {
-    background: var(--patient-bubble);
-    border: 1px solid #2a3d5a;
-    border-bottom-left-radius: 4px;
-  }
-
-  .msg.psi .msg-bubble {
-    background: var(--psi-bubble);
-    border: 1px solid #2a3d2a;
-    border-bottom-right-radius: 4px;
-    text-align: right;
-  }
-
-  .msg-name {
-    font-size: 0.7rem;
-    color: var(--muted);
-    margin-bottom: 4px;
-    font-weight: 500;
-  }
-
+  .msg.patient .msg-bubble { background: var(--patient-bubble); border: 1px solid #2a3d5a; border-bottom-left-radius: 4px; }
+  .msg.psi    .msg-bubble  { background: var(--psi-bubble);     border: 1px solid #2a3d2a; border-bottom-right-radius: 4px; text-align: right; }
+  .msg-name { font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
   em { color: var(--muted); font-style: italic; font-size: 0.85em; }
 
-  /* typing indicator */
   .typing .dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    margin: 0 2px;
-    animation: bounce 1.2s infinite;
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--accent);
+    margin: 0 2px; animation: bounce 1.2s infinite;
   }
   .typing .dot:nth-child(2) { animation-delay: 0.2s; }
   .typing .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
 
-  @keyframes bounce {
-    0%, 80%, 100% { transform: translateY(0); }
-    40%            { transform: translateY(-6px); }
-  }
-
-  /* ── INPUT BAR ── */
-  .input-bar {
-    display: flex;
-    gap: 10px;
-    opacity: 0;
-    animation: fadeDown 0.5s 0.3s forwards;
-  }
-
+  .input-bar { display: flex; gap: 10px; opacity: 0; animation: fadeDown 0.5s 0.3s forwards; }
   #user-input {
-    flex: 1;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 18px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    outline: none;
-    transition: border-color 0.2s;
-    resize: none;
-    height: 52px;
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    outline: none; transition: border-color 0.2s; resize: none; height: 52px;
   }
-
   #user-input:focus { border-color: var(--accent); }
   #user-input::placeholder { color: var(--muted); }
 
   .btn {
-    padding: 0 22px;
-    border: none;
-    border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    height: 52px;
+    padding: 0 22px; border: none; border-radius: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; height: 52px;
   }
-
-  #send-btn {
-    background: var(--accent);
-    color: #fff;
-  }
+  #send-btn { background: var(--accent); color: #fff; }
   #send-btn:hover { background: #4a7ee0; transform: translateY(-1px); }
   #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  #end-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
+  #end-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); }
   #end-btn:hover { border-color: var(--red); color: var(--red); }
   #end-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* ── FEEDBACK MODAL ── */
+  /* ══════════════════════════════════════════
+     PANTALLA 2: DOCENTE
+  ══════════════════════════════════════════ */
+  .docente-header {
+    opacity: 0; animation: fadeDown 0.5s 0.05s forwards;
+  }
+  .docente-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; color: var(--text); margin-bottom: 6px;
+  }
+  .docente-header p { font-size: 0.83rem; color: var(--muted); line-height: 1.6; }
+
+  .docente-info-box {
+    background: linear-gradient(135deg, rgba(52,211,153,0.06), rgba(52,211,153,0.02));
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.7;
+    opacity: 0; animation: fadeDown 0.5s 0.1s forwards;
+  }
+  .docente-info-box strong { color: var(--green); }
+
+  .docente-log-area {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    opacity: 0; animation: fadeDown 0.5s 0.2s forwards;
+  }
+  .docente-log-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; color: var(--text);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .docente-log-title span {
+    font-size: 0.72rem; color: var(--muted); font-family: 'DM Sans', sans-serif;
+  }
+
+  #docente-transcript {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-size: 0.82rem;
+    line-height: 1.85;
+    color: var(--text);
+    min-height: 320px;
+    max-height: 480px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: 'DM Sans', sans-serif;
+    resize: none;
+    outline: none;
+    pointer-events: none; /* read-only feel */
+  }
+  #docente-transcript::-webkit-scrollbar { width: 5px; }
+  #docente-transcript::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .docente-empty {
+    text-align: center; color: var(--muted); font-size: 0.85rem;
+    padding: 60px 0; line-height: 1.8;
+  }
+
+  /* ══════════════════════════════════════════
+     PANTALLA 3: ADMIN
+  ══════════════════════════════════════════ */
+  .admin-header {
+    opacity: 0; animation: fadeDown 0.5s 0.05s forwards;
+  }
+  .admin-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; color: var(--text); margin-bottom: 6px;
+  }
+  .admin-header p { font-size: 0.83rem; color: var(--muted); line-height: 1.6; }
+
+  .admin-info-box {
+    background: linear-gradient(135deg, rgba(251,146,60,0.06), rgba(251,146,60,0.02));
+    border: 1px solid rgba(251,146,60,0.2);
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 0.8rem; color: var(--muted); line-height: 1.7;
+    opacity: 0; animation: fadeDown 0.5s 0.1s forwards;
+  }
+  .admin-info-box strong { color: var(--orange); }
+
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 16px;
+    opacity: 0; animation: fadeDown 0.5s 0.2s forwards;
+  }
+
+  /* Lista de pacientes admin */
+  .admin-list-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 640px;
+  }
+  .admin-list-title {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-patient-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .admin-patient-list::-webkit-scrollbar { width: 4px; }
+  .admin-patient-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .admin-patient-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .admin-patient-item:hover { border-color: var(--orange); }
+  .admin-patient-item.selected { border-color: var(--orange); background: rgba(251,146,60,0.06); }
+  .admin-patient-item-name { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+  .admin-patient-item-age  { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .admin-item-del {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 1rem; padding: 2px 4px;
+    border-radius: 6px; transition: all 0.15s;
+    opacity: 0;
+  }
+  .admin-patient-item:hover .admin-item-del { opacity: 1; }
+  .admin-item-del:hover { color: var(--red); background: rgba(248,113,113,0.1); }
+
+  .admin-add-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(251,146,60,0.08);
+    border: 1px dashed rgba(251,146,60,0.35);
+    border-radius: 10px;
+    color: var(--orange);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .admin-add-btn:hover { background: rgba(251,146,60,0.14); }
+
+  /* Form panel */
+  .admin-form-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 18px;
+    max-height: 640px;
+    overflow-y: auto;
+  }
+  .admin-form-panel::-webkit-scrollbar { width: 5px; }
+  .admin-form-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .admin-form-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem; color: var(--text);
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+  .field input, .field textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.87rem;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--orange); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+  .field textarea { min-height: 90px; }
+
+  .admin-form-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .btn-admin-save {
+    flex: 1; padding: 12px;
+    background: var(--orange);
+    color: #fff; border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-admin-save:hover { background: #ea7c1e; }
+
+  .btn-admin-cancel {
+    padding: 12px 20px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-admin-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+  .admin-placeholder {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--muted); text-align: center; font-size: 0.85rem;
+    gap: 10px; padding: 40px 0;
+  }
+  .admin-placeholder .icon { font-size: 2.2rem; }
+
+  .form-success {
+    padding: 10px 14px;
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.25);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--green);
+    display: none;
+  }
+  .form-success.visible { display: block; }
+
+  /* section separator inside form */
+  .form-section-sep {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); display: flex; align-items: center; gap: 8px;
+  }
+  .form-section-sep::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ══════════════════════════════════════════
+     FEEDBACK MODAL
+  ══════════════════════════════════════════ */
   #modal-overlay {
     display: none;
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.75);
     backdrop-filter: blur(4px);
     z-index: 100;
-    align-items: center;
-    justify-content: center;
+    align-items: center; justify-content: center;
     padding: 20px;
   }
-
   #modal-overlay.active { display: flex; }
-
   .modal {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 20px;
-    width: 100%;
-    max-width: 680px;
-    max-height: 88vh;
-    overflow-y: auto;
+    width: 100%; max-width: 680px;
+    max-height: 88vh; overflow-y: auto;
     padding: 32px;
     animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
   }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
 
-  @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.92) translateY(20px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  .modal-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    margin-bottom: 6px;
-    color: var(--text);
-  }
-
-  .modal-subtitle {
-    font-size: 0.82rem;
-    color: var(--muted);
-    margin-bottom: 28px;
-  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 6px; color: var(--text); }
+  .modal-subtitle { font-size: 0.82rem; color: var(--muted); margin-bottom: 28px; }
 
   .score-ring {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     margin: 0 auto 28px;
     width: 100px; height: 100px;
     border-radius: 50%;
     background: conic-gradient(var(--accent) 0%, var(--border) 0%);
     position: relative;
   }
-
   .score-ring::before {
-    content: '';
-    position: absolute;
+    content: ''; position: absolute;
     width: 76px; height: 76px;
-    border-radius: 50%;
-    background: var(--surface);
+    border-radius: 50%; background: var(--surface);
   }
-
   .score-value {
-    position: relative;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6rem;
-    color: var(--accent);
-    z-index: 1;
+    position: relative; font-family: 'Playfair Display', serif;
+    font-size: 1.6rem; color: var(--accent); z-index: 1;
   }
-
   .specialty-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(167, 139, 250, 0.12);
-    border: 1px solid rgba(167, 139, 250, 0.3);
-    color: var(--accent2);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 0.78rem;
-    font-weight: 500;
-    margin: 0 auto 24px;
-    width: fit-content;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(167,139,250,0.12);
+    border: 1px solid rgba(167,139,250,0.3);
+    color: var(--accent2); border-radius: 20px;
+    padding: 5px 14px; font-size: 0.78rem; font-weight: 500;
+    margin: 0 auto 24px; width: fit-content;
   }
-
   .section-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
   }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .feedback-block {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px 20px;
-    font-size: 0.87rem;
-    line-height: 1.75;
-    color: var(--text);
-    margin-bottom: 20px;
-    white-space: pre-wrap;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    font-size: 0.87rem; line-height: 1.75;
+    color: var(--text); margin-bottom: 20px; white-space: pre-wrap;
   }
-
   .modal-close {
-    width: 100%;
-    padding: 13px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: background 0.2s;
+    width: 100%; padding: 13px;
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    margin-top: 10px; transition: background 0.2s;
   }
-
   .modal-close:hover { background: #4a7ee0; }
 
-  /* loading spinner in modal */
   .spinner {
     width: 36px; height: 36px;
     border: 3px solid var(--border);
@@ -516,23 +701,21 @@
     animation: spin 0.8s linear infinite;
     margin: 40px auto;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── FOOTER ── */
   footer {
-    padding: 16px;
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-align: center;
+    padding: 16px; font-size: 0.72rem; color: var(--muted); text-align: center;
   }
 
-  /* responsive */
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     header { padding: 14px 16px; }
     .badge { display: none; }
     .msg-bubble { max-width: 88%; }
     .patients-grid { grid-template-columns: 1fr 1fr; }
+    .roles-grid { grid-template-columns: 1fr; }
+    .admin-layout { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -540,16 +723,49 @@
 
 <header>
   <div class="logo">Sim<span>Psi</span></div>
-  <div>
-    <span class="status-dot"></span>
-    <span class="status-label">Conectado a Azure OpenAI</span>
+  <div class="header-right">
+    <div>
+      <span class="status-dot"></span>
+      <span class="status-label">Conectado a Azure OpenAI</span>
+    </div>
+    <div id="role-badge" class="role-badge"></div>
+    <button id="logout-btn" onclick="doLogout()">← Cambiar rol</button>
   </div>
 </header>
 
 <main>
 
-  <!-- ── PANTALLA 1: SELECCIÓN DE PACIENTE ── -->
-  <div class="screen active" id="screen-selection">
+  <!-- ══ PANTALLA 0: SELECCIÓN DE ROL ══ -->
+  <div class="screen active" id="screen-role">
+    <div class="role-screen-header">
+      <h1>¿Cómo quieres ingresar?</h1>
+      <p>Selecciona tu rol para acceder a la vista correspondiente.<br>
+         En el futuro, cada rol tendrá su propio inicio de sesión con credenciales.</p>
+    </div>
+    <div class="roles-grid">
+      <div class="role-card estudiante" onclick="enterRole('estudiante')">
+        <div class="role-icon">🎓</div>
+        <h3>Estudiante</h3>
+        <p>Practica sesiones con pacientes simulados sin información previa del caso.</p>
+        <div class="role-enter">Entrar como estudiante →</div>
+      </div>
+      <div class="role-card docente" onclick="enterRole('docente')">
+        <div class="role-icon">👩‍🏫</div>
+        <h3>Docente</h3>
+        <p>Visualiza el historial completo de sesiones realizadas por los estudiantes.</p>
+        <div class="role-enter">Entrar como docente →</div>
+      </div>
+      <div class="role-card admin" onclick="enterRole('admin')">
+        <div class="role-icon">⚙️</div>
+        <h3>Administrador</h3>
+        <p>Gestiona los perfiles de pacientes: agrega, edita o elimina casos clínicos.</p>
+        <div class="role-enter">Entrar como admin →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANTALLA 1: ESTUDIANTE — selección de paciente ══ -->
+  <div class="screen" id="screen-selection">
     <div class="selection-header">
       <h1>Selecciona tu paciente</h1>
       <p>Elige con quién trabajarás en esta sesión simulada.<br>
@@ -561,9 +777,8 @@
     </div>
   </div>
 
-  <!-- ── PANTALLA 2: CHAT ── -->
+  <!-- ══ PANTALLA 2: CHAT (estudiante) ══ -->
   <div class="screen" id="screen-chat">
-    <!-- Patient card: only name and age -->
     <div class="patient-card">
       <div class="avatar">👤</div>
       <div class="patient-info">
@@ -572,16 +787,12 @@
       </div>
       <div class="badge">Sesión simulada</div>
     </div>
-
-    <!-- Chat -->
     <div id="chat-box">
       <div class="empty-state" id="empty-msg">
         <div class="icon">🛋️</div>
         <span id="empty-label">Escribe tu primera intervención como psicólogo para iniciar la sesión.</span>
       </div>
     </div>
-
-    <!-- Input -->
     <div class="input-bar">
       <textarea id="user-input" placeholder="Escribe tu intervención como psicólogo..."></textarea>
       <button class="btn" id="send-btn">Enviar</button>
@@ -589,9 +800,61 @@
     </div>
   </div>
 
+  <!-- ══ PANTALLA 3: DOCENTE ══ -->
+  <div class="screen" id="screen-docente">
+    <div class="docente-header">
+      <h1>Vista Docente</h1>
+      <p>Historial de sesiones realizadas. Aquí podrás revisar las transcripciones de cada sesión una vez que los estudiantes las completen.</p>
+    </div>
+    <div class="docente-info-box">
+      <strong>📋 Modo de visualización:</strong> En esta vista puedes pegar o revisar una transcripción de sesión.
+      Cuando se integre la base de datos, aquí aparecerán automáticamente los registros de cada estudiante
+      con su paciente asignado, puntaje y análisis del supervisor de IA.
+    </div>
+    <div class="docente-log-area">
+      <div class="docente-log-title">
+        Transcripción de sesión
+        <span>Solo lectura</span>
+      </div>
+      <div id="docente-transcript">
+        <div class="docente-empty">
+          📂  Aún no hay sesiones registradas en esta simulación.<br>
+          <span style="font-size:0.78rem;">Cuando un estudiante complete una sesión, la transcripción aparecerá aquí.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANTALLA 4: ADMIN ══ -->
+  <div class="screen" id="screen-admin">
+    <div class="admin-header">
+      <h1>Panel de Administración</h1>
+      <p>Gestiona los perfiles de pacientes simulados. Los cambios se reflejan de inmediato en la vista de estudiantes.</p>
+    </div>
+    <div class="admin-info-box">
+      <strong>⚠ Modo prototipo:</strong> Los cambios realizados aquí se guardan temporalmente en memoria de la sesión actual.
+      Cuando se conecte la base de datos, los cambios serán permanentes y estarán disponibles para todos los usuarios.
+    </div>
+    <div class="admin-layout">
+      <!-- Lista izquierda -->
+      <div class="admin-list-panel">
+        <div class="admin-list-title">Pacientes registrados</div>
+        <div class="admin-patient-list" id="admin-patient-list"></div>
+        <button class="admin-add-btn" onclick="adminNewPatient()">+ Nuevo paciente</button>
+      </div>
+      <!-- Formulario derecha -->
+      <div class="admin-form-panel" id="admin-form-panel">
+        <div class="admin-placeholder">
+          <div class="icon">🗂️</div>
+          Selecciona un paciente para editar<br>o crea uno nuevo.
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
-<footer>SimPsi · Plataforma de entrenamiento clínico · Powered by Azure OpenAI + GPT-4o mini</footer>
+<footer>PsicoIA · Plataforma de entrenamiento clínico · Powered by Azure OpenAI + GPT-4o mini · Sebastian Salazar · Andrea Lomas</footer>
 
 <!-- Feedback modal -->
 <div id="modal-overlay">
@@ -603,10 +866,18 @@
 <script>
   const API = 'https://psicoia-habaesdshycpafh6.eastus2-01.azurewebsites.net';
 
+  // ─── Estado global ──────────────────────────────────────────────────────────
+  let currentRole  = null;
   let sessionId    = null;
   let patientName  = '';
   let patientId    = '';
   let isLoading    = false;
+
+  // Pacientes cargados del backend (usados también por admin)
+  let patientsData = {}; // { id: { name, age, description } }
+
+  // Transcripciones de sesión (para docente)
+  let sessionTranscripts = []; // array de strings
 
   const chatBox      = document.getElementById('chat-box');
   const input        = document.getElementById('user-input');
@@ -615,35 +886,66 @@
   const overlay      = document.getElementById('modal-overlay');
   const modalContent = document.getElementById('modal-content');
 
-  // ── HELPERS: pantallas ────────────────────────────────
+  // ─── Helpers: pantallas ─────────────────────────────────────────────────────
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
   }
 
-  // ── PANTALLA DE SELECCIÓN ─────────────────────────────
+  function doLogout() {
+    currentRole = null;
+    sessionId   = null;
+    patientName = '';
+    patientId   = '';
+    document.getElementById('role-badge').className  = 'role-badge';
+    document.getElementById('role-badge').textContent = '';
+    document.getElementById('logout-btn').classList.remove('visible');
+    showScreen('screen-role');
+  }
+
+  // ─── Selección de rol ───────────────────────────────────────────────────────
+  function enterRole(role) {
+    currentRole = role;
+    const badge = document.getElementById('role-badge');
+    const labels = { estudiante: '🎓 Estudiante', docente: '👩‍🏫 Docente', admin: '⚙️ Admin' };
+    badge.textContent  = labels[role];
+    badge.className    = `role-badge visible ${role}`;
+    document.getElementById('logout-btn').classList.add('visible');
+
+    if (role === 'estudiante') {
+      showScreen('screen-selection');
+      loadPatients();
+    } else if (role === 'docente') {
+      showScreen('screen-docente');
+      renderDocenteView();
+    } else if (role === 'admin') {
+      showScreen('screen-admin');
+      loadAdminPatients();
+    }
+  }
+
+  // ─── ESTUDIANTE: Cargar pacientes ───────────────────────────────────────────
   async function loadPatients() {
     const container = document.getElementById('patients-container');
+    container.className  = 'selection-loading';
+    container.innerHTML  = '<div class="spinner" style="margin:20px auto;"></div>Cargando pacientes disponibles…';
     try {
-      const res = await fetch(`${API}/patients`);
-      const patients = await res.json(); // { id: { name, age, description } }
-
-      const entries = Object.entries(patients);
+      const res     = await fetch(`${API}/patients`);
+      patientsData  = await res.json();
+      const entries = Object.entries(patientsData);
       if (entries.length === 0) {
         container.innerHTML = '<p style="text-align:center;color:var(--muted);">No hay pacientes disponibles.</p>';
         return;
       }
-
       container.className = 'patients-grid';
       container.innerHTML = entries.map(([pid, p]) => `
-        <div class="patient-option" onclick="selectPatient('${pid}', '${p.name}', ${p.age})">
+        <div class="patient-option" onclick="selectPatient('${pid}','${escHtml(p.name)}',${p.age})">
           <div class="avatar-lg">👤</div>
-          <h3>${p.name}</h3>
+          <h3>${escHtml(p.name)}</h3>
           <div class="age-tag">${p.age} años</div>
           <div class="start-label">Iniciar sesión →</div>
         </div>
       `).join('');
-
     } catch(e) {
       container.innerHTML = `<p style="text-align:center;color:var(--red);">⚠ No se pudo conectar con el servidor.<br><small>${e.message}</small></p>`;
     }
@@ -652,20 +954,12 @@
   async function selectPatient(pid, name, age) {
     patientId   = pid;
     patientName = name;
-
-    // Actualizar patient card
     document.getElementById('card-name').textContent = `${name}, ${age} años`;
     document.getElementById('card-age').textContent  = '';
-    document.getElementById('empty-label').textContent =
-      `Escribe tu primera intervención para iniciar la sesión con ${name}.`;
-
-    // Limpiar chat
     chatBox.innerHTML = `<div class="empty-state" id="empty-msg">
       <div class="icon">🛋️</div>
-      <span id="empty-label">Escribe tu primera intervención para iniciar la sesión con ${name}.</span>
+      <span id="empty-label">Escribe tu primera intervención para iniciar la sesión con ${escHtml(name)}.</span>
     </div>`;
-
-    // Iniciar sesión en backend
     try {
       const res = await fetch(`${API}/session/new`, {
         method: 'POST',
@@ -677,7 +971,6 @@
     } catch(e) {
       appendMsg('sistema', '⚠ No se pudo conectar con el servidor.');
     }
-
     showScreen('screen-chat');
     input.disabled   = false;
     sendBtn.disabled = false;
@@ -685,47 +978,39 @@
     input.focus();
   }
 
-  // ── RENDER MENSAJE ─────────────────────────────────────
+  // ─── Chat messages ──────────────────────────────────────────────────────────
   function appendMsg(role, text) {
     const empty = document.getElementById('empty-msg');
     if (empty) empty.remove();
-
-    const msg = document.createElement('div');
-    msg.className = `msg ${role === 'patient' ? 'patient' : role}`;
-
+    const msg       = document.createElement('div');
+    msg.className   = `msg ${role === 'patient' ? 'patient' : role}`;
     const formatted = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
     if (role === 'sistema') {
       msg.innerHTML = `<div style="width:100%;text-align:center;font-size:0.78rem;color:var(--muted);padding:4px 0;">${formatted}</div>`;
     } else {
       const isPatient = role === 'patient';
       msg.innerHTML = `
-        <div class="msg-avatar">${isPatient ? patientName.charAt(0) : 'P'}</div>
+        <div class="msg-avatar">${isPatient ? escHtml(patientName.charAt(0)) : 'P'}</div>
         <div>
-          <div class="msg-name">${isPatient ? patientName : 'Psicólogo'}</div>
+          <div class="msg-name">${isPatient ? escHtml(patientName) : 'Psicólogo'}</div>
           <div class="msg-bubble">${formatted}</div>
-        </div>
-      `;
+        </div>`;
     }
-
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
   function showTyping() {
-    const initial = patientName.charAt(0) || '?';
     const t = document.createElement('div');
-    t.className = 'msg patient';
-    t.id = 'typing-indicator';
+    t.className = 'msg patient'; t.id = 'typing-indicator';
     t.innerHTML = `
-      <div class="msg-avatar">${initial}</div>
+      <div class="msg-avatar">${escHtml(patientName.charAt(0)||'?')}</div>
       <div>
-        <div class="msg-name">${patientName}</div>
+        <div class="msg-name">${escHtml(patientName)}</div>
         <div class="msg-bubble typing">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         </div>
-      </div>
-    `;
+      </div>`;
     chatBox.appendChild(t);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
@@ -735,22 +1020,17 @@
     if (t) t.remove();
   }
 
-  // ── ENVIAR MENSAJE ─────────────────────────────────────
   async function sendMessage() {
     if (!sessionId || isLoading) return;
     const text = input.value.trim();
     if (!text) return;
-
     isLoading = true;
-    sendBtn.disabled = true;
-    endBtn.disabled  = true;
+    sendBtn.disabled = true; endBtn.disabled = true;
     input.value = '';
-
     appendMsg('psi', text);
     showTyping();
-
     try {
-      const res = await fetch(`${API}/chat`, {
+      const res  = await fetch(`${API}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: text })
@@ -762,77 +1042,78 @@
       removeTyping();
       appendMsg('sistema', '⚠ Error al contactar el servidor.');
     }
-
     isLoading = false;
-    sendBtn.disabled = false;
-    endBtn.disabled  = false;
+    sendBtn.disabled = false; endBtn.disabled = false;
     input.focus();
   }
 
-  // ── FINALIZAR SESIÓN ───────────────────────────────────
+  // ─── Finalizar sesión ────────────────────────────────────────────────────────
   async function endSession() {
     if (!sessionId || isLoading) return;
     if (!confirm('¿Terminar la sesión y ver el análisis?')) return;
-
-    sendBtn.disabled = true;
-    endBtn.disabled  = true;
-    input.disabled   = true;
-
+    sendBtn.disabled = true; endBtn.disabled = true; input.disabled = true;
     overlay.classList.add('active');
     modalContent.innerHTML = `
       <div class="modal-title">Analizando sesión…</div>
-      <div class="modal-subtitle">Generando retroalimentación de ${patientName} y análisis clínico</div>
-      <div class="spinner"></div>
-    `;
-
+      <div class="modal-subtitle">Generando retroalimentación de ${escHtml(patientName)} y análisis clínico</div>
+      <div class="spinner"></div>`;
     try {
-      const res = await fetch(`${API}/session/end`, {
+      const res  = await fetch(`${API}/session/end`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId })
       });
       const data = await res.json();
 
-      // Extraer puntuación
+      // Guardar transcripción para docente
+      const transcript = buildTranscriptFromDOM(data.patient_name);
+      sessionTranscripts.push(transcript);
+
       const scoreMatch = data.analisis_objetivo.match(/\b([0-9]{1,3})\s*(?:\/\s*100|puntos?)?/);
       const score = scoreMatch ? Math.min(parseInt(scoreMatch[1]), 100) : null;
       const deg   = score ? Math.round(score * 3.6) : 0;
-
-      // Extraer especialización (busca línea con "Especialización detectada" o similar)
       const specMatch = data.analisis_objetivo.match(
-        /especializaci[oó]n[^\n:]*[:]\s*\*{0,2}([^\n*]+)\*{0,2}/i
+        /enfoque[^\n:]*[:]\s*\*{0,2}([^\n*]+)\*{0,2}/i
       );
       const specialty = specMatch ? specMatch[1].trim() : null;
 
       modalContent.innerHTML = `
         <div class="modal-title">Reporte de sesión</div>
-        <div class="modal-subtitle">Sesión con ${data.patient_name} · Análisis generado por IA supervisora</div>
-
+        <div class="modal-subtitle">Sesión con ${escHtml(data.patient_name)} · Análisis generado por IA supervisora</div>
         ${score !== null ? `
-        <div class="score-ring" style="background: conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);">
+        <div class="score-ring" style="background:conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);">
           <span class="score-value">${score}</span>
         </div>` : ''}
-
         ${specialty ? `
         <div style="text-align:center;">
-          <div class="specialty-badge">🎓 Especialización detectada: ${specialty}</div>
+          <div class="specialty-badge">🎯 Enfoque detectado: ${escHtml(specialty)}</div>
         </div>` : ''}
-
-        <div class="section-label">Perspectiva de ${data.patient_name}</div>
-        <div class="feedback-block">${data.feedback_paciente}</div>
-
+        <div class="section-label">Perspectiva de ${escHtml(data.patient_name)}</div>
+        <div class="feedback-block">${escHtml(data.feedback_paciente)}</div>
         <div class="section-label">Análisis clínico objetivo</div>
-        <div class="feedback-block">${data.analisis_objetivo}</div>
-
-        <button class="modal-close" onclick="closeModal()">Cerrar y nueva sesión</button>
-      `;
+        <div class="feedback-block">${escHtml(data.analisis_objetivo)}</div>
+        <button class="modal-close" onclick="closeModal()">Cerrar y nueva sesión</button>`;
     } catch(e) {
       modalContent.innerHTML = `
         <div class="modal-title">Error</div>
         <div class="modal-subtitle">No se pudo generar el análisis. Intenta de nuevo.</div>
-        <button class="modal-close" onclick="closeModal()">Cerrar</button>
-      `;
+        <button class="modal-close" onclick="closeModal()">Cerrar</button>`;
     }
+  }
+
+  function buildTranscriptFromDOM(pName) {
+    const msgs = chatBox.querySelectorAll('.msg');
+    if (!msgs.length) return '';
+    const now = new Date().toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' });
+    let lines = [`=== Sesión con ${pName} — ${now} ===\n`];
+    msgs.forEach(m => {
+      const nameEl   = m.querySelector('.msg-name');
+      const bubbleEl = m.querySelector('.msg-bubble');
+      if (nameEl && bubbleEl) {
+        lines.push(`[${nameEl.textContent.trim()}]: ${bubbleEl.innerText.trim()}`);
+      }
+    });
+    return lines.join('\n');
   }
 
   function closeModal() {
@@ -844,19 +1125,196 @@
     loadPatients();
   }
 
-  // ── EVENTOS ────────────────────────────────────────────
+  // ─── DOCENTE: Renderizar vista ───────────────────────────────────────────────
+  function renderDocenteView() {
+    const el = document.getElementById('docente-transcript');
+    if (sessionTranscripts.length === 0) {
+      el.innerHTML = `<div class="docente-empty">
+        📂 Aún no hay sesiones registradas en esta simulación.<br>
+        <span style="font-size:0.78rem;">Cuando un estudiante complete una sesión, la transcripción aparecerá aquí.</span>
+      </div>`;
+    } else {
+      el.textContent = sessionTranscripts.join('\n\n' + '─'.repeat(60) + '\n\n');
+    }
+  }
+
+  // ─── ADMIN: Lógica de gestión de pacientes ───────────────────────────────────
+
+  // Datos locales del admin (empieza igual que los del backend; sin BD solo vive en memoria)
+  let adminPatients = {}; // { id: { name, age, description, instruccion, instruccion_feedback } }
+  let adminSelected = null; // id del paciente seleccionado
+
+  async function loadAdminPatients() {
+    // Cargamos del backend como base
+    if (Object.keys(patientsData).length === 0) {
+      try {
+        const res = await fetch(`${API}/patients`);
+        patientsData = await res.json();
+      } catch(e) {}
+    }
+    // Inicializar admin con los datos del backend (enriquecidos con campos vacíos si faltan)
+    if (Object.keys(adminPatients).length === 0) {
+      for (const [id, p] of Object.entries(patientsData)) {
+        adminPatients[id] = {
+          name: p.name,
+          age:  p.age,
+          description: p.description,
+          instruccion: p.instruccion || '',
+          instruccion_feedback: p.instruccion_feedback || ''
+        };
+      }
+    }
+    renderAdminList();
+  }
+
+  function renderAdminList() {
+    const list = document.getElementById('admin-patient-list');
+    const entries = Object.entries(adminPatients);
+    if (entries.length === 0) {
+      list.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:0.8rem;padding:20px 0;">Sin pacientes registrados.</p>';
+      return;
+    }
+    list.innerHTML = entries.map(([id, p]) => `
+      <div class="admin-patient-item ${adminSelected === id ? 'selected' : ''}" onclick="adminSelectPatient('${id}')">
+        <div>
+          <div class="admin-patient-item-name">${escHtml(p.name)}</div>
+          <div class="admin-patient-item-age">${p.age} años</div>
+        </div>
+        <button class="admin-item-del" onclick="adminDeletePatient(event,'${id}')" title="Eliminar">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  function adminSelectPatient(id) {
+    adminSelected = id;
+    renderAdminList();
+    renderAdminForm(id);
+  }
+
+  function adminNewPatient() {
+    adminSelected = null;
+    renderAdminList();
+    renderAdminForm(null);
+  }
+
+  function adminDeletePatient(e, id) {
+    e.stopPropagation();
+    const p = adminPatients[id];
+    if (!confirm(`¿Eliminar a "${p.name}" de la lista de pacientes?`)) return;
+    delete adminPatients[id];
+    if (adminSelected === id) {
+      adminSelected = null;
+      document.getElementById('admin-form-panel').innerHTML = `
+        <div class="admin-placeholder">
+          <div class="icon">🗂️</div>
+          Selecciona un paciente para editar<br>o crea uno nuevo.
+        </div>`;
+    }
+    renderAdminList();
+  }
+
+  function renderAdminForm(id) {
+    const panel = document.getElementById('admin-form-panel');
+    const p     = id ? adminPatients[id] : null;
+    const isNew = !id;
+
+    panel.innerHTML = `
+      <div class="admin-form-title">${isNew ? 'Nuevo paciente' : `Editar: ${escHtml(p.name)}`}</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Nombre del paciente</label>
+          <input id="af-name" type="text" placeholder="Ej. Sofía" value="${escAttr(p?.name||'')}"/>
+        </div>
+        <div class="field">
+          <label>Edad</label>
+          <input id="af-age" type="number" min="1" max="120" placeholder="Ej. 28" value="${p?.age||''}"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Descripción breve del caso</label>
+        <input id="af-desc" type="text" placeholder="Ej. Adulto joven con ansiedad social…" value="${escAttr(p?.description||'')}"/>
+      </div>
+
+      <div class="form-section-sep">Instrucción del personaje (system prompt)</div>
+
+      <div class="field">
+        <label>¿Cómo debe comportarse este paciente?</label>
+        <textarea id="af-instruccion" placeholder="Describe la personalidad, motivo de consulta, cómo responde, qué evita, etc.">${escHtml(p?.instruccion||'')}</textarea>
+      </div>
+
+      <div class="form-section-sep">Instrucción de feedback</div>
+
+      <div class="field">
+        <label>¿Qué reflexiones debe dar el paciente al final?</label>
+        <textarea id="af-feedback" placeholder="Preguntas guía que el paciente responderá para dar retroalimentación al estudiante.">${escHtml(p?.instruccion_feedback||'')}</textarea>
+      </div>
+
+      <div class="form-success" id="af-success">✓ Cambios guardados correctamente en esta sesión.</div>
+
+      <div class="admin-form-actions">
+        <button class="btn-admin-save" onclick="adminSavePatient('${id||''}')">
+          ${isNew ? '+ Crear paciente' : '💾 Guardar cambios'}
+        </button>
+        <button class="btn-admin-cancel" onclick="adminCancelForm()">Cancelar</button>
+      </div>
+    `;
+  }
+
+  function adminSavePatient(id) {
+    const name        = document.getElementById('af-name').value.trim();
+    const age         = parseInt(document.getElementById('af-age').value);
+    const desc        = document.getElementById('af-desc').value.trim();
+    const instruccion = document.getElementById('af-instruccion').value.trim();
+    const feedback    = document.getElementById('af-feedback').value.trim();
+
+    if (!name || !age || !desc) {
+      alert('Por favor completa al menos Nombre, Edad y Descripción.');
+      return;
+    }
+
+    const finalId = id || slugify(name) + '_' + Date.now();
+    adminPatients[finalId] = { name, age, description: desc, instruccion, instruccion_feedback: feedback };
+    adminSelected = finalId;
+    renderAdminList();
+
+    // Mostrar confirmación
+    const suc = document.getElementById('af-success');
+    if (suc) { suc.classList.add('visible'); setTimeout(() => suc.classList.remove('visible'), 3000); }
+
+    // Actualizar título del form
+    const title = document.querySelector('#admin-form-panel .admin-form-title');
+    if (title) title.textContent = `Editar: ${name}`;
+  }
+
+  function adminCancelForm() {
+    adminSelected = null;
+    renderAdminList();
+    document.getElementById('admin-form-panel').innerHTML = `
+      <div class="admin-placeholder">
+        <div class="icon">🗂️</div>
+        Selecciona un paciente para editar<br>o crea uno nuevo.
+      </div>`;
+  }
+
+  // ─── Utilidades ─────────────────────────────────────────────────────────────
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function escAttr(s) { return escHtml(s); }
+  function slugify(s) {
+    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  }
+
+  // ─── Eventos ─────────────────────────────────────────────────────────────────
   sendBtn.addEventListener('click', sendMessage);
   endBtn.addEventListener('click', endSession);
-
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
-
-  // Arranque
-  loadPatients();
 </script>
 </body>
 </html>
