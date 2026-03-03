@@ -18,8 +18,8 @@
     --yellow:    #fbbf24;
     --text:      #e2e8f0;
     --muted:     #64748b;
-    --mateo:     #1e2a3a;
-    --psi:       #1a2e1a;
+    --patient-bubble: #1e2a3a;
+    --psi-bubble:     #1a2e1a;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -82,7 +82,102 @@
     gap: 20px;
   }
 
-  /* ── PATIENT CARD ── */
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; gap: 20px; }
+  .screen.active { display: flex; }
+
+  /* ── PATIENT SELECTION SCREEN ── */
+  .selection-header {
+    text-align: center;
+    padding: 12px 0 4px;
+    opacity: 0;
+    animation: fadeDown 0.5s 0.05s forwards;
+  }
+
+  .selection-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .selection-header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .patients-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    opacity: 0;
+    animation: fadeDown 0.5s 0.15s forwards;
+  }
+
+  .patient-option {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .patient-option:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(91, 141, 238, 0.12);
+  }
+
+  .patient-option .avatar-lg {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b4f6e, #5b8dee);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+  }
+
+  .patient-option h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .patient-option .age-tag {
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: rgba(255,255,255,0.05);
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .patient-option .start-label {
+    font-size: 0.78rem;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-top: 2px;
+  }
+
+  .patient-option:hover .start-label { opacity: 1; }
+
+  .selection-loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    opacity: 0;
+    animation: fadeDown 0.4s 0.1s forwards;
+  }
+
+  /* ── CHAT SCREEN ── */
   .patient-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -119,7 +214,6 @@
     font-size: 0.78rem;
     color: var(--muted);
     margin-top: 3px;
-    line-height: 1.5;
   }
 
   .badge {
@@ -177,8 +271,8 @@
     font-weight: 600;
   }
 
-  .msg.mateo .msg-avatar { background: linear-gradient(135deg, #3b4f6e, #5b8dee); color: #fff; }
-  .msg.psi   .msg-avatar { background: linear-gradient(135deg, #1a3a1a, #34d399); color: #fff; }
+  .msg.patient .msg-avatar { background: linear-gradient(135deg, #3b4f6e, #5b8dee); color: #fff; }
+  .msg.psi    .msg-avatar { background: linear-gradient(135deg, #1a3a1a, #34d399); color: #fff; }
 
   .msg-bubble {
     max-width: 75%;
@@ -188,14 +282,14 @@
     line-height: 1.65;
   }
 
-  .msg.mateo .msg-bubble {
-    background: var(--mateo);
+  .msg.patient .msg-bubble {
+    background: var(--patient-bubble);
     border: 1px solid #2a3d5a;
     border-bottom-left-radius: 4px;
   }
 
   .msg.psi .msg-bubble {
-    background: var(--psi);
+    background: var(--psi-bubble);
     border: 1px solid #2a3d2a;
     border-bottom-right-radius: 4px;
     text-align: right;
@@ -351,6 +445,21 @@
     z-index: 1;
   }
 
+  .specialty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(167, 139, 250, 0.12);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    color: var(--accent2);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin: 0 auto 24px;
+    width: fit-content;
+  }
+
   .section-label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -423,6 +532,7 @@
     header { padding: 14px 16px; }
     .badge { display: none; }
     .msg-bubble { max-width: 88%; }
+    .patients-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
@@ -437,32 +547,48 @@
 </header>
 
 <main>
-  <!-- Patient card -->
-  <div class="patient-card">
-    <div class="avatar">👤</div>
-    <div class="patient-info">
-      <h2>Mateo, 22 años</h2>
-      <p>Estudiante de ingeniería · Derivado por sus padres<br>
-         <em style="color:#f87171; font-style:normal; font-size:0.75rem;">⚠ Resistencia alta · Desconfianza inicial</em>
-      </p>
-    </div>
-    <div class="badge">Sesión simulada</div>
-  </div>
 
-  <!-- Chat -->
-  <div id="chat-box">
-    <div class="empty-state" id="empty-msg">
-      <div class="icon">🛋️</div>
-      Escribe tu primera intervención como psicólogo<br>para iniciar la sesión con Mateo.
+  <!-- ── PANTALLA 1: SELECCIÓN DE PACIENTE ── -->
+  <div class="screen active" id="screen-selection">
+    <div class="selection-header">
+      <h1>Selecciona tu paciente</h1>
+      <p>Elige con quién trabajarás en esta sesión simulada.<br>
+         Recuerda: no tendrás información previa sobre el caso.</p>
+    </div>
+    <div id="patients-container" class="selection-loading">
+      <div class="spinner" style="margin: 20px auto;"></div>
+      Cargando pacientes disponibles…
     </div>
   </div>
 
-  <!-- Input -->
-  <div class="input-bar">
-    <textarea id="user-input" placeholder="Escribe tu intervención como psicólogo..."></textarea>
-    <button class="btn" id="send-btn">Enviar</button>
-    <button class="btn" id="end-btn">Finalizar sesión</button>
+  <!-- ── PANTALLA 2: CHAT ── -->
+  <div class="screen" id="screen-chat">
+    <!-- Patient card: only name and age -->
+    <div class="patient-card">
+      <div class="avatar">👤</div>
+      <div class="patient-info">
+        <h2 id="card-name">—</h2>
+        <p id="card-age" style="color: var(--muted);"></p>
+      </div>
+      <div class="badge">Sesión simulada</div>
+    </div>
+
+    <!-- Chat -->
+    <div id="chat-box">
+      <div class="empty-state" id="empty-msg">
+        <div class="icon">🛋️</div>
+        <span id="empty-label">Escribe tu primera intervención como psicólogo para iniciar la sesión.</span>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-bar">
+      <textarea id="user-input" placeholder="Escribe tu intervención como psicólogo..."></textarea>
+      <button class="btn" id="send-btn">Enviar</button>
+      <button class="btn" id="end-btn">Finalizar sesión</button>
+    </div>
   </div>
+
 </main>
 
 <footer>SimPsi · Plataforma de entrenamiento clínico · Powered by Azure OpenAI + GPT-4o mini</footer>
@@ -475,49 +601,108 @@
 </div>
 
 <script>
-  const API = 'https://psicoia-habaesdshycpafh6.eastus2-01.azurewebsites.net'; // URL servidor en producción
-  let sessionId = null;
-  let isLoading = false;
+  const API = 'https://psicoia-habaesdshycpafh6.eastus2-01.azurewebsites.net';
 
-  const chatBox    = document.getElementById('chat-box');
-  const input      = document.getElementById('user-input');
-  const sendBtn    = document.getElementById('send-btn');
-  const endBtn     = document.getElementById('end-btn');
-  const overlay    = document.getElementById('modal-overlay');
+  let sessionId    = null;
+  let patientName  = '';
+  let patientId    = '';
+  let isLoading    = false;
+
+  const chatBox      = document.getElementById('chat-box');
+  const input        = document.getElementById('user-input');
+  const sendBtn      = document.getElementById('send-btn');
+  const endBtn       = document.getElementById('end-btn');
+  const overlay      = document.getElementById('modal-overlay');
   const modalContent = document.getElementById('modal-content');
 
-  // ── INIT SESSION ──────────────────────────────────────
-  async function initSession() {
+  // ── HELPERS: pantallas ────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── PANTALLA DE SELECCIÓN ─────────────────────────────
+  async function loadPatients() {
+    const container = document.getElementById('patients-container');
     try {
-      const res = await fetch(`${API}/session/new`, { method: 'POST' });
-      const data = await res.json();
-      sessionId = data.session_id;
+      const res = await fetch(`${API}/patients`);
+      const patients = await res.json(); // { id: { name, age, description } }
+
+      const entries = Object.entries(patients);
+      if (entries.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--muted);">No hay pacientes disponibles.</p>';
+        return;
+      }
+
+      container.className = 'patients-grid';
+      container.innerHTML = entries.map(([pid, p]) => `
+        <div class="patient-option" onclick="selectPatient('${pid}', '${p.name}', ${p.age})">
+          <div class="avatar-lg">👤</div>
+          <h3>${p.name}</h3>
+          <div class="age-tag">${p.age} años</div>
+          <div class="start-label">Iniciar sesión →</div>
+        </div>
+      `).join('');
+
     } catch(e) {
-      appendMsg('sistema', '⚠ No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
+      container.innerHTML = `<p style="text-align:center;color:var(--red);">⚠ No se pudo conectar con el servidor.<br><small>${e.message}</small></p>`;
     }
   }
 
-  // ── RENDER MESSAGE ─────────────────────────────────────
+  async function selectPatient(pid, name, age) {
+    patientId   = pid;
+    patientName = name;
+
+    // Actualizar patient card
+    document.getElementById('card-name').textContent = `${name}, ${age} años`;
+    document.getElementById('card-age').textContent  = '';
+    document.getElementById('empty-label').textContent =
+      `Escribe tu primera intervención para iniciar la sesión con ${name}.`;
+
+    // Limpiar chat
+    chatBox.innerHTML = `<div class="empty-state" id="empty-msg">
+      <div class="icon">🛋️</div>
+      <span id="empty-label">Escribe tu primera intervención para iniciar la sesión con ${name}.</span>
+    </div>`;
+
+    // Iniciar sesión en backend
+    try {
+      const res = await fetch(`${API}/session/new`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: pid })
+      });
+      const data = await res.json();
+      sessionId = data.session_id;
+    } catch(e) {
+      appendMsg('sistema', '⚠ No se pudo conectar con el servidor.');
+    }
+
+    showScreen('screen-chat');
+    input.disabled   = false;
+    sendBtn.disabled = false;
+    endBtn.disabled  = false;
+    input.focus();
+  }
+
+  // ── RENDER MENSAJE ─────────────────────────────────────
   function appendMsg(role, text) {
     const empty = document.getElementById('empty-msg');
     if (empty) empty.remove();
 
-    const isMateo = role === 'mateo';
-    const isPsi   = role === 'psi';
-
     const msg = document.createElement('div');
-    msg.className = `msg ${role}`;
+    msg.className = `msg ${role === 'patient' ? 'patient' : role}`;
 
-    // Format asterisk actions as italic
     const formatted = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
     if (role === 'sistema') {
-      msg.innerHTML = `<div style="width:100%;text-align:center;font-size:0.78rem;color:var(--muted);padding:4px 0;">${text}</div>`;
+      msg.innerHTML = `<div style="width:100%;text-align:center;font-size:0.78rem;color:var(--muted);padding:4px 0;">${formatted}</div>`;
     } else {
+      const isPatient = role === 'patient';
       msg.innerHTML = `
-        <div class="msg-avatar">${isMateo ? 'M' : 'P'}</div>
+        <div class="msg-avatar">${isPatient ? patientName.charAt(0) : 'P'}</div>
         <div>
-          <div class="msg-name">${isMateo ? 'Mateo' : 'Psicólogo'}</div>
+          <div class="msg-name">${isPatient ? patientName : 'Psicólogo'}</div>
           <div class="msg-bubble">${formatted}</div>
         </div>
       `;
@@ -528,13 +713,14 @@
   }
 
   function showTyping() {
+    const initial = patientName.charAt(0) || '?';
     const t = document.createElement('div');
-    t.className = 'msg mateo';
+    t.className = 'msg patient';
     t.id = 'typing-indicator';
     t.innerHTML = `
-      <div class="msg-avatar">M</div>
+      <div class="msg-avatar">${initial}</div>
       <div>
-        <div class="msg-name">Mateo</div>
+        <div class="msg-name">${patientName}</div>
         <div class="msg-bubble typing">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         </div>
@@ -549,7 +735,7 @@
     if (t) t.remove();
   }
 
-  // ── SEND MESSAGE ───────────────────────────────────────
+  // ── ENVIAR MENSAJE ─────────────────────────────────────
   async function sendMessage() {
     if (!sessionId || isLoading) return;
     const text = input.value.trim();
@@ -571,7 +757,7 @@
       });
       const data = await res.json();
       removeTyping();
-      appendMsg('mateo', data.reply);
+      appendMsg('patient', data.reply);
     } catch(e) {
       removeTyping();
       appendMsg('sistema', '⚠ Error al contactar el servidor.');
@@ -583,7 +769,7 @@
     input.focus();
   }
 
-  // ── END SESSION + FEEDBACK ─────────────────────────────
+  // ── FINALIZAR SESIÓN ───────────────────────────────────
   async function endSession() {
     if (!sessionId || isLoading) return;
     if (!confirm('¿Terminar la sesión y ver el análisis?')) return;
@@ -592,11 +778,10 @@
     endBtn.disabled  = true;
     input.disabled   = true;
 
-    // Show modal with spinner
     overlay.classList.add('active');
     modalContent.innerHTML = `
       <div class="modal-title">Analizando sesión…</div>
-      <div class="modal-subtitle">Generando retroalimentación de Mateo y análisis clínico</div>
+      <div class="modal-subtitle">Generando retroalimentación de ${patientName} y análisis clínico</div>
       <div class="spinner"></div>
     `;
 
@@ -608,22 +793,33 @@
       });
       const data = await res.json();
 
-      // Extract score from analysis text
-      const scoreMatch = data.analisis_objetivo.match(/(\d{1,3})\s*(?:\/\s*100|puntos?)?/);
+      // Extraer puntuación
+      const scoreMatch = data.analisis_objetivo.match(/\b([0-9]{1,3})\s*(?:\/\s*100|puntos?)?/);
       const score = scoreMatch ? Math.min(parseInt(scoreMatch[1]), 100) : null;
-      const deg = score ? Math.round(score * 3.6) : 0;
+      const deg   = score ? Math.round(score * 3.6) : 0;
+
+      // Extraer especialización (busca línea con "Especialización detectada" o similar)
+      const specMatch = data.analisis_objetivo.match(
+        /especializaci[oó]n[^\n:]*[:]\s*\*{0,2}([^\n*]+)\*{0,2}/i
+      );
+      const specialty = specMatch ? specMatch[1].trim() : null;
 
       modalContent.innerHTML = `
         <div class="modal-title">Reporte de sesión</div>
-        <div class="modal-subtitle">Sesión finalizada · Análisis generado por IA supervisora</div>
+        <div class="modal-subtitle">Sesión con ${data.patient_name} · Análisis generado por IA supervisora</div>
 
         ${score !== null ? `
         <div class="score-ring" style="background: conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);">
           <span class="score-value">${score}</span>
         </div>` : ''}
 
-        <div class="section-label">Perspectiva de Mateo</div>
-        <div class="feedback-block">${data.feedback_mateo}</div>
+        ${specialty ? `
+        <div style="text-align:center;">
+          <div class="specialty-badge">🎓 Especialización detectada: ${specialty}</div>
+        </div>` : ''}
+
+        <div class="section-label">Perspectiva de ${data.patient_name}</div>
+        <div class="feedback-block">${data.feedback_paciente}</div>
 
         <div class="section-label">Análisis clínico objetivo</div>
         <div class="feedback-block">${data.analisis_objetivo}</div>
@@ -633,7 +829,7 @@
     } catch(e) {
       modalContent.innerHTML = `
         <div class="modal-title">Error</div>
-        <div class="modal-subtitle">No se pudo generar el análisis.</div>
+        <div class="modal-subtitle">No se pudo generar el análisis. Intenta de nuevo.</div>
         <button class="modal-close" onclick="closeModal()">Cerrar</button>
       `;
     }
@@ -641,18 +837,14 @@
 
   function closeModal() {
     overlay.classList.remove('active');
-    sessionId = null;
-    chatBox.innerHTML = `<div class="empty-state" id="empty-msg">
-      <div class="icon">🛋️</div>
-      Escribe tu primera intervención como psicólogo<br>para iniciar la sesión con Mateo.
-    </div>`;
-    input.disabled   = false;
-    sendBtn.disabled = false;
-    endBtn.disabled  = false;
-    initSession();
+    sessionId   = null;
+    patientName = '';
+    patientId   = '';
+    showScreen('screen-selection');
+    loadPatients();
   }
 
-  // ── EVENTS ─────────────────────────────────────────────
+  // ── EVENTOS ────────────────────────────────────────────
   sendBtn.addEventListener('click', sendMessage);
   endBtn.addEventListener('click', endSession);
 
@@ -663,8 +855,8 @@
     }
   });
 
-  // Start
-  initSession();
+  // Arranque
+  loadPatients();
 </script>
 </body>
 </html>
