@@ -22,12 +22,3 @@ jobs:
           action: 'upload'
           app_location: 'frontend'
           output_location: ''
-```
-
----
-
-## 7. El flujo de trabajo desde ahora
-
-Una vez configurado todo, tu flujo diario en VS Code será simplemente:
-```
-Editas código → Ctrl+Shift+G (Source Control) → escribes mensaje de commit → Commit → Sync
