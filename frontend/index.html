@@ -43,7 +43,7 @@ header { width:100%;padding:16px 40px;display:flex;align-items:center;justify-co
 .btn-logout:hover { border-color:var(--red);color:var(--red); }
 
 /* MAIN */
-main { width:100%;max-width:900px;padding:32px 20px;flex:1;display:flex;flex-direction:column;gap:20px; }
+main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-direction:column;gap:20px; }
 .screen { display:none;flex-direction:column;gap:20px; }
 .screen.active { display:flex; }
 
@@ -158,13 +158,156 @@ tr:hover td { background:rgba(255,255,255,.02); }
 .spinner { width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto; }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-footer { padding:16px;font-size:.72rem;color:var(--muted);text-align:center; }
 
-@media(max-width:600px){
-  header{padding:12px 16px;flex-wrap:wrap;gap:8px;}
-  .nav-tabs{display:none;} .badge{display:none;}
-  .msg-bubble{max-width:88%;} .patients-grid{grid-template-columns:1fr 1fr;}
-  th:nth-child(3),td:nth-child(3){display:none;}
+/* ═══════════════════════════════════════════
+   ADMIN PANEL — FULL DESIGN SYSTEM
+   ═══════════════════════════════════════════ */
+
+/* KPI bar */
+.admin-kpi-row { display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:4px; }
+.kpi-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:12px; }
+.kpi-icon { font-size:1.4rem;flex-shrink:0; }
+.kpi-val { font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--accent);line-height:1; }
+.kpi-lbl { font-size:.7rem;color:var(--muted);margin-top:3px; }
+
+/* Layout */
+.admin-layout { display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start; }
+.admin-sidebar { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 10px;position:sticky;top:80px; }
+.sidebar-section-label { font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:4px 10px 8px;font-weight:600; }
+.sidebar-item { width:100%;padding:9px 12px;border-radius:10px;background:transparent;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.83rem;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;transition:all .18s; }
+.sidebar-item:hover { background:rgba(255,255,255,.04);color:var(--text); }
+.sidebar-item.active { background:rgba(91,141,238,.12);color:var(--accent);font-weight:500; }
+
+/* Panel areas */
+.admin-panels { position:relative;min-height:400px; }
+.admin-panel { display:none;flex-direction:column;gap:16px; }
+.admin-panel.active { display:flex; }
+
+.panel-header { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px; }
+.panel-title { font-family:'Playfair Display',serif;font-size:1.3rem; }
+.panel-sub { font-size:.8rem;color:var(--muted);margin-top:2px; }
+
+/* Overview grid */
+.overview-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+.overview-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px; }
+.ov-card-title { font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;font-weight:600; }
+.ov-list { display:flex;flex-direction:column;gap:8px; }
+.ov-row { display:flex;align-items:center;justify-content:space-between;font-size:.83rem;padding:6px 0;border-bottom:1px solid var(--border); }
+.ov-row:last-child { border-bottom:none; }
+.ov-empty { color:var(--muted);font-size:.82rem;padding:8px 0; }
+.revenue-bar-row { display:flex;align-items:center;gap:10px;font-size:.8rem;margin-bottom:10px; }
+.revenue-bar-row span:first-child { width:90px;color:var(--muted); }
+.revenue-bar-row span:last-child { width:32px;text-align:right;color:var(--muted); }
+.rev-bar-wrap { flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden; }
+.rev-bar { height:100%;border-radius:4px;transition:width .6s ease; }
+
+/* Institution cards */
+.inst-cards { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px; }
+.inst-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s; }
+.inst-card:hover { border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(91,141,238,.1); }
+.inst-card-name { font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:6px; }
+.inst-card-meta { font-size:.75rem;color:var(--muted);margin-bottom:10px; }
+.inst-card-pills { display:flex;gap:6px;flex-wrap:wrap; }
+.inst-pill { padding:3px 9px;border-radius:10px;font-size:.7rem; }
+.inst-pill-active { background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.2); }
+.inst-pill-plan { background:rgba(91,141,238,.1);color:var(--accent);border:1px solid rgba(91,141,238,.2); }
+
+/* Detail tabs */
+.btn-back { background:transparent;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px;transition:color .2s; }
+.btn-back:hover { color:var(--accent); }
+.detail-tabs { display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0; }
+.dtab { padding:8px 16px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;transition:all .2s;margin-bottom:-1px; }
+.dtab.active { color:var(--accent);border-bottom-color:var(--accent); }
+.dtab:hover:not(.active) { color:var(--text); }
+.dtab-panel { display:none; }
+.dtab-panel.active { display:block; }
+
+/* Sub-tabs */
+.sub-tabs { display:flex;gap:6px;margin-bottom:14px; }
+.stab { padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s; }
+.stab.active { background:rgba(91,141,238,.12);color:var(--accent);border-color:rgba(91,141,238,.25); }
+.stab-panel { display:none; }
+.stab-panel.active { display:block; }
+
+/* Forms */
+.form-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.form-grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.form-field { display:flex;flex-direction:column;gap:6px; }
+.form-field label { font-size:.73rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px; }
+.form-field input,.form-field select { background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;outline:none;transition:border-color .2s; }
+.form-field input:focus,.form-field select:focus { border-color:var(--accent); }
+.form-field select option { background:var(--surface); }
+.ai-textarea { width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.86rem;outline:none;resize:vertical;line-height:1.6;transition:border-color .2s; }
+.ai-textarea:focus { border-color:var(--accent); }
+
+/* Suscripcion */
+.suscripcion-grid { display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start; }
+.suscripcion-status-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 18px;display:flex;flex-direction:column;gap:10px; }
+.sus-badge { padding:4px 12px;border-radius:12px;font-size:.72rem;font-weight:600;width:fit-content; }
+.active-badge { background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.25); }
+.sus-plan-name { font-family:'Playfair Display',serif;font-size:1.05rem;line-height:1.2; }
+.sus-dates { display:flex;flex-direction:column;gap:4px;font-size:.77rem;color:var(--muted); }
+.sus-monto { font-size:.78rem;color:var(--muted); }
+
+/* Contrato file drop */
+.file-drop { border:1.5px dashed var(--border);border-radius:10px;padding:20px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;font-size:.83rem;color:var(--muted);transition:all .2s; }
+.file-drop:hover { border-color:var(--accent);color:var(--accent); }
+
+/* Buttons */
+.btn-accent { padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap; }
+.btn-accent:hover { background:#4a7ee0;transform:translateY(-1px); }
+.btn-accent-sm { padding:6px 13px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .2s; }
+.btn-accent-sm:hover { background:#4a7ee0; }
+.btn-ghost { padding:9px 16px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;transition:all .2s;white-space:nowrap; }
+.btn-ghost:hover { color:var(--text);border-color:rgba(255,255,255,.2); }
+.btn-ghost-sm { padding:6px 12px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.76rem;cursor:pointer;transition:all .2s; }
+.btn-ghost-sm:hover { color:var(--text); }
+
+/* Filter bar */
+.filter-bar { display:flex;gap:10px;align-items:center;flex-wrap:wrap; }
+.search-input { flex:1;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s; }
+.search-input:focus { border-color:var(--accent); }
+.filter-select { background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;cursor:pointer; }
+.filter-select option { background:var(--card); }
+
+/* Casos IA layout */
+.casos-layout { display:grid;grid-template-columns:160px 1fr 1fr;gap:14px;align-items:start; }
+.casos-categories { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 12px; }
+.cat-title { font-size:.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600; }
+.cat-item { padding:8px 10px;border-radius:8px;font-size:.82rem;cursor:pointer;transition:all .18s;color:var(--muted);display:flex;align-items:center;justify-content:space-between; }
+.cat-item:hover { background:rgba(255,255,255,.04);color:var(--text); }
+.cat-item.active { background:rgba(91,141,238,.12);color:var(--accent); }
+.cat-count { font-size:.7rem;background:var(--surface);padding:1px 7px;border-radius:8px; }
+.casos-list { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:300px; }
+.caso-item { padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:all .18s; }
+.caso-item:hover { border-color:var(--accent);background:rgba(91,141,238,.04); }
+.caso-item.active { border-color:var(--accent);background:rgba(91,141,238,.08); }
+.caso-item-name { font-size:.88rem;font-weight:500; }
+.caso-item-meta { font-size:.73rem;color:var(--muted);margin-top:2px; }
+.caso-editor { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;min-height:300px; }
+.editor-title { font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px; }
+
+/* Contabilidad KPIs */
+.contabilidad-kpis { display:grid;grid-template-columns:repeat(4,1fr);gap:12px; }
+.ck-card { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px; }
+.ck-val { font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--green); }
+.ck-lbl { font-size:.72rem;color:var(--muted);margin-top:4px; }
+
+
+/* Modals extra */
+.modal-section { margin-bottom:20px; }
+.modal-section-title { font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600; }
+
+/* Admin modal overlays */
+.admin-modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);z-index:200;align-items:center;justify-content:center;padding:20px; }
+.admin-modal { background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:32px;animation:modalIn .3s cubic-bezier(.34,1.56,.64,1); }
+.admin-modal-wide { max-width:720px; }
+
+/* Responsive */
+@media(max-width:900px){
+  .admin-layout{grid-template-columns:1fr;} .admin-kpi-row{grid-template-columns:repeat(3,1fr);}
+  .overview-grid{grid-template-columns:1fr;} .casos-layout{grid-template-columns:1fr;}
+  .suscripcion-grid{grid-template-columns:1fr;} .contabilidad-kpis{grid-template-columns:repeat(2,1fr);}
 }
 </style>
 </head>
@@ -274,22 +417,404 @@ footer { padding:16px;font-size:.72rem;color:var(--muted);text-align:center; }
 
   <!-- PANEL ADMIN -->
   <div class="screen" id="screen-admin">
-    <div class="anim anim-1">
-      <div class="section-title">Panel de administración</div>
-      <div class="section-sub">Gestión de usuarios de la plataforma</div>
+
+    <!-- TOP KPI BAR -->
+    <div class="anim anim-1 admin-kpi-row" id="admin-kpi-row">
+      <div class="kpi-card"><span class="kpi-icon">🏫</span><div><div class="kpi-val" id="kpi-inst">—</div><div class="kpi-lbl">Instituciones</div></div></div>
+      <div class="kpi-card"><span class="kpi-icon">👥</span><div><div class="kpi-val" id="kpi-users">—</div><div class="kpi-lbl">Usuarios totales</div></div></div>
+      <div class="kpi-card"><span class="kpi-icon">🎓</span><div><div class="kpi-val" id="kpi-students">—</div><div class="kpi-lbl">Estudiantes</div></div></div>
+      <div class="kpi-card"><span class="kpi-icon">💰</span><div><div class="kpi-val" id="kpi-revenue">$0</div><div class="kpi-lbl">Ingresos totales</div></div></div>
+      <div class="kpi-card"><span class="kpi-icon">🤖</span><div><div class="kpi-val" id="kpi-cases">—</div><div class="kpi-lbl">Casos IA activos</div></div></div>
     </div>
-    <div class="stats-row anim anim-2" id="admin-stats"></div>
-    <div class="table-wrap anim anim-3">
-      <table>
-        <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Registro</th><th></th></tr></thead>
-        <tbody id="admin-tbody"></tbody>
-      </table>
-    </div>
-  </div>
+
+    <!-- ADMIN SIDEBAR LAYOUT -->
+    <div class="admin-layout anim anim-2">
+
+      <!-- LEFT SIDEBAR -->
+      <nav class="admin-sidebar">
+        <div class="sidebar-section-label">Gestión</div>
+        <button class="sidebar-item active" data-panel="panel-overview" onclick="adminNav(this,'panel-overview')">
+          <span>📊</span> Vista general
+        </button>
+        <button class="sidebar-item" data-panel="panel-instituciones" onclick="adminNav(this,'panel-instituciones');loadInstituciones()">
+          <span>🏫</span> Instituciones
+        </button>
+        <button class="sidebar-item" data-panel="panel-particulares" onclick="adminNav(this,'panel-particulares');loadParticulares()">
+          <span>👤</span> Particulares
+        </button>
+
+        <div class="sidebar-section-label" style="margin-top:16px;">Plataforma</div>
+        <button class="sidebar-item" data-panel="panel-casos" onclick="adminNav(this,'panel-casos');loadCasosAdmin()">
+          <span>🤖</span> Casos IA
+        </button>
+        <button class="sidebar-item" data-panel="panel-sesiones" onclick="adminNav(this,'panel-sesiones');loadAdminSesiones()">
+          <span>📋</span> Sesiones
+        </button>
+
+        <div class="sidebar-section-label" style="margin-top:16px;">Finanzas</div>
+        <button class="sidebar-item" data-panel="panel-contabilidad" onclick="adminNav(this,'panel-contabilidad');loadContabilidad()">
+          <span>📈</span> Contabilidad
+        </button>
+      </nav>
+
+      <!-- RIGHT PANEL AREA -->
+      <div class="admin-panels">
+
+        <!-- OVERVIEW -->
+        <div class="admin-panel active" id="panel-overview">
+          <div class="panel-header">
+            <div><div class="panel-title">Vista general</div><div class="panel-sub">Resumen operativo de SimPsi</div></div>
+          </div>
+          <div class="overview-grid">
+            <div class="overview-card"><div class="ov-card-title">Instituciones activas</div><div id="ov-inst-list" class="ov-list"><div class="ov-empty">Cargando...</div></div></div>
+            <div class="overview-card"><div class="ov-card-title">Últimas sesiones</div><div id="ov-sesiones-list" class="ov-list"><div class="ov-empty">Cargando...</div></div></div>
+            <div class="overview-card"><div class="ov-card-title">Usuarios recientes</div><div id="ov-users-list" class="ov-list"><div class="ov-empty">Cargando...</div></div></div>
+            <div class="overview-card"><div class="ov-card-title">Ingresos por segmento</div>
+              <div id="ov-revenue-chart" class="ov-list">
+                <div class="revenue-bar-row"><span>Instituciones</span><div class="rev-bar-wrap"><div class="rev-bar" style="width:65%;background:var(--accent)"></div></div><span>65%</span></div>
+                <div class="revenue-bar-row"><span>Particulares</span><div class="rev-bar-wrap"><div class="rev-bar" style="width:35%;background:var(--accent2)"></div></div><span>35%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INSTITUCIONES -->
+        <div class="admin-panel" id="panel-instituciones">
+          <div class="panel-header">
+            <div><div class="panel-title">Instituciones</div><div class="panel-sub">Universidades y centros vinculados</div></div>
+            <button class="btn-accent" onclick="openAdminModal('modal-nueva-inst')">+ Nueva institución</button>
+          </div>
+          <div id="inst-list" class="inst-cards"></div>
+
+          <div id="inst-detail" style="display:none;">
+            <button class="btn-back" onclick="closeInstDetail()">← Volver a instituciones</button>
+            <div class="detail-tabs">
+              <button class="dtab active" onclick="detailTab(this,'dtab-info')">Información</button>
+              <button class="dtab" onclick="detailTab(this,'dtab-usuarios')">Usuarios</button>
+              <button class="dtab" onclick="detailTab(this,'dtab-suscripcion')">Suscripción</button>
+              <button class="dtab" onclick="detailTab(this,'dtab-contrato')">Contrato</button>
+              <button class="dtab" onclick="detailTab(this,'dtab-pagos')">Pagos</button>
+            </div>
+            <div class="dtab-panel active" id="dtab-info">
+              <div class="form-grid">
+                <div class="form-field"><label>Nombre</label><input id="di-nombre" type="text" placeholder="Nombre institución"/></div>
+                <div class="form-field"><label>NIT / ID legal</label><input id="di-nit" type="text" placeholder="900.123.456-7"/></div>
+                <div class="form-field"><label>Contacto principal</label><input id="di-contacto" type="text" placeholder="Nombre del responsable"/></div>
+                <div class="form-field"><label>Email contacto</label><input id="di-email" type="email" placeholder="contacto@univ.edu.co"/></div>
+                <div class="form-field"><label>Teléfono</label><input id="di-telefono" type="text" placeholder="+57 300 000 0000"/></div>
+                <div class="form-field"><label>Ciudad</label><input id="di-ciudad" type="text" placeholder="Bogotá"/></div>
+                <div class="form-field" style="grid-column:1/-1"><label>Dominio institucional (para registro automático)</label><input id="di-dominio" type="text" placeholder="@universidad.edu.co"/></div>
+              </div>
+              <button class="btn-accent" style="margin-top:16px" onclick="guardarInstitucion()">Guardar cambios</button>
+            </div>
+            <div class="dtab-panel" id="dtab-usuarios">
+              <div class="page-header" style="margin-bottom:16px">
+                <div style="font-size:.85rem;color:var(--muted)">Docentes y estudiantes vinculados</div>
+                <button class="btn-accent-sm" onclick="openAdminModal('modal-invitar-usuario')">+ Invitar usuario</button>
+              </div>
+              <div class="sub-tabs">
+                <button class="stab active" onclick="subTab(this,'stab-docentes')">Docentes</button>
+                <button class="stab" onclick="subTab(this,'stab-estudiantes')">Estudiantes</button>
+              </div>
+              <div class="stab-panel active" id="stab-docentes">
+                <div class="table-wrap"><table>
+                  <thead><tr><th>Nombre</th><th>Correo</th><th>Sesiones</th><th>Estado</th><th></th></tr></thead>
+                  <tbody id="inst-docentes-tbody"><tr><td colspan="5" class="empty-table">Sin docentes vinculados</td></tr></tbody>
+                </table></div>
+              </div>
+              <div class="stab-panel" id="stab-estudiantes">
+                <div class="table-wrap"><table>
+                  <thead><tr><th>Nombre</th><th>Correo</th><th>Sesiones</th><th>Último acceso</th><th></th></tr></thead>
+                  <tbody id="inst-estudiantes-tbody"><tr><td colspan="5" class="empty-table">Sin estudiantes vinculados</td></tr></tbody>
+                </table></div>
+              </div>
+            </div>
+            <div class="dtab-panel" id="dtab-suscripcion">
+              <div class="suscripcion-grid">
+                <div class="suscripcion-status-card">
+                  <div class="sus-badge active-badge" id="sus-badge-estado">Activa</div>
+                  <div class="sus-plan-name" id="sus-plan-name">—</div>
+                  <div class="sus-dates"><span>Inicio: <strong id="sus-inicio">—</strong></span><span>Vence: <strong id="sus-vence">—</strong></span></div>
+                  <div class="sus-monto">Monto: <strong id="sus-monto">—</strong></div>
+                </div>
+                <div class="form-grid">
+                  <div class="form-field"><label>Plan</label>
+                    <select id="sus-plan-sel">
+                      <option>Básico (hasta 50 estudiantes)</option>
+                      <option>Profesional (hasta 200 estudiantes)</option>
+                      <option>Enterprise (ilimitado)</option>
+                    </select>
+                  </div>
+                  <div class="form-field"><label>Fecha inicio</label><input id="sus-fecha-inicio" type="date"/></div>
+                  <div class="form-field"><label>Fecha vencimiento</label><input id="sus-fecha-fin" type="date"/></div>
+                  <div class="form-field"><label>Monto mensual (COP)</label><input id="sus-monto-input" type="number" placeholder="0"/></div>
+                  <div class="form-field"><label>Estado</label>
+                    <select id="sus-estado-sel">
+                      <option value="activa">Activa</option><option value="suspendida">Suspendida</option>
+                      <option value="vencida">Vencida</option><option value="prueba">Período de prueba</option>
+                    </select>
+                  </div>
+                  <div class="form-field"><label>Notas internas</label><input type="text" id="sus-notas" placeholder="Observaciones..."/></div>
+                </div>
+              </div>
+              <button class="btn-accent" style="margin-top:16px" onclick="guardarSuscripcion()">Actualizar suscripción</button>
+            </div>
+            <div class="dtab-panel" id="dtab-contrato">
+              <div class="form-grid">
+                <div class="form-field"><label>N° de contrato</label><input type="text" id="ct-numero" placeholder="CT-2026-001"/></div>
+                <div class="form-field"><label>Fecha de firma</label><input type="date" id="ct-fecha"/></div>
+                <div class="form-field"><label>Vigencia (meses)</label><input type="number" id="ct-vigencia" placeholder="12"/></div>
+                <div class="form-field" style="grid-column:1/-1"><label>Términos / descripción</label>
+                  <textarea id="ct-desc" rows="4" class="ai-textarea" placeholder="Resumen de las condiciones del contrato..."></textarea></div>
+                <div class="form-field" style="grid-column:1/-1"><label>Documento PDF</label>
+                  <div class="file-drop" onclick="document.getElementById('contrato-file').click()">
+                    <span>📄</span><span id="contrato-file-name">Haz clic para cargar el contrato PDF</span>
+                    <input type="file" id="contrato-file" accept=".pdf" style="display:none" onchange="handleContratoFile(this)"/>
+                  </div>
+                </div>
+              </div>
+              <button class="btn-accent" style="margin-top:16px" onclick="guardarContrato()">Guardar contrato</button>
+            </div>
+            <div class="dtab-panel" id="dtab-pagos">
+              <div class="page-header" style="margin-bottom:16px">
+                <div style="font-size:.85rem;color:var(--muted)">Historial de pagos de esta institución</div>
+                <button class="btn-accent-sm" onclick="openAdminModal('modal-registro-pago')">+ Registrar pago</button>
+              </div>
+              <div class="table-wrap"><table>
+                <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="inst-pagos-tbody"><tr><td colspan="6" class="empty-table">Sin pagos registrados</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PARTICULARES -->
+        <div class="admin-panel" id="panel-particulares">
+          <div class="panel-header">
+            <div><div class="panel-title">Particulares</div><div class="panel-sub">Usuarios sin vinculación institucional</div></div>
+            <button class="btn-accent" onclick="openAdminModal('modal-nuevo-particular')">+ Nuevo usuario</button>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="part-search" placeholder="🔍 Buscar por nombre o correo..." oninput="filtrarParticulares()" class="search-input"/>
+            <select id="part-filter-estado" onchange="filtrarParticulares()" class="filter-select">
+              <option value="">Todos los estados</option>
+              <option value="activa">Suscripción activa</option>
+              <option value="vencida">Vencida</option>
+              <option value="sin-plan">Sin plan</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nombre</th><th>Correo</th><th>Suscripción</th><th>Vence</th><th>Sesiones</th><th>Ingresos</th><th></th></tr></thead>
+              <tbody id="part-tbody"><tr><td colspan="7" class="empty-table">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CASOS IA -->
+        <div class="admin-panel" id="panel-casos">
+          <div class="panel-header">
+            <div><div class="panel-title">Casos IA</div><div class="panel-sub">Gestión de pacientes simulados</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-ghost" onclick="openAdminModal('modal-analisis-objetivo')">✏️ Análisis objetivo global</button>
+              <button class="btn-accent" onclick="abrirNuevoCaso()">+ Nuevo caso</button>
+            </div>
+          </div>
+          <div class="casos-layout">
+            <div class="casos-categories">
+              <div class="cat-title">Categorías</div>
+              <div id="casos-cat-list"></div>
+              <button class="btn-ghost-sm" onclick="openAdminModal('modal-nueva-categoria')" style="margin-top:10px;width:100%">+ Categoría</button>
+            </div>
+            <div class="casos-list" id="casos-list-wrap"><div class="ov-empty">Selecciona una categoría</div></div>
+            <div class="caso-editor" id="caso-editor" style="display:none">
+              <div class="editor-title" id="editor-caso-title">Nuevo caso</div>
+              <div class="form-field"><label>Nombre del paciente</label><input id="ce-nombre" type="text" placeholder="Ej: Mateo"/></div>
+              <div class="form-grid-2">
+                <div class="form-field"><label>Edad</label><input id="ce-edad" type="number" placeholder="22"/></div>
+                <div class="form-field"><label>Dificultad</label>
+                  <select id="ce-dificultad"><option>Básica</option><option>Intermedia</option><option>Avanzada</option><option>Experto</option></select>
+                </div>
+              </div>
+              <div class="form-field"><label>Descripción visible al estudiante</label><textarea id="ce-desc" rows="2" class="ai-textarea" placeholder="Descripción corta del caso..."></textarea></div>
+              <div class="form-field"><label>System prompt — Comportamiento del paciente</label><textarea id="ce-instruccion" rows="5" class="ai-textarea" placeholder="Eres 'Mateo', un joven de 22 años..."></textarea></div>
+              <div class="form-field"><label>System prompt — Feedback del paciente</label><textarea id="ce-feedback" rows="4" class="ai-textarea" placeholder="Acabas de terminar una sesión como 'Mateo'..."></textarea></div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn-accent" onclick="guardarCaso()">Guardar</button>
+                <button class="btn-danger" id="btn-eliminar-caso" style="display:none" onclick="eliminarCaso()">Eliminar</button>
+                <button class="btn-ghost" onclick="document.getElementById('caso-editor').style.display='none'">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SESIONES ADMIN -->
+        <div class="admin-panel" id="panel-sesiones">
+          <div class="panel-header">
+            <div><div class="panel-title">Sesiones de práctica</div><div class="panel-sub">Historial global de todas las sesiones</div></div>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="ses-search" placeholder="🔍 Buscar usuario o paciente..." class="search-input" oninput="filtrarSesiones()"/>
+            <select id="ses-filter-estado" class="filter-select" onchange="filtrarSesiones()">
+              <option value="">Todos</option><option value="completada">Completadas</option><option value="activa">Activas</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Estudiante</th><th>Paciente</th><th>Inicio</th><th>Puntuación</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="admin-ses-tbody"><tr><td colspan="6" class="empty-table">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CONTABILIDAD -->
+        <div class="admin-panel" id="panel-contabilidad">
+          <div class="panel-header">
+            <div><div class="panel-title">Contabilidad</div><div class="panel-sub">Ingresos y pagos registrados</div></div>
+            <button class="btn-accent" onclick="openAdminModal('modal-registro-pago')">+ Registrar pago</button>
+          </div>
+          <div class="contabilidad-kpis">
+            <div class="ck-card"><div class="ck-val" id="ck-total">$0</div><div class="ck-lbl">Total recaudado</div></div>
+            <div class="ck-card"><div class="ck-val" id="ck-inst">$0</div><div class="ck-lbl">Instituciones</div></div>
+            <div class="ck-card"><div class="ck-val" id="ck-part">$0</div><div class="ck-lbl">Particulares</div></div>
+            <div class="ck-card"><div class="ck-val" id="ck-mes">$0</div><div class="ck-lbl">Este mes</div></div>
+          </div>
+          <div class="filter-bar">
+            <select id="cont-filter-tipo" class="filter-select" onchange="filtrarPagos()">
+              <option value="">Todos los tipos</option>
+              <option value="institucional">Institucional</option>
+              <option value="particular">Particular</option>
+            </select>
+            <input type="month" id="cont-filter-mes" class="filter-select" onchange="filtrarPagos()"/>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Origen</th><th>Tipo</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Estado</th></tr></thead>
+              <tbody id="cont-tbody"><tr><td colspan="7" class="empty-table">Sin registros de pago aún</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /admin-panels -->
+    </div><!-- /admin-layout -->
+  </div><!-- /screen-admin -->
 
 </main>
 
 <footer>SimPsi · Plataforma de entrenamiento clínico · Powered by Azure OpenAI + GPT-4o mini</footer>
+
+<!-- MODALS ADMIN -->
+<!-- Modal: nueva institución -->
+<div id="modal-nueva-inst" class="admin-modal-overlay" onclick="closeAdminModal('modal-nueva-inst')">
+  <div class="admin-modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nueva institución</div>
+    <div class="modal-subtitle">Registra una universidad o centro educativo</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Nombre</label><input id="ni-nombre" type="text" placeholder="Universidad Autónoma"/></div>
+      <div class="form-field"><label>NIT</label><input id="ni-nit" type="text" placeholder="900.123.456-7"/></div>
+      <div class="form-field"><label>Contacto</label><input id="ni-contacto" type="text" placeholder="Nombre del responsable"/></div>
+      <div class="form-field"><label>Email contacto</label><input id="ni-email" type="email" placeholder="rector@univ.edu.co"/></div>
+      <div class="form-field"><label>Ciudad</label><input id="ni-ciudad" type="text" placeholder="Bogotá"/></div>
+      <div class="form-field"><label>Dominio institucional</label><input id="ni-dominio" type="text" placeholder="@univ.edu.co"/></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeAdminModal('modal-nueva-inst')">Cancelar</button>
+      <button class="btn-accent" onclick="crearInstitucion()">Crear institución</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: análisis objetivo global -->
+<div id="modal-analisis-objetivo" class="admin-modal-overlay" onclick="closeAdminModal('modal-analisis-objetivo')">
+  <div class="admin-modal admin-modal-wide" onclick="event.stopPropagation()">
+    <div class="modal-title">Análisis objetivo global</div>
+    <div class="modal-subtitle">System prompt aplicado a TODOS los casos al finalizar una sesión. Define cómo el supervisor IA evalúa al estudiante.</div>
+    <div class="form-field">
+      <label>Instrucciones del supervisor clínico</label>
+      <textarea id="ao-instruccion" rows="14" class="ai-textarea" style="font-size:.82rem;line-height:1.7"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeAdminModal('modal-analisis-objetivo')">Cancelar</button>
+      <button class="btn-accent" onclick="guardarAnalisisObjetivo()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nueva categoría de casos -->
+<div id="modal-nueva-categoria" class="admin-modal-overlay" onclick="closeAdminModal('modal-nueva-categoria')">
+  <div class="admin-modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nueva categoría</div>
+    <div class="modal-subtitle">Agrupa los casos de pacientes por tipo o condición</div>
+    <div class="form-field"><label>Nombre de la categoría</label><input id="nc-nombre" type="text" placeholder="Ej: Ansiedad, Depresión, Forense..."/></div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeAdminModal('modal-nueva-categoria')">Cancelar</button>
+      <button class="btn-accent" onclick="crearCategoria()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: invitar usuario a institución -->
+<div id="modal-invitar-usuario" class="admin-modal-overlay" onclick="closeAdminModal('modal-invitar-usuario')">
+  <div class="admin-modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Invitar usuario</div>
+    <div class="modal-subtitle">Vincula un usuario existente a esta institución</div>
+    <div class="form-field"><label>Correo electrónico</label><input id="inv-email" type="email" placeholder="usuario@universidad.edu.co"/></div>
+    <div class="form-field" style="margin-top:10px"><label>Rol</label>
+      <select id="inv-rol"><option value="estudiante">Estudiante</option><option value="docente">Docente</option></select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeAdminModal('modal-invitar-usuario')">Cancelar</button>
+      <button class="btn-accent" onclick="invitarUsuario()">Vincular</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nuevo particular -->
+<div id="modal-nuevo-particular" class="admin-modal-overlay" onclick="closeAdminModal('modal-nuevo-particular')">
+  <div class="admin-modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nuevo usuario particular</div>
+    <div class="modal-subtitle">Crea una cuenta sin vinculación institucional</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Nombre</label><input id="np-nombre" type="text" placeholder="Nombre completo"/></div>
+      <div class="form-field"><label>Correo</label><input id="np-email" type="email" placeholder="correo@email.com"/></div>
+      <div class="form-field"><label>Contraseña temporal</label><input id="np-password" type="password" placeholder="Mínimo 8 caracteres"/></div>
+      <div class="form-field"><label>Rol</label>
+        <select id="np-rol"><option value="estudiante">Estudiante</option><option value="docente">Docente</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeAdminModal('modal-nuevo-particular')">Cancelar</button>
+      <button class="btn-accent" onclick="crearParticular()">Crear usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: registrar pago -->
+<div id="modal-registro-pago" class="admin-modal-overlay" onclick="closeAdminModal('modal-registro-pago')">
+  <div class="admin-modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Registrar pago</div>
+    <div class="modal-subtitle">Registra manualmente un ingreso a la plataforma</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Tipo</label>
+        <select id="pago-tipo"><option value="institucional">Institucional</option><option value="particular">Particular</option></select>
+      </div>
+      <div class="form-field"><label>Origen (nombre)</label><input id="pago-origen" type="text" placeholder="Universidad / Nombre usuario"/></div>
+      <div class="form-field"><label>Monto (COP)</label><input id="pago-monto" type="number" placeholder="0"/></div>
+      <div class="form-field"><label>Fecha</label><input id="pago-fecha" type="date"/></div>
+      <div class="form-field"><label>Método de pago</label>
+        <select id="pago-metodo"><option>Transferencia bancaria</option><option>PSE</option><option>Tarjeta crédito</option><option>Efectivo</option><option>Otro</option></select>
+      </div>
+      <div class="form-field"><label>Referencia / N° transacción</label><input id="pago-ref" type="text" placeholder="TXN-2026-XXXX"/></div>
+      <div class="form-field" style="grid-column:1/-1"><label>Estado</label>
+        <select id="pago-estado"><option value="confirmado">Confirmado</option><option value="pendiente">Pendiente</option><option value="rechazado">Rechazado</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeAdminModal('modal-registro-pago')">Cancelar</button>
+      <button class="btn-accent" onclick="registrarPago()">Guardar pago</button>
+    </div>
+  </div>
+</div>
 
 <div id="modal-overlay">
   <div class="modal" id="modal-content"><div class="spinner"></div></div>
@@ -403,7 +928,7 @@ function setupHeader() {
       { id:'screen-docente', label:'Sesiones estudiantes', action:() => { showScreen('screen-docente'); loadDocente(); } },
     ],
     admin: [
-      { id:'screen-admin',   label:'Usuarios', action:() => { showScreen('screen-admin');   loadAdmin(); } },
+      { id:'screen-admin',   label:'Panel Admin', action:() => { showScreen('screen-admin'); loadAdmin(); } },
       { id:'screen-docente', label:'Sesiones', action:() => { showScreen('screen-docente'); loadDocente(); } },
     ],
   };
@@ -715,48 +1240,585 @@ async function loadDocente() {
   }
 }
 
-// ── ADMIN ─────────────────────────────────────────────────
-async function loadAdmin() {
-  const tbody = document.getElementById('admin-tbody');
-  const stats = document.getElementById('admin-stats');
-  tbody.innerHTML = '<tr><td colspan="5" class="empty-table"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+// ── ADMIN PANEL ───────────────────────────────────────────
 
+// ---- State ----
+let adminData = { usuarios:[], instituciones:[], pagos:[], casos:PATIENT_PROFILES_LOCAL, categorias:['Ansiedad','Depresión','Estrés Laboral','Forense','Duelo'] };
+let selectedInstId = null;
+let selectedCasoId = null;
+let selectedCatIndex = null;
+
+// Local mirror of PATIENT_PROFILES for admin editing (seed from backend on load)
+let PATIENT_PROFILES_LOCAL = {};
+
+// ---- Navigation ----
+function adminNav(btn, panelId) {
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ---- Load overview (called on admin screen open) ----
+async function loadAdmin() {
+  // Update nav tabs for admin role
   try {
     const res  = await fetch(`${API}/admin/usuarios`, { headers: authHeaders() });
     const data = await res.json();
+    adminData.usuarios = data;
 
-    const byRol = r => data.filter(u => u.rol === r).length;
-    stats.innerHTML = `
-      <div class="stat-card"><div class="stat-val">${data.length}</div><div class="stat-lbl">Usuarios totales</div></div>
-      <div class="stat-card"><div class="stat-val">${byRol('estudiante')}</div><div class="stat-lbl">Estudiantes</div></div>
-      <div class="stat-card"><div class="stat-val">${byRol('docente')}</div><div class="stat-lbl">Docentes</div></div>
-      <div class="stat-card"><div class="stat-val">${byRol('admin')}</div><div class="stat-lbl">Administradores</div></div>`;
+    // KPIs
+    document.getElementById('kpi-users').textContent = data.length;
+    document.getElementById('kpi-students').textContent = data.filter(u=>u.rol==='estudiante').length;
 
-    tbody.innerHTML = data.map(u => `
-      <tr>
-        <td>${u.nombre}</td>
-        <td style="font-size:.8rem;color:var(--muted);">${u.email}</td>
-        <td><span class="role-badge role-${u.rol}">${u.rol}</span></td>
-        <td style="font-size:.78rem;color:var(--muted);">${formatDate(u.creado_en)}</td>
-        <td>${u.email !== currentUser.email
-          ? `<button class="btn-danger" onclick="deleteUser('${u.email}')">Eliminar</button>`
-          : '<span style="color:var(--muted);font-size:.75rem;">Tú</span>'}</td>
-      </tr>`).join('');
+    // Overview: users
+    const ovUsers = document.getElementById('ov-users-list');
+    ovUsers.innerHTML = data.slice(0,5).map(u=>`
+      <div class="ov-row">
+        <span>${u.nombre} <span style="color:var(--muted);font-size:.75rem;">(${u.rol})</span></span>
+        <span style="font-size:.75rem;color:var(--muted)">${formatDate(u.creado_en)}</span>
+      </div>`).join('') || '<div class="ov-empty">Sin usuarios</div>';
+
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-table" style="color:var(--red);">Error cargando usuarios.</td></tr>';
+    document.getElementById('ov-users-list').innerHTML = '<div class="ov-empty" style="color:var(--red)">Error cargando usuarios</div>';
+  }
+
+  // Overview: instituciones (local for now)
+  loadInstitOverview();
+  // Overview: sesiones
+  loadSesionesOverview();
+  // Cases KPI
+  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos || {}).length || 3;
+  document.getElementById('kpi-inst').textContent = adminData.instituciones.length || '—';
+  loadContabilidadKpis();
+}
+
+function loadInstitOverview() {
+  const el = document.getElementById('ov-inst-list');
+  if (!adminData.instituciones.length) {
+    el.innerHTML = '<div class="ov-empty">Sin instituciones registradas aún.<br><small>Ve a Instituciones → + Nueva institución</small></div>';
+    return;
+  }
+  el.innerHTML = adminData.instituciones.slice(0,4).map(i=>`
+    <div class="ov-row">
+      <span>${i.nombre}</span>
+      <span class="inst-pill inst-pill-active" style="font-size:.7rem">${i.suscripcion_estado||'activa'}</span>
+    </div>`).join('');
+  document.getElementById('kpi-inst').textContent = adminData.instituciones.length;
+}
+
+async function loadSesionesOverview() {
+  try {
+    const res  = await fetch(`${API}/historial/todos`, { headers: authHeaders() });
+    const data = await res.json();
+    const el   = document.getElementById('ov-sesiones-list');
+    el.innerHTML = data.slice(0,5).map(s=>`
+      <div class="ov-row">
+        <span style="font-size:.82rem">${s.usuario_id?.split('@')[0]||'—'} → ${s.patient_name||'—'}</span>
+        <span class="score-pill ${scoreCls(s.puntuacion)}">${s.puntuacion!=null?s.puntuacion+'pts':'—'}</span>
+      </div>`).join('') || '<div class="ov-empty">Sin sesiones aún</div>';
+    adminData.sesiones = data;
+  } catch(e) {}
+}
+
+// ---- INSTITUCIONES ----
+function loadInstituciones() {
+  const list = document.getElementById('inst-list');
+  if (!adminData.instituciones.length) {
+    list.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);background:var(--card);border:1px dashed var(--border);border-radius:14px">
+      <div style="font-size:2rem;margin-bottom:8px">🏫</div>
+      <div>No hay instituciones registradas</div>
+      <div style="font-size:.8rem;margin-top:6px">Haz clic en "+ Nueva institución" para comenzar</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = adminData.instituciones.map((inst,i)=>`
+    <div class="inst-card" onclick="abrirInstitucion(${i})">
+      <div class="inst-card-name">${inst.nombre}</div>
+      <div class="inst-card-meta">${inst.ciudad||''} · ${inst.email||''}</div>
+      <div class="inst-card-pills">
+        <span class="inst-pill inst-pill-active">${inst.suscripcion_estado||'activa'}</span>
+        <span class="inst-pill inst-pill-plan">${inst.plan||'Sin plan'}</span>
+        <span class="inst-pill" style="background:rgba(167,139,250,.1);color:var(--accent2);border:1px solid rgba(167,139,250,.2)">${inst.usuarios?.length||0} usuarios</span>
+      </div>
+    </div>`).join('');
+}
+
+function abrirInstitucion(idx) {
+  selectedInstId = idx;
+  const inst = adminData.instituciones[idx];
+  document.getElementById('inst-list').style.display = 'none';
+  const det = document.getElementById('inst-detail');
+  det.style.display = 'block';
+  // Fill info tab
+  document.getElementById('di-nombre').value   = inst.nombre||'';
+  document.getElementById('di-nit').value       = inst.nit||'';
+  document.getElementById('di-contacto').value  = inst.contacto||'';
+  document.getElementById('di-email').value     = inst.email||'';
+  document.getElementById('di-telefono').value  = inst.telefono||'';
+  document.getElementById('di-ciudad').value    = inst.ciudad||'';
+  document.getElementById('di-dominio').value   = inst.dominio||'';
+  // Suscripcion
+  document.getElementById('sus-plan-name').textContent  = inst.plan||'Sin plan';
+  document.getElementById('sus-inicio').textContent     = inst.sus_inicio ? formatDate(inst.sus_inicio) : '—';
+  document.getElementById('sus-vence').textContent      = inst.sus_fin   ? formatDate(inst.sus_fin)   : '—';
+  document.getElementById('sus-monto').textContent      = inst.sus_monto ? '$'+inst.sus_monto.toLocaleString() : '—';
+  // Activate first dtab
+  document.querySelectorAll('.dtab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  document.querySelectorAll('.dtab-panel').forEach((p,i)=>p.classList.toggle('active',i===0));
+  // Usuarios
+  renderInstUsuarios(inst);
+  // Pagos
+  renderInstPagos(idx);
+}
+
+function closeInstDetail() {
+  document.getElementById('inst-detail').style.display='none';
+  document.getElementById('inst-list').style.display='grid';
+}
+
+function renderInstUsuarios(inst) {
+  const docentes = (inst.usuarios||[]).filter(u=>u.rol==='docente');
+  const estudiantes = (inst.usuarios||[]).filter(u=>u.rol==='estudiante');
+  document.getElementById('inst-docentes-tbody').innerHTML = docentes.length
+    ? docentes.map(u=>`<tr><td>${u.nombre}</td><td style="font-size:.8rem;color:var(--muted)">${u.email}</td><td>—</td><td><span class="status-pill status-completada">Activo</span></td><td><button class="btn-danger" onclick="desvincularUsuario('${u.email}')">Desvincular</button></td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty-table">Sin docentes vinculados</td></tr>';
+  document.getElementById('inst-estudiantes-tbody').innerHTML = estudiantes.length
+    ? estudiantes.map(u=>`<tr><td>${u.nombre}</td><td style="font-size:.8rem;color:var(--muted)">${u.email}</td><td>—</td><td style="font-size:.78rem;color:var(--muted)">—</td><td><button class="btn-danger" onclick="desvincularUsuario('${u.email}')">Desvincular</button></td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty-table">Sin estudiantes vinculados</td></tr>';
+}
+
+function renderInstPagos(idx) {
+  const inst = adminData.instituciones[idx];
+  const pagos = (adminData.pagos||[]).filter(p=>p.origen===inst.nombre);
+  document.getElementById('inst-pagos-tbody').innerHTML = pagos.length
+    ? pagos.map(p=>`<tr><td style="font-size:.8rem">${formatDate(p.fecha)}</td><td>$${Number(p.monto).toLocaleString()}</td><td style="font-size:.8rem;color:var(--muted)">${p.metodo||'—'}</td><td style="font-size:.78rem;color:var(--muted)">${p.referencia||'—'}</td><td><span class="status-pill ${p.estado==='confirmado'?'status-completada':'status-activa'}">${p.estado}</span></td><td></td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty-table">Sin pagos registrados</td></tr>';
+}
+
+function guardarInstitucion() {
+  if (selectedInstId === null) return;
+  const inst = adminData.instituciones[selectedInstId];
+  inst.nombre   = document.getElementById('di-nombre').value;
+  inst.nit      = document.getElementById('di-nit').value;
+  inst.contacto = document.getElementById('di-contacto').value;
+  inst.email    = document.getElementById('di-email').value;
+  inst.telefono = document.getElementById('di-telefono').value;
+  inst.ciudad   = document.getElementById('di-ciudad').value;
+  inst.dominio  = document.getElementById('di-dominio').value;
+  showToast('Institución guardada ✓');
+  // TODO: POST /admin/instituciones/:id con authHeaders()
+}
+
+function guardarSuscripcion() {
+  if (selectedInstId === null) return;
+  const inst = adminData.instituciones[selectedInstId];
+  inst.plan             = document.getElementById('sus-plan-sel').value;
+  inst.sus_inicio       = document.getElementById('sus-fecha-inicio').value;
+  inst.sus_fin          = document.getElementById('sus-fecha-fin').value;
+  inst.sus_monto        = Number(document.getElementById('sus-monto-input').value);
+  inst.suscripcion_estado = document.getElementById('sus-estado-sel').value;
+  showToast('Suscripción actualizada ✓');
+}
+
+function guardarContrato() {
+  if (selectedInstId === null) return;
+  showToast('Contrato guardado ✓');
+}
+
+function crearInstitucion() {
+  const nombre = document.getElementById('ni-nombre').value.trim();
+  if (!nombre) { alert('El nombre es requerido.'); return; }
+  adminData.instituciones.push({
+    nombre,
+    nit:      document.getElementById('ni-nit').value,
+    contacto: document.getElementById('ni-contacto').value,
+    email:    document.getElementById('ni-email').value,
+    ciudad:   document.getElementById('ni-ciudad').value,
+    dominio:  document.getElementById('ni-dominio').value,
+    usuarios: [], suscripcion_estado:'prueba', plan:'Sin plan'
+  });
+  closeAdminModal('modal-nueva-inst');
+  loadInstituciones();
+  loadInstitOverview();
+  document.getElementById('kpi-inst').textContent = adminData.instituciones.length;
+  showToast('Institución creada ✓');
+}
+
+function invitarUsuario() {
+  if (selectedInstId === null) return;
+  const email = document.getElementById('inv-email').value.trim();
+  const rol   = document.getElementById('inv-rol').value;
+  const usuario = adminData.usuarios.find(u=>u.email===email);
+  if (!usuario) { alert('No se encontró un usuario con ese correo.'); return; }
+  const inst = adminData.instituciones[selectedInstId];
+  if (!inst.usuarios) inst.usuarios = [];
+  if (inst.usuarios.find(u=>u.email===email)) { alert('Este usuario ya está vinculado.'); return; }
+  inst.usuarios.push({...usuario, rol});
+  closeAdminModal('modal-invitar-usuario');
+  renderInstUsuarios(inst);
+  showToast('Usuario vinculado ✓');
+}
+
+function desvincularUsuario(email) {
+  if (!confirm('¿Desvincular este usuario de la institución?')) return;
+  const inst = adminData.instituciones[selectedInstId];
+  inst.usuarios = (inst.usuarios||[]).filter(u=>u.email!==email);
+  renderInstUsuarios(inst);
+  showToast('Usuario desvinculado');
+}
+
+// ---- PARTICULARES ----
+function loadParticulares() {
+  filtrarParticulares();
+}
+
+function filtrarParticulares() {
+  const q     = (document.getElementById('part-search')?.value||'').toLowerCase();
+  const estado= document.getElementById('part-filter-estado')?.value||'';
+  // Only users with no institución
+  const vinculados = new Set(adminData.instituciones.flatMap(i=>(i.usuarios||[]).map(u=>u.email)));
+  let users = adminData.usuarios.filter(u=>!vinculados.has(u.email)&&u.rol!=='admin');
+  if (q) users = users.filter(u=>u.nombre?.toLowerCase().includes(q)||u.email?.toLowerCase().includes(q));
+  const tbody = document.getElementById('part-tbody');
+  tbody.innerHTML = users.length
+    ? users.map(u=>`<tr>
+        <td>${u.nombre}</td>
+        <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
+        <td><span class="role-badge role-${u.rol}">${u.rol}</span></td>
+        <td style="font-size:.78rem;color:var(--muted)">—</td>
+        <td style="font-size:.78rem;color:var(--muted)">—</td>
+        <td style="font-size:.78rem;color:var(--muted)">$0</td>
+        <td><button class="btn-detail" onclick="verParticular('${u.email}')">Ver</button>
+            ${u.email!==currentUser?.email?`<button class="btn-danger" onclick="deleteUser('${u.email}')">Eliminar</button>`:''}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" class="empty-table">Sin usuarios particulares</td></tr>';
+}
+
+function crearParticular() {
+  const nombre   = document.getElementById('np-nombre').value.trim();
+  const email    = document.getElementById('np-email').value.trim();
+  const password = document.getElementById('np-password').value;
+  const rol      = document.getElementById('np-rol').value;
+  if (!nombre||!email||!password) { alert('Completa todos los campos.'); return; }
+  fetch(`${API}/auth/register`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({nombre,email,password,rol})
+  }).then(r=>r.json()).then(d=>{
+    closeAdminModal('modal-nuevo-particular');
+    loadAdmin();
+    showToast('Usuario creado ✓');
+  }).catch(()=>alert('Error creando el usuario.'));
+}
+
+function verParticular(email) {
+  const u = adminData.usuarios.find(u=>u.email===email);
+  if (!u) return;
+  alert(`Usuario: ${u.nombre}\nCorreo: ${u.email}\nRol: ${u.rol}\nRegistrado: ${formatDate(u.creado_en)}`);
+}
+
+// ---- CASOS IA ----
+function loadCasosAdmin() {
+  // Seed from hardcoded profiles if empty
+  if (!Object.keys(adminData.casos||{}).length) {
+    adminData.casos = {
+      mateo:     { name:'Mateo', age:22, descripcion:'Joven universitario introvertido, asiste a terapia obligado por sus padres.', instruccion:'Eres Mateo...', instruccion_feedback:'Acabas de terminar una sesión...', categoria:'Ansiedad', dificultad:'Intermedia' },
+      lucia:     { name:'Lucía', age:35, descripcion:'Docente de primaria con burnout y ansiedad severa.', instruccion:'Eres Lucía...', instruccion_feedback:'Acabas de terminar una sesión...', categoria:'Estrés Laboral', dificultad:'Básica' },
+      don_carlos:{ name:'Don Carlos', age:58, descripcion:'Hombre imputado por fraude, en evaluación forense.', instruccion:'Eres Don Carlos...', instruccion_feedback:'Acabas de terminar una evaluación...', categoria:'Forense', dificultad:'Avanzada' },
+    };
+  }
+  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
+  renderCategorias();
+}
+
+function renderCategorias() {
+  const list = document.getElementById('casos-cat-list');
+  list.innerHTML = adminData.categorias.map((cat,i)=>{
+    const count = Object.values(adminData.casos).filter(c=>c.categoria===cat).length;
+    return `<div class="cat-item${i===selectedCatIndex?' active':''}" onclick="seleccionarCategoria(${i},'${cat}')">
+      <span>${cat}</span><span class="cat-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function seleccionarCategoria(idx, cat) {
+  selectedCatIndex = idx;
+  renderCategorias();
+  const casos = Object.entries(adminData.casos).filter(([,c])=>c.categoria===cat);
+  const wrap  = document.getElementById('casos-list-wrap');
+  wrap.innerHTML = casos.length
+    ? casos.map(([id,c])=>`<div class="caso-item" onclick="abrirCasoEditor('${id}')">
+        <div class="caso-item-name">${c.name} <span style="font-size:.72rem;color:var(--muted);">(${c.age} años)</span></div>
+        <div class="caso-item-meta">${c.dificultad||'—'} · ${c.descripcion?.slice(0,50)||''}...</div>
+      </div>`).join('')
+    : '<div class="ov-empty">No hay casos en esta categoría.<br><small>Crea uno con "+ Nuevo caso"</small></div>';
+}
+
+function abrirNuevoCaso() {
+  selectedCasoId = null;
+  document.getElementById('editor-caso-title').textContent = 'Nuevo caso';
+  document.getElementById('ce-nombre').value = '';
+  document.getElementById('ce-edad').value = '';
+  document.getElementById('ce-desc').value = '';
+  document.getElementById('ce-instruccion').value = '';
+  document.getElementById('ce-feedback').value = '';
+  document.getElementById('btn-eliminar-caso').style.display = 'none';
+  document.getElementById('caso-editor').style.display = 'flex';
+}
+
+function abrirCasoEditor(id) {
+  selectedCasoId = id;
+  const c = adminData.casos[id];
+  document.getElementById('editor-caso-title').textContent = 'Editando: ' + c.name;
+  document.getElementById('ce-nombre').value     = c.name||'';
+  document.getElementById('ce-edad').value       = c.age||'';
+  document.getElementById('ce-dificultad').value = c.dificultad||'Básica';
+  document.getElementById('ce-desc').value       = c.descripcion||'';
+  document.getElementById('ce-instruccion').value= c.instruccion||'';
+  document.getElementById('ce-feedback').value   = c.instruccion_feedback||'';
+  document.getElementById('btn-eliminar-caso').style.display = 'inline-block';
+  document.getElementById('caso-editor').style.display = 'flex';
+  document.querySelectorAll('.caso-item').forEach(el=>el.classList.remove('active'));
+  event.currentTarget?.classList.add('active');
+}
+
+function guardarCaso() {
+  const nombre = document.getElementById('ce-nombre').value.trim();
+  if (!nombre) { alert('El nombre del paciente es requerido.'); return; }
+  const id = selectedCasoId || nombre.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  adminData.casos[id] = {
+    name: nombre,
+    age:  Number(document.getElementById('ce-edad').value)||0,
+    dificultad: document.getElementById('ce-dificultad').value,
+    descripcion: document.getElementById('ce-desc').value,
+    instruccion: document.getElementById('ce-instruccion').value,
+    instruccion_feedback: document.getElementById('ce-feedback').value,
+    categoria: adminData.categorias[selectedCatIndex]||adminData.categorias[0]||'General',
+  };
+  document.getElementById('caso-editor').style.display = 'none';
+  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
+  if (selectedCatIndex !== null) seleccionarCategoria(selectedCatIndex, adminData.categorias[selectedCatIndex]);
+  renderCategorias();
+  showToast(selectedCasoId?'Caso actualizado ✓':'Caso creado ✓');
+  selectedCasoId = null;
+  // TODO: POST/PUT /admin/casos/:id con authHeaders()
+}
+
+function eliminarCaso() {
+  if (!selectedCasoId) return;
+  if (!confirm(`¿Eliminar el caso "${adminData.casos[selectedCasoId]?.name}"?`)) return;
+  delete adminData.casos[selectedCasoId];
+  selectedCasoId = null;
+  document.getElementById('caso-editor').style.display = 'none';
+  if (selectedCatIndex !== null) seleccionarCategoria(selectedCatIndex, adminData.categorias[selectedCatIndex]);
+  renderCategorias();
+  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
+  showToast('Caso eliminado');
+}
+
+function crearCategoria() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  if (!nombre) return;
+  if (!adminData.categorias.includes(nombre)) adminData.categorias.push(nombre);
+  closeAdminModal('modal-nueva-categoria');
+  renderCategorias();
+  showToast('Categoría creada ✓');
+}
+
+function openModal_analisisObjetivo() {
+  // Fill with current prompt from backend (hardcoded seed for now)
+  document.getElementById('ao-instruccion').value = `Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades...\n\n[Edita aquí el prompt completo del análisis objetivo]`;
+  openAdminModal('modal-analisis-objetivo');
+}
+
+function guardarAnalisisObjetivo() {
+  closeAdminModal('modal-analisis-objetivo');
+  showToast('Análisis objetivo guardado ✓');
+  // TODO: POST /admin/analisis-objetivo con authHeaders()
+}
+
+// ---- SESIONES ADMIN ----
+async function loadAdminSesiones() {
+  const tbody = document.getElementById('admin-ses-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  try {
+    const res  = await fetch(`${API}/historial/todos`, { headers: authHeaders() });
+    const data = await res.json();
+    adminData.sesiones = data;
+    renderSesionesAdmin(data);
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red)">Error cargando sesiones</td></tr>';
   }
 }
 
+function renderSesionesAdmin(data) {
+  const tbody = document.getElementById('admin-ses-tbody');
+  tbody.innerHTML = data.length
+    ? data.map(s=>`<tr>
+        <td style="font-size:.82rem">${s.usuario_id||'—'}</td>
+        <td>${s.patient_name||'—'}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${formatDate(s.inicio)}</td>
+        <td><span class="score-pill ${scoreCls(s.puntuacion)}">${s.puntuacion!=null?s.puntuacion+'/100':'—'}</span></td>
+        <td><span class="status-pill status-${s.estado||'activa'}">${s.estado||'activa'}</span></td>
+        <td><button class="btn-detail" onclick="verSesionAdmin('${s.sesion_id}')">Ver</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="empty-table">Sin sesiones registradas</td></tr>';
+}
+
+function filtrarSesiones() {
+  const q      = (document.getElementById('ses-search')?.value||'').toLowerCase();
+  const estado = document.getElementById('ses-filter-estado')?.value||'';
+  let data     = adminData.sesiones||[];
+  if (q) data      = data.filter(s=>(s.usuario_id||'').includes(q)||(s.patient_name||'').toLowerCase().includes(q));
+  if (estado) data = data.filter(s=>s.estado===estado);
+  renderSesionesAdmin(data);
+}
+
+async function verSesionAdmin(sesionId) {
+  openModal();
+  try {
+    const res  = await fetch(`${API}/historial/sesion/${sesionId}`, { headers: authHeaders() });
+    const data = await res.json();
+    renderFeedbackModal(data);
+  } catch(e) {
+    document.getElementById('modal-content').innerHTML = '<div style="color:var(--red);padding:20px;">Error cargando la sesión.</div>';
+  }
+}
+
+// ---- CONTABILIDAD ----
+function loadContabilidad() {
+  filtrarPagos();
+  loadContabilidadKpis();
+}
+
+function loadContabilidadKpis() {
+  const pagos = adminData.pagos||[];
+  const total = pagos.reduce((s,p)=>s+Number(p.monto||0),0);
+  const inst  = pagos.filter(p=>p.tipo==='institucional').reduce((s,p)=>s+Number(p.monto||0),0);
+  const part  = pagos.filter(p=>p.tipo==='particular').reduce((s,p)=>s+Number(p.monto||0),0);
+  const mes   = pagos.filter(p=>{
+    if (!p.fecha) return false;
+    const d = new Date(p.fecha); const n = new Date();
+    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+  }).reduce((s,p)=>s+Number(p.monto||0),0);
+  document.getElementById('kpi-revenue').textContent = total?'$'+total.toLocaleString():'$0';
+  document.getElementById('ck-total').textContent = '$'+total.toLocaleString();
+  document.getElementById('ck-inst').textContent  = '$'+inst.toLocaleString();
+  document.getElementById('ck-part').textContent  = '$'+part.toLocaleString();
+  document.getElementById('ck-mes').textContent   = '$'+mes.toLocaleString();
+}
+
+function filtrarPagos() {
+  const tipo = document.getElementById('cont-filter-tipo')?.value||'';
+  const mes  = document.getElementById('cont-filter-mes')?.value||'';
+  let pagos  = adminData.pagos||[];
+  if (tipo) pagos = pagos.filter(p=>p.tipo===tipo);
+  if (mes)  pagos = pagos.filter(p=>p.fecha?.startsWith(mes));
+  const tbody = document.getElementById('cont-tbody');
+  tbody.innerHTML = pagos.length
+    ? pagos.map(p=>`<tr>
+        <td style="font-size:.8rem">${formatDate(p.fecha)}</td>
+        <td>${p.origen||'—'}</td>
+        <td><span class="inst-pill ${p.tipo==='institucional'?'inst-pill-plan':'inst-pill-active'}">${p.tipo||'—'}</span></td>
+        <td><strong>$${Number(p.monto||0).toLocaleString()}</strong></td>
+        <td style="font-size:.78rem;color:var(--muted)">${p.metodo||'—'}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${p.referencia||'—'}</td>
+        <td><span class="status-pill ${p.estado==='confirmado'?'status-completada':'status-activa'}">${p.estado||'pendiente'}</span></td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" class="empty-table">Sin registros de pago</td></tr>';
+}
+
+function registrarPago() {
+  const pago = {
+    tipo:       document.getElementById('pago-tipo').value,
+    origen:     document.getElementById('pago-origen').value,
+    monto:      Number(document.getElementById('pago-monto').value)||0,
+    fecha:      document.getElementById('pago-fecha').value,
+    metodo:     document.getElementById('pago-metodo').value,
+    referencia: document.getElementById('pago-ref').value,
+    estado:     document.getElementById('pago-estado').value,
+  };
+  if (!pago.origen||!pago.monto) { alert('Completa al menos el origen y el monto.'); return; }
+  if (!adminData.pagos) adminData.pagos = [];
+  adminData.pagos.unshift(pago);
+  closeAdminModal('modal-registro-pago');
+  loadContabilidad();
+  if (selectedInstId !== null) renderInstPagos(selectedInstId);
+  showToast('Pago registrado ✓');
+  // TODO: POST /admin/pagos con authHeaders()
+}
+
+// ---- ADMIN MODAL HELPERS ----
+function openAdminModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'flex';
+  if (id==='modal-analisis-objetivo' && !document.getElementById('ao-instruccion').value) {
+    document.getElementById('ao-instruccion').value = 'Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades...\n\n[Edita aquí el prompt completo del análisis objetivo global]';
+  }
+}
+
+function openModal(id) {
+  if (id) { openAdminModal(id); return; }
+  document.getElementById('modal-overlay').classList.add('active');
+  document.getElementById('modal-content').innerHTML = '<div class="spinner"></div>';
+}
+
+function closeAdminModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+
+// ---- DETAIL TABS ----
+function detailTab(btn, panelId) {
+  btn.closest('.admin-panel, #inst-detail').querySelectorAll('.dtab').forEach(b=>b.classList.remove('active'));
+  btn.closest('.admin-panel, #inst-detail').querySelectorAll('.dtab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+function subTab(btn, panelId) {
+  btn.closest('.dtab-panel').querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
+  btn.closest('.dtab-panel').querySelectorAll('.stab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+function handleContratoFile(input) {
+  const fname = input.files[0]?.name || '';
+  document.getElementById('contrato-file-name').textContent = fname || 'Haz clic para cargar el contrato PDF';
+}
+
+// ---- TOAST ----
+function showToast(msg) {
+  let t = document.getElementById('admin-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'admin-toast';
+    t.style.cssText = 'position:fixed;bottom:28px;right:28px;background:var(--green);color:#0a1a0a;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(()=>t.style.opacity='0', 2500);
+}
+
+// Keep deleteUser from old admin
 async function deleteUser(email) {
   if (!confirm(`¿Eliminar al usuario ${email}? Esta acción no se puede deshacer.`)) return;
   try {
-    await fetch(`${API}/admin/usuario/${encodeURIComponent(email)}`, {
-      method:'DELETE', headers: authHeaders()
-    });
+    await fetch(`${API}/admin/usuario/${encodeURIComponent(email)}`, { method:'DELETE', headers: authHeaders() });
     loadAdmin();
-  } catch(e) {
-    alert('Error al eliminar el usuario.');
-  }
+    loadParticulares();
+    showToast('Usuario eliminado');
+  } catch(e) { alert('Error al eliminar el usuario.'); }
+}
+
+function scoreCls(s) {
+  if (s==null) return '';
+  if (s>=75) return 'score-high';
+  if (s>=50) return 'score-mid';
+  return 'score-low';
 }
 
 // ── KEYBOARD ─────────────────────────────────────────────

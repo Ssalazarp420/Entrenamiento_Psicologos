@@ -21,7 +21,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://purple-cliff-0fa98ff0f.1.azurestaticapps.net",  # <-- reemplaza con tu URL de Azure Static Web App
+        "https://purple-cliff-0fa98ff0f.1.azurestaticapps.net",  # Static Web App
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
