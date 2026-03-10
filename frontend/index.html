@@ -633,7 +633,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
               <div class="form-grid-2">
                 <div class="form-field"><label>Edad</label><input id="ce-edad" type="number" placeholder="22"/></div>
                 <div class="form-field"><label>Dificultad</label>
-                  <select id="ce-dificultad"><option>Básica</option><option>Intermedia</option><option>Avanzada</option><option>Experto</option></select>
+                  <select id="ce-dificultad"><option value="Leve">🟢 Leve</option><option value="Moderada">🟡 Moderada</option><option value="Severa">🔴 Severa</option></select>
                 </div>
               </div>
               <div class="form-field"><label>Descripción visible al estudiante</label><textarea id="ce-desc" rows="2" class="ai-textarea" placeholder="Descripción corta del caso..."></textarea></div>
@@ -1712,6 +1712,14 @@ function renderCategorias() {
   }).join('');
 }
 
+function dificultadColor(d) {
+  if (d === 'Leve')     return 'background:rgba(5,150,105,.12);color:#059669;border:1px solid rgba(5,150,105,.25)';
+  if (d === 'Moderada') return 'background:rgba(217,119,6,.12);color:#D97706;border:1px solid rgba(217,119,6,.25)';
+  if (d === 'Severa')   return 'background:rgba(220,38,38,.12);color:#DC2626;border:1px solid rgba(220,38,38,.25)';
+  return 'background:var(--border);color:var(--muted)';
+}
+
+
 function seleccionarCategoria(idx, cat) {
   selectedCatIndex = idx;
   renderCategorias();
@@ -1722,7 +1730,7 @@ function seleccionarCategoria(idx, cat) {
         <div class="caso-item" onclick="abrirCasoEditor('${id}', event)">
           <div class="caso-item-name">${c.name}
             <span style="font-size:.72rem;color:var(--muted)">(${c.age} años)</span>
-            <span class="inst-pill inst-pill-plan" style="float:right;font-size:.65rem">${c.dificultad||'—'}</span>
+            <span class="inst-pill" style="float:right;font-size:.65rem;${dificultadColor(c.dificultad)}">${c.dificultad||'—'}</span>
           </div>
           <div class="caso-item-meta">${(c.descripcion||'').slice(0, 55)}${c.descripcion?.length > 55 ? '…' : ''}</div>
         </div>`).join('')
@@ -1734,7 +1742,7 @@ function abrirNuevoCaso() {
   document.getElementById('editor-caso-title').textContent = 'Nuevo caso';
   document.getElementById('ce-nombre').value      = '';
   document.getElementById('ce-edad').value        = '';
-  document.getElementById('ce-dificultad').value  = 'Básica';
+  document.getElementById('ce-dificultad').value  = 'Leve';
   document.getElementById('ce-desc').value        = '';
   document.getElementById('ce-instruccion').value = '';
   document.getElementById('ce-feedback').value    = '';
@@ -1749,7 +1757,7 @@ function abrirCasoEditor(id, evt) {
   document.getElementById('editor-caso-title').textContent = 'Editando: ' + c.name;
   document.getElementById('ce-nombre').value      = c.name || '';
   document.getElementById('ce-edad').value        = c.age  || '';
-  document.getElementById('ce-dificultad').value  = c.dificultad || 'Básica';
+  document.getElementById('ce-dificultad').value  = c.dificultad || 'Leve';
   document.getElementById('ce-desc').value        = c.descripcion || '';
   document.getElementById('ce-instruccion').value = c.instruccion || '';
   document.getElementById('ce-feedback').value    = c.instruccion_feedback || '';
