@@ -31,6 +31,8 @@ jobs:
           echo "AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> Conexion_Azure.env
           echo "AZURE_OPENAI_DEPLOYMENT_NAME=${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}" >> Conexion_Azure.env
           echo "AZURE_OPENAI_API_VERSION=${{ secrets.AZURE_OPENAI_API_VERSION }}" >> Conexion_Azure.env
+          echo "COSMOS_CONNECTION_STRING=${{ secrets.COSMOS_CONNECTION_STRING }}" >> Conexion_Azure.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> Conexion_Azure.env
 
       - name: Desplegar en Azure App Service
         uses: azure/webapps-deploy@v3
