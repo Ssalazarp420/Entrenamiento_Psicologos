@@ -78,6 +78,25 @@ main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-di
 .age-tag { font-size:.78rem;color:var(--muted);background:rgba(255,255,255,.05);padding:3px 10px;border-radius:20px;border:1px solid var(--border); }
 .start-label { font-size:.78rem;color:var(--accent);opacity:0;transition:opacity .2s;margin-top:2px; }
 .patient-option:hover .start-label { opacity:1; }
+/* Filtros de categoría y dificultad */
+.filter-cat-btn { padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s; }
+.filter-cat-btn:hover,.filter-cat-btn.active { border-color:var(--accent);background:rgba(91,141,238,.12);color:var(--accent); }
+.filter-dif-btn { padding:8px 20px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.84rem;cursor:pointer;transition:all .2s;font-weight:500; }
+.filter-dif-btn:hover { border-color:var(--accent); }
+.filter-dif-btn.active[data-dif="Leve"]     { background:rgba(5,150,105,.15);color:#059669;border-color:rgba(5,150,105,.4); }
+.filter-dif-btn.active[data-dif="Moderada"] { background:rgba(217,119,6,.15);color:#D97706;border-color:rgba(217,119,6,.4); }
+.filter-dif-btn.active[data-dif="Severa"]   { background:rgba(220,38,38,.15);color:#DC2626;border-color:rgba(220,38,38,.4); }
+/* Tarjetas de grupos docente */
+.grupo-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s; }
+.grupo-card:hover { border-color:var(--accent);transform:translateY(-2px); }
+.grupo-card-nombre { font-weight:700;font-size:.95rem;margin-bottom:6px; }
+.grupo-card-meta { font-size:.78rem;color:var(--muted);margin-bottom:12px; }
+/* Retroalimentaciones */
+.retro-item { padding:16px 0;border-bottom:1px solid var(--border); }
+.retro-item:last-child { border-bottom:none; }
+.retro-sesion { font-size:.78rem;color:var(--muted);margin-bottom:4px; }
+.retro-comentario { font-size:.9rem;line-height:1.55; }
+.retro-docente { font-size:.75rem;color:var(--accent);margin-top:6px; }
 
 /* CHAT */
 .patient-card { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 24px;display:flex;align-items:center;gap:16px; }
@@ -349,13 +368,53 @@ tr:hover td { background:rgba(255,255,255,.02); }
     </div>
   </div>
 
-  <!-- SELECCIÓN DE PACIENTE -->
+  <!-- SELECCIÓN DE PACIENTE — flujo categoría → dificultad → pacientes -->
   <div class="screen" id="screen-selection">
-    <div class="anim anim-1">
-      <div class="section-title">Selecciona tu paciente</div>
-      <div class="section-sub">Solo verás nombre y edad — sin información previa sobre el caso.</div>
+
+    <div class="page-header anim anim-1">
+      <div>
+        <div class="section-title">Nueva sesión</div>
+        <div class="section-sub">Selecciona el tipo de caso y la dificultad para ver los pacientes disponibles.</div>
+      </div>
+      <button class="btn-ghost" style="width:auto;padding:9px 18px;" onclick="openRetroModal()">
+        💬 Retroalimentaciones del docente
+      </button>
     </div>
-    <div id="patients-container" class="patients-grid anim anim-2"></div>
+
+    <!-- Paso 1: Tipo de caso -->
+    <div class="anim anim-2" style="margin-bottom:10px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Tipo de caso</div>
+      <div id="filter-categorias" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+
+    <!-- Paso 2: Dificultad -->
+    <div class="anim anim-3" id="filter-dif-wrap" style="margin-bottom:22px;display:none;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Dificultad</div>
+      <div style="display:flex;gap:8px;">
+        <button class="filter-dif-btn" data-dif="Leve"     onclick="selectDificultad('Leve')">🟢 Leve</button>
+        <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡 Moderada</button>
+        <button class="filter-dif-btn" data-dif="Severa"   onclick="selectDificultad('Severa')">🔴 Severa</button>
+      </div>
+    </div>
+
+    <!-- Paso 3: Pacientes -->
+    <div id="patients-container" class="patients-grid anim anim-4"></div>
+  </div>
+
+  <!-- MODAL RETROALIMENTACIONES DOCENTE -->
+  <div class="modal-overlay" id="modal-retro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
+    <div class="modal-box" style="width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">💬 Retroalimentaciones del docente</div>
+          <div class="modal-subtitle">Comentarios que tus docentes han dejado sobre tus sesiones.</div>
+        </div>
+        <button class="modal-close" onclick="closeRetroModal()">✕</button>
+      </div>
+      <div id="retro-list" style="overflow-y:auto;flex:1;padding:4px 0;">
+        <div class="spinner" style="margin:32px auto;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- CHAT -->
@@ -402,16 +461,93 @@ tr:hover td { background:rgba(255,255,255,.02); }
 
   <!-- PANEL DOCENTE -->
   <div class="screen" id="screen-docente">
-    <div class="anim anim-1">
-      <div class="section-title">Panel del docente</div>
-      <div class="section-sub">Sesiones completadas por todos los estudiantes</div>
+    <div class="page-header anim anim-1">
+      <div>
+        <div class="section-title">Mis grupos</div>
+        <div class="section-sub">Gestiona tus grupos y deja retroalimentaciones a tus estudiantes</div>
+      </div>
+      <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;" onclick="openCrearGrupoModal()">
+        + Nuevo grupo
+      </button>
     </div>
-    <div class="stats-row anim anim-2" id="docente-stats"></div>
-    <div class="table-wrap anim anim-3">
-      <table>
-        <thead><tr><th>Estudiante</th><th>Paciente</th><th>Fecha</th><th>Puntuación</th><th></th></tr></thead>
-        <tbody id="docente-tbody"></tbody>
-      </table>
+
+    <!-- Lista de grupos -->
+    <div id="docente-grupos-wrap" class="anim anim-2" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px;"></div>
+
+    <!-- Detalle de grupo seleccionado -->
+    <div id="docente-grupo-detail" style="display:none;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+        <button class="btn-ghost" style="padding:7px 14px;" onclick="cerrarGrupoDetail()">← Volver</button>
+        <div>
+          <div class="section-title" id="dg-nombre" style="font-size:1.1rem;margin:0;"></div>
+          <div class="section-sub" id="dg-sub" style="margin:0;"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:18px;">
+        <input id="dg-add-email" type="email" placeholder="Agregar estudiante por email..."
+          style="flex:1;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;"/>
+        <button class="btn-accent" style="padding:9px 18px;" onclick="docenteAgregarEstudiante()">Agregar</button>
+      </div>
+      <div class="table-wrap anim anim-2">
+        <table>
+          <thead><tr><th>Estudiante</th><th>Email</th><th>Sesiones</th><th>Últ. puntuación</th><th>Acciones</th></tr></thead>
+          <tbody id="dg-estudiantes-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal sesiones de un estudiante -->
+    <div class="modal-overlay" id="modal-docente-sesiones" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
+      <div class="modal-box" style="width:min(720px,95vw);max-height:85vh;display:flex;flex-direction:column;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">📋 Sesiones de <span id="modal-ses-nombre">—</span></div>
+            <div class="modal-subtitle">Haz clic en "Comentar" para dejar retroalimentación sobre una sesión.</div>
+          </div>
+          <button class="modal-close" onclick="closeAdminModal('modal-docente-sesiones')">✕</button>
+        </div>
+        <div id="modal-ses-list" style="overflow-y:auto;flex:1;"></div>
+      </div>
+    </div>
+
+    <!-- Modal escribir retroalimentación -->
+    <div class="modal-overlay" id="modal-escribir-retro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:center;justify-content:center;">
+      <div class="modal-box" style="width:min(580px,95vw);">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">✏️ Retroalimentación</div>
+            <div class="modal-subtitle">Escribe un comentario sobre la sesión de <span id="retro-est-nombre">—</span></div>
+          </div>
+          <button class="modal-close" onclick="closeAdminModal('modal-escribir-retro')">✕</button>
+        </div>
+        <div style="padding:0 0 8px;">
+          <textarea id="retro-comentario" rows="6"
+            placeholder="Escribe aquí tu retroalimentación para el estudiante..."
+            style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.88rem;resize:vertical;box-sizing:border-box;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn-ghost" onclick="closeAdminModal('modal-escribir-retro')">Cancelar</button>
+          <button class="btn-accent" onclick="guardarRetroalimentacion()">Enviar retroalimentación</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal crear grupo -->
+    <div class="modal-overlay" id="modal-crear-grupo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
+      <div class="modal-box" style="width:min(480px,95vw);">
+        <div class="modal-header">
+          <div class="modal-title">👥 Nuevo grupo</div>
+          <button class="modal-close" onclick="closeAdminModal('modal-crear-grupo')">✕</button>
+        </div>
+        <div class="field">
+          <label>Nombre del grupo</label>
+          <input id="ng-nombre" type="text" placeholder="Ej: Clínica 2026-1"/>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+          <button class="btn-ghost" onclick="closeAdminModal('modal-crear-grupo')">Cancelar</button>
+          <button class="btn-accent" onclick="docenteCrearGrupo()">Crear grupo</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -633,7 +769,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
               <div class="form-grid-2">
                 <div class="form-field"><label>Edad</label><input id="ce-edad" type="number" placeholder="22"/></div>
                 <div class="form-field"><label>Dificultad</label>
-                  <select id="ce-dificultad"><option value="Leve">🟢 Leve</option><option value="Moderada">🟡 Moderada</option><option value="Severa">🔴 Severa</option></select>
+                  <select id="ce-dificultad"><option>Básica</option><option>Intermedia</option><option>Avanzada</option><option>Experto</option></select>
                 </div>
               </div>
               <div class="form-field"><label>Descripción visible al estudiante</label><textarea id="ce-desc" rows="2" class="ai-textarea" placeholder="Descripción corta del caso..."></textarea></div>
@@ -961,32 +1097,97 @@ function logout() {
   showScreen('screen-login');
 }
 
-// ── PATIENT SELECTION ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// SELECCIÓN DE PACIENTE — flujo categoría → dificultad → pacientes
+// ═══════════════════════════════════════════════════════════
+let allPatients       = {};   // cache: { pid: {...} }
+let selectedCategoria = null;
+let selectedDificultad = null;
+
 async function loadPatients() {
-  const container = document.getElementById('patients-container');
-  container.innerHTML = '<div class="spinner" style="margin:30px auto;grid-column:1/-1;"></div>';
+  selectedCategoria  = null;
+  selectedDificultad = null;
+  document.getElementById('filter-dif-wrap').style.display = 'none';
+  document.getElementById('patients-container').innerHTML  = '';
 
   try {
-    const res      = await fetch(`${API}/patients`, { headers: authHeaders() });
-    const patients = await res.json();
-    container.innerHTML = Object.entries(patients).map(([pid, p]) => `
-      <div class="patient-option" onclick="selectPatient('${pid}','${p.name}',${p.age})">
-        <div class="avatar-lg">👤</div>
-        <h3>${p.name}</h3>
-        <div class="age-tag">${p.age} años</div>
-        <div class="start-label">Iniciar sesión →</div>
-      </div>`).join('');
+    // Carga pacientes y categorías en paralelo
+    const [resPat, resCats] = await Promise.all([
+      fetch(`${API}/patients`, { headers: authHeaders() }),
+      fetch(`${API}/admin/categorias`, { headers: authHeaders() }),
+    ]);
+    allPatients = await resPat.json();
+    const cats  = await resCats.json();
+
+    // Renderiza botones de categoría
+    const wrap = document.getElementById('filter-categorias');
+    wrap.innerHTML = (Array.isArray(cats) ? cats : []).map(cat => `
+      <button class="filter-cat-btn" data-cat="${cat}"
+        onclick="selectCategoria('${cat.replace(/'/g,"\\'")}')">
+        ${cat}
+      </button>`).join('');
   } catch(e) {
-    container.innerHTML = `<p style="color:var(--red);font-size:.85rem;">⚠ Error cargando pacientes.</p>`;
+    document.getElementById('filter-categorias').innerHTML =
+      '<span style="color:var(--red);font-size:.85rem;">⚠ Error cargando categorías</span>';
   }
+}
+
+function selectCategoria(cat) {
+  selectedCategoria  = cat;
+  selectedDificultad = null;
+
+  // Resalta botón activo
+  document.querySelectorAll('.filter-cat-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.cat === cat));
+
+  // Muestra selector de dificultad, resetea botones
+  document.getElementById('filter-dif-wrap').style.display = 'block';
+  document.querySelectorAll('.filter-dif-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('patients-container').innerHTML = '';
+}
+
+function selectDificultad(dif) {
+  selectedDificultad = dif;
+
+  document.querySelectorAll('.filter-dif-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.dif === dif));
+
+  renderPatientCards();
+}
+
+function renderPatientCards() {
+  const container = document.getElementById('patients-container');
+  const filtered  = Object.entries(allPatients).filter(([, p]) =>
+    p.categoria  === selectedCategoria &&
+    p.dificultad === selectedDificultad
+  );
+
+  if (!filtered.length) {
+    container.innerHTML = `
+      <div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);
+        background:var(--card);border:1px dashed var(--border);border-radius:16px;">
+        <div style="font-size:2rem;margin-bottom:8px">🔍</div>
+        <div>No hay pacientes para <strong>${selectedCategoria}</strong> — <strong>${selectedDificultad}</strong></div>
+        <div style="font-size:.8rem;margin-top:6px">El administrador puede agregar casos desde el panel.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(([pid, p]) => `
+    <div class="patient-option" onclick="selectPatient('${pid}','${p.name}',${p.age})">
+      <div class="avatar-lg">👤</div>
+      <h3>${p.name}</h3>
+      <div class="age-tag">${p.age} años</div>
+      <div class="start-label">Iniciar sesión →</div>
+    </div>`).join('');
 }
 
 async function selectPatient(pid, name, age) {
   patientId   = pid;
   patientName = name;
 
-  document.getElementById('card-name').textContent = `${name}, ${age} años`;
-  document.getElementById('empty-label').textContent = `Escribe tu primera intervención para iniciar la sesión con ${name}.`;
+  document.getElementById('card-name').textContent      = `${name}, ${age} años`;
+  document.getElementById('empty-label').textContent    = `Escribe tu primera intervención para iniciar la sesión con ${name}.`;
   document.getElementById('chat-box').innerHTML = `
     <div class="empty-state" id="empty-msg">
       <div class="icon">🛋️</div>
@@ -995,7 +1196,7 @@ async function selectPatient(pid, name, age) {
 
   try {
     const res  = await fetch(`${API}/session/new`, {
-      method:'POST', headers: authHeaders(),
+      method: 'POST', headers: authHeaders(),
       body: JSON.stringify({ patient_id: pid })
     });
     const data = await res.json();
@@ -1012,7 +1213,302 @@ async function selectPatient(pid, name, age) {
   document.getElementById('user-input').focus();
 }
 
+// ── Retroalimentaciones del docente (vista estudiante) ────
+async function openRetroModal() {
+  document.getElementById('modal-retro').style.display = 'flex';
+  const list = document.getElementById('retro-list');
+  list.innerHTML = '<div class="spinner" style="margin:32px auto;"></div>';
+  try {
+    const res   = await fetch(`${API}/estudiante/retroalimentaciones`, { headers: authHeaders() });
+    const items = await res.json();
+    if (!items.length) {
+      list.innerHTML = '<div class="ov-empty" style="padding:32px">Aún no tienes retroalimentaciones de ningún docente.</div>';
+      return;
+    }
+    list.innerHTML = items.map(r => `
+      <div class="retro-item">
+        <div class="retro-sesion">Sesión: ${r.sesion_id?.slice(0,8)}… · ${formatDate(r.creado_en)}</div>
+        <div class="retro-comentario">${r.comentario}</div>
+        <div class="retro-docente">— ${r.docente_email}</div>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="ov-empty" style="color:var(--red)">Error cargando retroalimentaciones.</div>';
+  }
+}
+
+function closeRetroModal() {
+  document.getElementById('modal-retro').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// HISTORIAL — con botón eliminar
+// ═══════════════════════════════════════════════════════════
+async function loadHistorial() {
+  const tbody = document.getElementById('historial-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const res  = await fetch(`${API}/historial/mis-sesiones`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-table">No tienes sesiones completadas aún.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(s => `
+      <tr>
+        <td><strong>${s.patient_name || '—'}</strong></td>
+        <td style="font-size:.8rem;color:var(--muted)">${formatDate(s.inicio)}</td>
+        <td style="font-size:.8rem;color:var(--muted)">${calcDuracion(s.inicio, s.fin)}</td>
+        <td>${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
+        <td><span class="status-pill status-${s.estado || 'activa'}">${s.estado || '—'}</span></td>
+        <td style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
+            onclick="verSesion('${s.sesion_id}')">Ver</button>
+          <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
+            onclick="eliminarSesion('${s.sesion_id}', this)">🗑</button>
+        </td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red)">Error cargando historial.</td></tr>';
+  }
+}
+
+async function eliminarSesion(sesionId, btn) {
+  if (!confirm('¿Eliminar esta sesión?\nSe borrará completamente incluyendo el análisis y las retroalimentaciones.')) return;
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await fetch(`${API}/historial/sesion/${sesionId}`, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    showToast('Sesión eliminada');
+    loadHistorial();
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, true);
+    btn.disabled = false; btn.textContent = '🗑';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PANEL DOCENTE — grupos, estudiantes, retroalimentaciones
+// ═══════════════════════════════════════════════════════════
+let docenteGrupoActual = null;  // { id, nombre, estudiantes[] }
+
+async function loadDocente() {
+  document.getElementById('docente-grupo-detail').style.display = 'none';
+  document.getElementById('docente-grupos-wrap').style.display  = 'grid';
+  const wrap = document.getElementById('docente-grupos-wrap');
+  wrap.innerHTML = '<div style="grid-column:1/-1"><div class="spinner" style="margin:0 auto;"></div></div>';
+  try {
+    const res    = await fetch(`${API}/docente/mis-grupos`, { headers: authHeaders() });
+    const grupos = await res.json();
+    if (!grupos.length) {
+      wrap.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);
+        background:var(--card);border:1px dashed var(--border);border-radius:14px;">
+        <div style="font-size:2rem;margin-bottom:8px">👥</div>
+        <div>No tienes grupos creados aún.</div>
+        <div style="font-size:.8rem;margin-top:6px">Haz clic en "+ Nuevo grupo" para comenzar.</div>
+      </div>`;
+      return;
+    }
+    wrap.innerHTML = grupos.map(g => `
+      <div class="grupo-card" onclick="abrirGrupoDocente('${g.id}','${g.nombre.replace(/'/g,"\\'")}',${JSON.stringify(g.estudiantes||[])})">
+        <div class="grupo-card-nombre">👥 ${g.nombre}</div>
+        <div class="grupo-card-meta">${(g.estudiantes||[]).length} estudiantes · Creado ${formatDate(g.creado_en)}</div>
+        <div><span class="inst-pill inst-pill-plan">${g.institucion_id ? 'Institucional' : 'Independiente'}</span></div>
+      </div>`).join('');
+  } catch(e) {
+    wrap.innerHTML = '<div style="grid-column:1/-1" class="ov-empty" style="color:var(--red)">Error cargando grupos.</div>';
+  }
+}
+
+async function abrirGrupoDocente(grupoId, nombre, estudiantes) {
+  docenteGrupoActual = { id: grupoId, nombre, estudiantes };
+  document.getElementById('docente-grupos-wrap').style.display  = 'none';
+  document.getElementById('docente-grupo-detail').style.display = 'block';
+  document.getElementById('dg-nombre').textContent = nombre;
+  document.getElementById('dg-sub').textContent    = `${estudiantes.length} estudiantes en este grupo`;
+  await cargarEstudiantesGrupo(grupoId, estudiantes);
+}
+
+function cerrarGrupoDetail() {
+  document.getElementById('docente-grupo-detail').style.display = 'none';
+  document.getElementById('docente-grupos-wrap').style.display  = 'grid';
+  docenteGrupoActual = null;
+}
+
+async function cargarEstudiantesGrupo(grupoId, emails) {
+  const tbody = document.getElementById('dg-estudiantes-tbody');
+  if (!emails.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin estudiantes aún. Agrégalos por email arriba.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="5" class="empty-table"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const res      = await fetch(`${API}/docente/grupo/${grupoId}/sesiones`, { headers: authHeaders() });
+    const sesiones = await res.json();
+
+    // Agrupa sesiones por estudiante
+    const porEst = {};
+    sesiones.forEach(s => {
+      if (!porEst[s.usuario_id]) porEst[s.usuario_id] = [];
+      porEst[s.usuario_id].push(s);
+    });
+
+    tbody.innerHTML = emails.map(email => {
+      const ses    = porEst[email] || [];
+      const ultima = ses[0];
+      return `<tr>
+        <td><strong>${email.split('@')[0]}</strong></td>
+        <td style="font-size:.8rem;color:var(--muted)">${email}</td>
+        <td>${ses.length}</td>
+        <td>${ultima?.puntuacion != null ? `${ultima.puntuacion}/100` : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
+            onclick="verSesionesEstudiante('${email}', '${email.split('@')[0]}')">Ver sesiones</button>
+          <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
+            onclick="quitarEstudianteGrupo('${email}')">Quitar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table" style="color:var(--red)">Error cargando sesiones.</td></tr>';
+  }
+}
+
+async function docenteAgregarEstudiante() {
+  if (!docenteGrupoActual) return;
+  const email = document.getElementById('dg-add-email').value.trim();
+  if (!email) return;
+  try {
+    const res = await fetch(`${API}/docente/grupos/${docenteGrupoActual.id}/agregar-estudiante`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    document.getElementById('dg-add-email').value = '';
+    if (!docenteGrupoActual.estudiantes.includes(email))
+      docenteGrupoActual.estudiantes.push(email);
+    document.getElementById('dg-sub').textContent = `${docenteGrupoActual.estudiantes.length} estudiantes en este grupo`;
+    await cargarEstudiantesGrupo(docenteGrupoActual.id, docenteGrupoActual.estudiantes);
+    showToast(`${email} agregado al grupo ✓`);
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function quitarEstudianteGrupo(email) {
+  if (!docenteGrupoActual) return;
+  if (!confirm(`¿Quitar a ${email} de este grupo?`)) return;
+  try {
+    const res = await fetch(`${API}/docente/grupos/${docenteGrupoActual.id}/quitar-estudiante`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    docenteGrupoActual.estudiantes = docenteGrupoActual.estudiantes.filter(e => e !== email);
+    document.getElementById('dg-sub').textContent = `${docenteGrupoActual.estudiantes.length} estudiantes en este grupo`;
+    await cargarEstudiantesGrupo(docenteGrupoActual.id, docenteGrupoActual.estudiantes);
+    showToast('Estudiante quitado del grupo');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+// ── Ver sesiones de un estudiante (modal) ────────────────
+let retroSesionActual    = null;
+let retroEstudianteActual = null;
+
+async function verSesionesEstudiante(email, nombre) {
+  retroEstudianteActual = { email, nombre };
+  document.getElementById('modal-ses-nombre').textContent = nombre;
+  openAdminModal('modal-docente-sesiones');
+  const list = document.getElementById('modal-ses-list');
+  list.innerHTML = '<div class="spinner" style="margin:32px auto;"></div>';
+  try {
+    const res = await fetch(`${API}/docente/grupo/${docenteGrupoActual.id}/sesiones`, { headers: authHeaders() });
+    const all = await res.json();
+    const ses = all.filter(s => s.usuario_id === email);
+    if (!ses.length) {
+      list.innerHTML = '<div class="ov-empty">Este estudiante no tiene sesiones completadas.</div>';
+      return;
+    }
+    list.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:rgba(255,255,255,.03);">
+        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Paciente</th>
+        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Fecha</th>
+        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Puntuación</th>
+        <th style="padding:10px 12px;"></th>
+      </tr></thead>
+      <tbody>
+        ${ses.map(s => `<tr style="border-top:1px solid var(--border);">
+          <td style="padding:10px 12px;font-size:.88rem;">${s.patient_name || '—'}</td>
+          <td style="padding:10px 12px;font-size:.8rem;color:var(--muted);">${formatDate(s.inicio)}</td>
+          <td style="padding:10px 12px;">${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
+          <td style="padding:10px 12px;">
+            <button class="btn-accent" style="padding:5px 12px;font-size:.75rem;"
+              onclick="abrirEscribirRetro('${s.sesion_id}','${(s.patient_name||'').replace(/'/g,"\\'")}')">
+              ✏️ Comentar
+            </button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  } catch(e) {
+    list.innerHTML = '<div class="ov-empty" style="color:var(--red)">Error cargando sesiones.</div>';
+  }
+}
+
+function abrirEscribirRetro(sesionId, pacienteNombre) {
+  retroSesionActual = sesionId;
+  document.getElementById('retro-est-nombre').textContent =
+    `${retroEstudianteActual?.nombre || '—'} (${pacienteNombre})`;
+  document.getElementById('retro-comentario').value = '';
+  openAdminModal('modal-escribir-retro');
+}
+
+async function guardarRetroalimentacion() {
+  const comentario = document.getElementById('retro-comentario').value.trim();
+  if (!comentario) { showToast('Escribe un comentario antes de enviar', true); return; }
+  const btn = document.querySelector('#modal-escribir-retro .btn-accent');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+  try {
+    const res = await fetch(`${API}/docente/retroalimentacion`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({
+        sesion_id:        retroSesionActual,
+        estudiante_email: retroEstudianteActual.email,
+        comentario,
+      }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    closeAdminModal('modal-escribir-retro');
+    showToast('Retroalimentación enviada ✓');
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar retroalimentación'; }
+  }
+}
+
+function openCrearGrupoModal() {
+  document.getElementById('ng-nombre').value = '';
+  openAdminModal('modal-crear-grupo');
+}
+
+async function docenteCrearGrupo() {
+  const nombre = document.getElementById('ng-nombre').value.trim();
+  if (!nombre) { showToast('El nombre es requerido', true); return; }
+  try {
+    const res = await fetch(`${API}/docente/grupos`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ nombre }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    closeAdminModal('modal-crear-grupo');
+    showToast(`Grupo "${nombre}" creado ✓`);
+    await loadDocente();
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
 // ── CHAT ──────────────────────────────────────────────────
+
 function appendMsg(role, text) {
   const empty   = document.getElementById('empty-msg');
   if (empty) empty.remove();
@@ -1149,32 +1645,8 @@ function closeSessionModal() {
   setNavActive('screen-selection');
 }
 
-// ── HISTORIAL ─────────────────────────────────────────────
-async function loadHistorial() {
-  const tbody = document.getElementById('historial-tbody');
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
 
-  try {
-    const res  = await fetch(`${API}/historial/mis-sesiones`, { headers: authHeaders() });
-    const data = await res.json();
-
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Aún no tienes sesiones completadas.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(s => `
-      <tr>
-        <td>${s.patient_name || '—'}</td>
-        <td>${formatDate(s.inicio)}</td>
-        <td>${formatDuration(s.inicio, s.fin)}</td>
-        <td>${scorePill(s.puntuacion)}</td>
-        <td><span class="status-pill status-${s.estado}">${s.estado}</span></td>
-        <td>${s.estado==='completada' ? `<button class="btn-detail" onclick="loadDetalle('${s.sesion_id}')">Ver análisis</button>` : '—'}</td>
-      </tr>`).join('');
-  } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red);">Error cargando historial.</td></tr>';
-  }
-}
+// ── HISTORIAL — ver detalle (modal) ──────────────────────
 
 async function loadDetalle(sesionId) {
   const overlay = document.getElementById('modal-overlay');
@@ -1203,43 +1675,9 @@ async function loadDetalle(sesionId) {
   }
 }
 
-// ── DOCENTE ───────────────────────────────────────────────
-async function loadDocente() {
-  const tbody = document.getElementById('docente-tbody');
-  const stats = document.getElementById('docente-stats');
-  tbody.innerHTML = '<tr><td colspan="5" class="empty-table"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
 
-  try {
-    const res  = await fetch(`${API}/historial/todos`, { headers: authHeaders() });
-    const data = await res.json();
-
-    const total  = data.length;
-    const scores = data.filter(s => s.puntuacion !== null).map(s => s.puntuacion);
-    const avg    = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
-    const unique = new Set(data.map(s => s.usuario_id)).size;
-
-    stats.innerHTML = `
-      <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Sesiones completadas</div></div>
-      <div class="stat-card"><div class="stat-val">${unique}</div><div class="stat-lbl">Estudiantes activos</div></div>
-      <div class="stat-card"><div class="stat-val">${avg !== null ? avg : '—'}</div><div class="stat-lbl">Puntuación promedio</div></div>`;
-
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No hay sesiones completadas aún.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(s => `
-      <tr>
-        <td style="font-size:.8rem;color:var(--muted);">${s.usuario_id}</td>
-        <td>${s.patient_name || '—'}</td>
-        <td>${formatDate(s.inicio)}</td>
-        <td>${scorePill(s.puntuacion)}</td>
-        <td><button class="btn-detail" onclick="loadDetalle('${s.sesion_id}')">Ver análisis</button></td>
-      </tr>`).join('');
-  } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-table" style="color:var(--red);">Error cargando sesiones.</td></tr>';
-  }
-}
-
+// ── DOCENTE (old simple view — replaced by new panel above) ──
+// kept as stub to avoid reference errors from old nav calls
 // ── ADMIN PANEL ───────────────────────────────────────────
 
 // ---- State ----
@@ -1712,14 +2150,6 @@ function renderCategorias() {
   }).join('');
 }
 
-function dificultadColor(d) {
-  if (d === 'Leve')     return 'background:rgba(5,150,105,.12);color:#059669;border:1px solid rgba(5,150,105,.25)';
-  if (d === 'Moderada') return 'background:rgba(217,119,6,.12);color:#D97706;border:1px solid rgba(217,119,6,.25)';
-  if (d === 'Severa')   return 'background:rgba(220,38,38,.12);color:#DC2626;border:1px solid rgba(220,38,38,.25)';
-  return 'background:var(--border);color:var(--muted)';
-}
-
-
 function seleccionarCategoria(idx, cat) {
   selectedCatIndex = idx;
   renderCategorias();
@@ -1730,7 +2160,7 @@ function seleccionarCategoria(idx, cat) {
         <div class="caso-item" onclick="abrirCasoEditor('${id}', event)">
           <div class="caso-item-name">${c.name}
             <span style="font-size:.72rem;color:var(--muted)">(${c.age} años)</span>
-            <span class="inst-pill" style="float:right;font-size:.65rem;${dificultadColor(c.dificultad)}">${c.dificultad||'—'}</span>
+            <span class="inst-pill inst-pill-plan" style="float:right;font-size:.65rem">${c.dificultad||'—'}</span>
           </div>
           <div class="caso-item-meta">${(c.descripcion||'').slice(0, 55)}${c.descripcion?.length > 55 ? '…' : ''}</div>
         </div>`).join('')
@@ -1742,7 +2172,7 @@ function abrirNuevoCaso() {
   document.getElementById('editor-caso-title').textContent = 'Nuevo caso';
   document.getElementById('ce-nombre').value      = '';
   document.getElementById('ce-edad').value        = '';
-  document.getElementById('ce-dificultad').value  = 'Leve';
+  document.getElementById('ce-dificultad').value  = 'Básica';
   document.getElementById('ce-desc').value        = '';
   document.getElementById('ce-instruccion').value = '';
   document.getElementById('ce-feedback').value    = '';
@@ -1757,7 +2187,7 @@ function abrirCasoEditor(id, evt) {
   document.getElementById('editor-caso-title').textContent = 'Editando: ' + c.name;
   document.getElementById('ce-nombre').value      = c.name || '';
   document.getElementById('ce-edad').value        = c.age  || '';
-  document.getElementById('ce-dificultad').value  = c.dificultad || 'Leve';
+  document.getElementById('ce-dificultad').value  = c.dificultad || 'Básica';
   document.getElementById('ce-desc').value        = c.descripcion || '';
   document.getElementById('ce-instruccion').value = c.instruccion || '';
   document.getElementById('ce-feedback').value    = c.instruccion_feedback || '';

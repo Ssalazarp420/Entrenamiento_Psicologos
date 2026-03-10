@@ -607,6 +607,270 @@ def eliminar_pago(pago_id: str, user=Depends(require_admin)):
     return {"mensaje": "Pago eliminado"}
 
 # ---------------------------------------------------------------------------
+# CONTENEDORES NUEVOS
+# ---------------------------------------------------------------------------
+c_grupos             = db.get_container_client("grupos")
+c_retroalimentaciones = db.get_container_client("retroalimentaciones")
+
+# ---------------------------------------------------------------------------
+# MODELOS — GRUPOS
+# ---------------------------------------------------------------------------
+class GrupoCreate(BaseModel):
+    nombre:        str
+    institucion_id: Optional[str] = None
+    docente_email: Optional[str] = None
+    estudiantes:   Optional[List[str]] = []   # lista de emails
+
+class GrupoUpdate(BaseModel):
+    nombre:        Optional[str] = None
+    docente_email: Optional[str] = None
+    estudiantes:   Optional[List[str]] = None
+
+class AgregarEstudiante(BaseModel):
+    email: str
+
+# ---------------------------------------------------------------------------
+# MODELOS — RETROALIMENTACIONES
+# ---------------------------------------------------------------------------
+class RetroCreate(BaseModel):
+    sesion_id:        str
+    estudiante_email: str
+    comentario:       str
+
+# ---------------------------------------------------------------------------
+# ADMIN — GRUPOS
+# ---------------------------------------------------------------------------
+@app.get("/admin/grupos")
+def listar_grupos_admin(user=Depends(require_admin)):
+    return list(c_grupos.query_items(
+        "SELECT * FROM c ORDER BY c.creado_en DESC",
+        enable_cross_partition_query=True))
+
+@app.post("/admin/grupos")
+def crear_grupo_admin(req: GrupoCreate, user=Depends(require_admin)):
+    grupo_id = str(uuid.uuid4())
+    doc = {
+        "id":            grupo_id,
+        "nombre":        req.nombre,
+        "institucion_id": req.institucion_id,
+        "docente_email": req.docente_email,
+        "estudiantes":   req.estudiantes or [],
+        "creado_en":     datetime.utcnow().isoformat(),
+        "creado_por":    user["email"],
+    }
+    c_grupos.create_item(doc)
+    return {"id": grupo_id, "mensaje": "Grupo creado"}
+
+@app.put("/admin/grupos/{grupo_id}")
+def actualizar_grupo_admin(grupo_id: str, req: GrupoUpdate, user=Depends(require_admin)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if req.nombre        is not None: doc["nombre"]        = req.nombre
+    if req.docente_email is not None: doc["docente_email"] = req.docente_email
+    if req.estudiantes   is not None: doc["estudiantes"]   = req.estudiantes
+    doc["actualizado_en"]  = datetime.utcnow().isoformat()
+    doc["actualizado_por"] = user["email"]
+    c_grupos.upsert_item(doc)
+    return {"mensaje": "Grupo actualizado"}
+
+@app.post("/admin/grupos/{grupo_id}/agregar-estudiante")
+def agregar_estudiante_admin(grupo_id: str, req: AgregarEstudiante, user=Depends(require_admin)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if req.email not in doc["estudiantes"]:
+        doc["estudiantes"].append(req.email)
+        c_grupos.upsert_item(doc)
+    return {"mensaje": f"{req.email} agregado al grupo"}
+
+@app.post("/admin/grupos/{grupo_id}/quitar-estudiante")
+def quitar_estudiante_admin(grupo_id: str, req: AgregarEstudiante, user=Depends(require_admin)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    doc["estudiantes"] = [e for e in doc["estudiantes"] if e != req.email]
+    c_grupos.upsert_item(doc)
+    return {"mensaje": f"{req.email} quitado del grupo"}
+
+@app.delete("/admin/grupos/{grupo_id}")
+def eliminar_grupo_admin(grupo_id: str, user=Depends(require_admin)):
+    try:
+        c_grupos.delete_item(item=grupo_id, partition_key=grupo_id)
+        return {"mensaje": "Grupo eliminado"}
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+
+# ---------------------------------------------------------------------------
+# DOCENTE — Panel propio
+# ---------------------------------------------------------------------------
+def require_docente(user=Depends(get_current_user)):
+    if user["rol"] not in ["docente", "admin"]:
+        raise HTTPException(status_code=403, detail="Acceso solo para docentes")
+    return user
+
+@app.get("/docente/mis-grupos")
+def mis_grupos(user=Depends(require_docente)):
+    """Devuelve los grupos donde el docente autenticado es el responsable."""
+    grupos = list(c_grupos.query_items(
+        f"SELECT * FROM c WHERE c.docente_email = '{user['email']}'",
+        enable_cross_partition_query=True))
+    return grupos
+
+@app.post("/docente/grupos")
+def crear_grupo_docente(req: GrupoCreate, user=Depends(require_docente)):
+    """El docente crea su propio grupo — queda asignado como docente automáticamente."""
+    grupo_id = str(uuid.uuid4())
+
+    # Detecta institución del docente si no se provee
+    institucion_id = req.institucion_id
+    if not institucion_id:
+        uq = f"SELECT c.institucion_id FROM c WHERE c.email = '{user['email']}'"
+        ur = list(c_usuarios.query_items(uq, enable_cross_partition_query=True))
+        if ur: institucion_id = ur[0].get("institucion_id")
+
+    doc = {
+        "id":             grupo_id,
+        "nombre":         req.nombre,
+        "institucion_id": institucion_id,
+        "docente_email":  user["email"],   # siempre el docente autenticado
+        "estudiantes":    req.estudiantes or [],
+        "creado_en":      datetime.utcnow().isoformat(),
+        "creado_por":     user["email"],
+    }
+    c_grupos.create_item(doc)
+    return {"id": grupo_id, "mensaje": "Grupo creado"}
+
+@app.put("/docente/grupos/{grupo_id}")
+def editar_grupo_docente(grupo_id: str, req: GrupoUpdate, user=Depends(require_docente)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if doc["docente_email"] != user["email"] and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="No puedes editar un grupo que no es tuyo")
+    if req.nombre      is not None: doc["nombre"]      = req.nombre
+    if req.estudiantes is not None: doc["estudiantes"] = req.estudiantes
+    doc["actualizado_en"] = datetime.utcnow().isoformat()
+    c_grupos.upsert_item(doc)
+    return {"mensaje": "Grupo actualizado"}
+
+@app.post("/docente/grupos/{grupo_id}/agregar-estudiante")
+def agregar_estudiante_docente(grupo_id: str, req: AgregarEstudiante, user=Depends(require_docente)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if doc["docente_email"] != user["email"] and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="No puedes modificar un grupo que no es tuyo")
+    if req.email not in doc["estudiantes"]:
+        doc["estudiantes"].append(req.email)
+        c_grupos.upsert_item(doc)
+    return {"mensaje": f"{req.email} agregado"}
+
+@app.post("/docente/grupos/{grupo_id}/quitar-estudiante")
+def quitar_estudiante_docente(grupo_id: str, req: AgregarEstudiante, user=Depends(require_docente)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if doc["docente_email"] != user["email"] and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="No puedes modificar un grupo que no es tuyo")
+    doc["estudiantes"] = [e for e in doc["estudiantes"] if e != req.email]
+    c_grupos.upsert_item(doc)
+    return {"mensaje": f"{req.email} quitado"}
+
+@app.get("/docente/grupo/{grupo_id}/sesiones")
+def sesiones_de_grupo(grupo_id: str, user=Depends(require_docente)):
+    """Devuelve las sesiones de todos los estudiantes del grupo."""
+    try: grupo = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if grupo["docente_email"] != user["email"] and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    estudiantes = grupo.get("estudiantes", [])
+    if not estudiantes:
+        return []
+
+    # Busca sesiones de cada estudiante del grupo
+    emails_str = ",".join([f"'{e}'" for e in estudiantes])
+    query = f"""
+        SELECT c.sesion_id, c.usuario_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado
+        FROM c WHERE c.usuario_id IN ({emails_str})
+        ORDER BY c.inicio DESC
+    """
+    sesiones = list(c_sesiones.query_items(query, enable_cross_partition_query=True))
+    return sesiones
+
+@app.post("/docente/retroalimentacion")
+def crear_retroalimentacion(req: RetroCreate, user=Depends(require_docente)):
+    # Verifica que el docente tiene acceso a esta sesión (pertenece a un estudiante de su grupo)
+    grupos = list(c_grupos.query_items(
+        f"SELECT * FROM c WHERE c.docente_email = '{user['email']}'",
+        enable_cross_partition_query=True))
+    todos_estudiantes = set()
+    for g in grupos:
+        todos_estudiantes.update(g.get("estudiantes", []))
+
+    if req.estudiante_email not in todos_estudiantes and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="Este estudiante no está en ninguno de tus grupos")
+
+    retro_id = str(uuid.uuid4())
+    doc = {
+        "id":               retro_id,
+        "sesion_id":        req.sesion_id,
+        "estudiante_email": req.estudiante_email,
+        "docente_email":    user["email"],
+        "comentario":       req.comentario,
+        "creado_en":        datetime.utcnow().isoformat(),
+    }
+    c_retroalimentaciones.create_item(doc)
+    return {"id": retro_id, "mensaje": "Retroalimentación guardada"}
+
+@app.get("/docente/retroalimentaciones/{sesion_id}")
+def retros_de_sesion(sesion_id: str, user=Depends(require_docente)):
+    """El docente consulta las retroalimentaciones que él mismo ha dado sobre una sesión."""
+    items = list(c_retroalimentaciones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
+        enable_cross_partition_query=True))
+    return items
+
+# ---------------------------------------------------------------------------
+# ESTUDIANTE — endpoints propios
+# ---------------------------------------------------------------------------
+@app.get("/estudiante/retroalimentaciones")
+def mis_retroalimentaciones(user=Depends(get_current_user)):
+    """El estudiante ve todos los comentarios que los docentes han dejado sobre sus sesiones."""
+    items = list(c_retroalimentaciones.query_items(
+        f"SELECT * FROM c WHERE c.estudiante_email = '{user['email']}' ORDER BY c.creado_en DESC",
+        enable_cross_partition_query=True))
+    return items
+
+@app.delete("/historial/sesion/{sesion_id}")
+def eliminar_sesion(sesion_id: str, user=Depends(get_current_user)):
+    """El estudiante elimina una sesión propia completamente (sesion + detalle + retroalimentaciones)."""
+    # Verifica que la sesión pertenece al usuario (a menos que sea admin)
+    ses_items = list(c_sesiones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
+        enable_cross_partition_query=True))
+    if not ses_items:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    if ses_items[0]["usuario_id"] != user["email"] and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="No puedes eliminar sesiones de otros usuarios")
+
+    # Elimina de sesiones
+    try: c_sesiones.delete_item(item=ses_items[0]["id"], partition_key=ses_items[0]["sesion_id"])
+    except Exception: pass
+
+    # Elimina detalle
+    det_items = list(c_detalle.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
+        enable_cross_partition_query=True))
+    for d in det_items:
+        try: c_detalle.delete_item(item=d["id"], partition_key=d["sesion_id"])
+        except Exception: pass
+
+    # Elimina retroalimentaciones asociadas
+    retro_items = list(c_retroalimentaciones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
+        enable_cross_partition_query=True))
+    for r in retro_items:
+        try: c_retroalimentaciones.delete_item(item=r["id"], partition_key=r["sesion_id"])
+        except Exception: pass
+
+    return {"mensaje": "Sesión eliminada completamente"}
+
+# ---------------------------------------------------------------------------
 # HEALTH
 # ---------------------------------------------------------------------------
 @app.get("/health")
