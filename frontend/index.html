@@ -1112,9 +1112,10 @@ async function loadPatients() {
 
   try {
     // Carga pacientes y categorías en paralelo
+    // /categorias es público para todos los roles — /admin/categorias solo admin
     const [resPat, resCats] = await Promise.all([
-      fetch(`${API}/patients`, { headers: authHeaders() }),
-      fetch(`${API}/admin/categorias`, { headers: authHeaders() }),
+      fetch(`${API}/patients`,    { headers: authHeaders() }),
+      fetch(`${API}/categorias`,  { headers: authHeaders() }),
     ]);
     allPatients = await resPat.json();
     const cats  = await resCats.json();

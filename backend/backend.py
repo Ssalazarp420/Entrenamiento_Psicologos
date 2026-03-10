@@ -548,6 +548,13 @@ def listar_categorias(user=Depends(require_admin)):
     items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
     return json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED
 
+# Endpoint público — cualquier usuario autenticado puede leer las categorías
+@app.get("/categorias")
+def listar_categorias_publico(user=Depends(get_current_user)):
+    import json
+    items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
+    return json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED
+
 @app.post("/admin/categorias")
 def crear_categoria(req: CategoriaCreate, user=Depends(require_admin)):
     import json
@@ -677,6 +684,14 @@ def actualizar_grupo_admin(grupo_id: str, req: GrupoUpdate, user=Depends(require
 def agregar_estudiante_admin(grupo_id: str, req: AgregarEstudiante, user=Depends(require_admin)):
     try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
     except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    # Verifica que el email corresponde a un usuario registrado con rol estudiante
+    existing = list(c_usuarios.query_items(
+        f"SELECT c.email, c.rol FROM c WHERE c.email = '{req.email}'",
+        enable_cross_partition_query=True))
+    if not existing:
+        raise HTTPException(status_code=404, detail=f"No existe ningún usuario con el correo '{req.email}'")
+    if existing[0].get("rol") not in ["estudiante"]:
+        raise HTTPException(status_code=400, detail=f"El usuario '{req.email}' no tiene rol de estudiante")
     if req.email not in doc["estudiantes"]:
         doc["estudiantes"].append(req.email)
         c_grupos.upsert_item(doc)
@@ -755,6 +770,14 @@ def agregar_estudiante_docente(grupo_id: str, req: AgregarEstudiante, user=Depen
     except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
     if doc["docente_email"] != user["email"] and user["rol"] != "admin":
         raise HTTPException(status_code=403, detail="No puedes modificar un grupo que no es tuyo")
+    # Verifica que el email corresponde a un usuario registrado con rol estudiante
+    existing = list(c_usuarios.query_items(
+        f"SELECT c.email, c.rol FROM c WHERE c.email = '{req.email}'",
+        enable_cross_partition_query=True))
+    if not existing:
+        raise HTTPException(status_code=404, detail=f"No existe ningún usuario con el correo '{req.email}'")
+    if existing[0].get("rol") not in ["estudiante"]:
+        raise HTTPException(status_code=400, detail=f"El usuario '{req.email}' no tiene rol de estudiante")
     if req.email not in doc["estudiantes"]:
         doc["estudiantes"].append(req.email)
         c_grupos.upsert_item(doc)
