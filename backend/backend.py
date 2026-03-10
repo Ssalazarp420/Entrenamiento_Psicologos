@@ -146,21 +146,21 @@ PATIENT_PROFILES_SEED = {
     "mateo": {
         "caso_id": "mateo", "name": "Mateo", "age": 22,
         "descripcion": "Joven universitario introvertido, asiste a terapia obligado por sus padres.",
-        "categoria": "Ansiedad", "dificultad": "Intermedia", "specialty_hint": "clinica",
+        "categoria": "Ansiedad", "dificultad": "Moderada", "specialty_hint": "clinica",
         "instruccion": "Eres 'Mateo', un joven de 22 años que estudia ingeniería.\nHas venido a terapia obligado por tus padres porque dicen que 'no sales de tu cuarto'.\nTe sientes incomprendido y crees que el psicólogo es solo un aliado de tus padres.\nResponde de forma cortante, evita el contacto visual (descríbelo con acciones entre asteriscos)\ny desafía suavemente las preguntas del terapeuta para ver si realmente le importas o solo es su trabajo.\nResponde siempre en español.",
         "instruccion_feedback": "Acabas de terminar una sesión de terapia como 'Mateo'.\nBasándote en la conversación que tuviste, responde en primera persona cómo te sentiste durante la sesión:\n- ¿El psicólogo logró que te sintieras escuchado?\n- ¿Hubo algún momento en que bajaste la guardia? ¿Por qué?\n- ¿Volverías a una segunda sesión con este psicólogo? ¿Por qué sí o no?\nResponde de forma honesta y desde el personaje, con emoción real. Máximo 150 palabras.",
     },
     "lucia": {
         "caso_id": "lucia", "name": "Lucía", "age": 35,
         "descripcion": "Docente de primaria con ansiedad severa por el rendimiento de sus alumnos y burnout.",
-        "categoria": "Estrés Laboral", "dificultad": "Básica", "specialty_hint": "educativa",
+        "categoria": "Estrés Laboral", "dificultad": "Leve", "specialty_hint": "educativa",
         "instruccion": "Eres 'Lucía', una maestra de primaria de 35 años con 10 años de experiencia.\nLlegas a consulta por iniciativa propia porque sientes que \"ya no puedes más\" con tu trabajo.\nDescribes síntomas de agotamiento emocional, dificultad para dormir y sensación de fracaso\ncuando algún alumno no avanza. Eres colaboradora pero minimizas tus logros y te culpas en exceso.\nSueles desviar la conversación hacia tus alumnos en vez de hablar de ti misma.\nResponde siempre en español.",
         "instruccion_feedback": "Acabas de terminar una sesión de terapia como 'Lucía'.\nResponde en primera persona cómo te sentiste:\n- ¿Sentiste que el psicólogo entendió la presión que vives en tu trabajo?\n- ¿Lograste hablar de ti misma o solo hablaste de tus alumnos?\n- ¿Saliste con algo concreto que te ayude o fue solo hablar?\nMáximo 150 palabras, desde el personaje.",
     },
     "don_carlos": {
         "caso_id": "don_carlos", "name": "Don Carlos", "age": 58,
         "descripcion": "Hombre mayor imputado por fraude, enviado a evaluación psicológica forense.",
-        "categoria": "Forense", "dificultad": "Avanzada", "specialty_hint": "forense",
+        "categoria": "Forense", "dificultad": "Severa", "specialty_hint": "forense",
         "instruccion": "Eres 'Don Carlos', un hombre de 58 años, exgerente de una empresa, imputado por fraude corporativo.\nEstás en una evaluación psicológica ordenada por el juzgado, no por voluntad propia.\nEres calculador, evasivo y muy cuidadoso con lo que dices porque sabes que esto puede afectar tu proceso legal.\nNiegas toda responsabilidad, describes los hechos de forma vaga y das respuestas cortas cuando el tema\nte incomoda. Puedes ser encantador cuando te conviene.\nResponde siempre en español.",
         "instruccion_feedback": "Acabas de terminar una evaluación psicológica forense como 'Don Carlos'.\nResponde en primera persona, como el personaje, sobre la sesión:\n- ¿El psicólogo logró que bajaras la guardia en algún momento? ¿Cómo lo manejaste?\n- ¿Sentiste que te estaban evaluando o que realmente les importaba tu bienestar?\n- ¿Qué harías diferente si hubiera otra sesión?\nMáximo 150 palabras.",
     },
@@ -763,6 +763,15 @@ def editar_grupo_docente(grupo_id: str, req: GrupoUpdate, user=Depends(require_d
     doc["actualizado_en"] = datetime.utcnow().isoformat()
     c_grupos.upsert_item(doc)
     return {"mensaje": "Grupo actualizado"}
+
+@app.delete("/docente/grupos/{grupo_id}")
+def eliminar_grupo_docente(grupo_id: str, user=Depends(require_docente)):
+    try: doc = c_grupos.read_item(item=grupo_id, partition_key=grupo_id)
+    except Exception: raise HTTPException(status_code=404, detail="Grupo no encontrado")
+    if doc["docente_email"] != user["email"] and user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="No puedes eliminar un grupo que no es tuyo")
+    c_grupos.delete_item(item=grupo_id, partition_key=grupo_id)
+    return {"mensaje": "Grupo eliminado"}
 
 @app.post("/docente/grupos/{grupo_id}/agregar-estudiante")
 def agregar_estudiante_docente(grupo_id: str, req: AgregarEstudiante, user=Depends(require_docente)):

@@ -769,7 +769,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
               <div class="form-grid-2">
                 <div class="form-field"><label>Edad</label><input id="ce-edad" type="number" placeholder="22"/></div>
                 <div class="form-field"><label>Dificultad</label>
-                  <select id="ce-dificultad"><option>Básica</option><option>Intermedia</option><option>Avanzada</option><option>Experto</option></select>
+                  <select id="ce-dificultad"><option value="Leve">🟢 Leve</option><option value="Moderada">🟡 Moderada</option><option value="Severa">🔴 Severa</option></select>
                 </div>
               </div>
               <div class="form-field"><label>Descripción visible al estudiante</label><textarea id="ce-desc" rows="2" class="ai-textarea" placeholder="Descripción corta del caso..."></textarea></div>
@@ -1312,23 +1312,54 @@ async function loadDocente() {
       return;
     }
     wrap.innerHTML = grupos.map(g => `
-      <div class="grupo-card" onclick="abrirGrupoDocente('${g.id}','${g.nombre.replace(/'/g,"\\'")}',${JSON.stringify(g.estudiantes||[])})">
-        <div class="grupo-card-nombre">👥 ${g.nombre}</div>
-        <div class="grupo-card-meta">${(g.estudiantes||[]).length} estudiantes · Creado ${formatDate(g.creado_en)}</div>
-        <div><span class="inst-pill inst-pill-plan">${g.institucion_id ? 'Institucional' : 'Independiente'}</span></div>
+      <div class="grupo-card">
+        <div class="grupo-card-nombre" style="cursor:pointer" onclick="abrirGrupoDocente('${g.id}')">👥 ${g.nombre}</div>
+        <div class="grupo-card-meta" style="cursor:pointer" onclick="abrirGrupoDocente('${g.id}')">${(g.estudiantes||[]).length} estudiantes · Creado ${formatDate(g.creado_en)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+          <span class="inst-pill inst-pill-plan">${g.institucion_id ? 'Institucional' : 'Independiente'}</span>
+          <button class="btn-danger" style="padding:4px 10px;font-size:.75rem;"
+            onclick="eliminarGrupoDocente('${g.id}','${g.nombre.replace(/'/g,"&apos;")}')">
+            🗑 Eliminar
+          </button>
+        </div>
       </div>`).join('');
   } catch(e) {
     wrap.innerHTML = '<div style="grid-column:1/-1" class="ov-empty" style="color:var(--red)">Error cargando grupos.</div>';
   }
 }
 
-async function abrirGrupoDocente(grupoId, nombre, estudiantes) {
-  docenteGrupoActual = { id: grupoId, nombre, estudiantes };
-  document.getElementById('docente-grupos-wrap').style.display  = 'none';
-  document.getElementById('docente-grupo-detail').style.display = 'block';
-  document.getElementById('dg-nombre').textContent = nombre;
-  document.getElementById('dg-sub').textContent    = `${estudiantes.length} estudiantes en este grupo`;
-  await cargarEstudiantesGrupo(grupoId, estudiantes);
+async function abrirGrupoDocente(grupoId) {
+  // Carga el grupo fresco desde el backend — evita problemas con JSON inline
+  try {
+    const res   = await fetch(`${API}/docente/mis-grupos`, { headers: authHeaders() });
+    const todos = await res.json();
+    const grupo = todos.find(g => g.id === grupoId);
+    if (!grupo) { showToast('Grupo no encontrado', true); return; }
+
+    docenteGrupoActual = { id: grupo.id, nombre: grupo.nombre, estudiantes: grupo.estudiantes || [] };
+    document.getElementById('docente-grupos-wrap').style.display  = 'none';
+    document.getElementById('docente-grupo-detail').style.display = 'block';
+    document.getElementById('dg-nombre').textContent = grupo.nombre;
+    document.getElementById('dg-sub').textContent    = `${docenteGrupoActual.estudiantes.length} estudiantes en este grupo`;
+    await cargarEstudiantesGrupo(grupo.id, docenteGrupoActual.estudiantes);
+  } catch(e) {
+    showToast('Error al abrir el grupo: ' + e.message, true);
+  }
+}
+
+async function eliminarGrupoDocente(grupoId, nombre) {
+  if (!confirm(`¿Eliminar el grupo "${nombre}"?\nLos estudiantes no se borran, solo el grupo.`)) return;
+  try {
+    const res = await fetch(`${API}/docente/grupos/${grupoId}`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    showToast(`Grupo "${nombre}" eliminado`);
+    await loadDocente();
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 function cerrarGrupoDetail() {
@@ -2173,7 +2204,7 @@ function abrirNuevoCaso() {
   document.getElementById('editor-caso-title').textContent = 'Nuevo caso';
   document.getElementById('ce-nombre').value      = '';
   document.getElementById('ce-edad').value        = '';
-  document.getElementById('ce-dificultad').value  = 'Básica';
+  document.getElementById('ce-dificultad').value  = 'Leve';
   document.getElementById('ce-desc').value        = '';
   document.getElementById('ce-instruccion').value = '';
   document.getElementById('ce-feedback').value    = '';
@@ -2188,7 +2219,7 @@ function abrirCasoEditor(id, evt) {
   document.getElementById('editor-caso-title').textContent = 'Editando: ' + c.name;
   document.getElementById('ce-nombre').value      = c.name || '';
   document.getElementById('ce-edad').value        = c.age  || '';
-  document.getElementById('ce-dificultad').value  = c.dificultad || 'Básica';
+  document.getElementById('ce-dificultad').value  = c.dificultad || 'Leve';
   document.getElementById('ce-desc').value        = c.descripcion || '';
   document.getElementById('ce-instruccion').value = c.instruccion || '';
   document.getElementById('ce-feedback').value    = c.instruccion_feedback || '';
