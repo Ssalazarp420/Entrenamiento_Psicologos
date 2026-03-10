@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
@@ -21,7 +21,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://purple-cliff-0fa98ff0f.1.azurestaticapps.net",  # Static Web App
+        "https://purple-cliff-0fa98ff0f.1.azurestaticapps.net",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
@@ -33,31 +33,30 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # COSMOS DB
 # ---------------------------------------------------------------------------
-cosmos_client = CosmosClient.from_connection_string(
-    os.getenv("COSMOS_CONNECTION_STRING")
-)
-db         = cosmos_client.get_database_client("psicoia-db")
-c_usuarios = db.get_container_client("usuarios")
-c_sesiones = db.get_container_client("sesiones")
-c_detalle  = db.get_container_client("sesiones_detalle")
+cosmos_client = CosmosClient.from_connection_string(os.getenv("COSMOS_CONNECTION_STRING"))
+db = cosmos_client.get_database_client("psicoia-db")
+
+c_usuarios      = db.get_container_client("usuarios")
+c_sesiones      = db.get_container_client("sesiones")
+c_detalle       = db.get_container_client("sesiones_detalle")
+c_instituciones = db.get_container_client("instituciones")
+c_casos         = db.get_container_client("casos")
+c_pagos         = db.get_container_client("pagos")
+c_config        = db.get_container_client("config")
 
 # ---------------------------------------------------------------------------
 # AUTH
 # ---------------------------------------------------------------------------
-SECRET_KEY    = os.getenv("JWT_SECRET", "cambia-esto-en-produccion")
-ALGORITHM     = "HS256"
-TOKEN_EXPIRE  = 60 * 8  # 8 horas
+SECRET_KEY   = os.getenv("JWT_SECRET", "cambia-esto-en-produccion")
+ALGORITHM    = "HS256"
+TOKEN_EXPIRE = 60 * 8
 
 pwd_ctx       = CryptContext(schemes=["bcrypt"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def hash_password(p: str) -> str:
-    return pwd_ctx.hash(p)
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_ctx.verify(plain, hashed)
-
-def create_token(data: dict) -> str:
+def hash_password(p):        return pwd_ctx.hash(p)
+def verify_password(p, h):   return pwd_ctx.verify(p, h)
+def create_token(data):
     exp = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE)
     return jwt.encode({**data, "exp": exp}, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -66,86 +65,108 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email   = payload.get("sub")
         rol     = payload.get("rol")
-        if not email:
-            raise HTTPException(status_code=401, detail="Token inválido")
+        if not email: raise HTTPException(status_code=401, detail="Token inválido")
         return {"email": email, "rol": rol}
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
+def require_admin(user=Depends(get_current_user)):
+    if user["rol"] != "admin":
+        raise HTTPException(status_code=403, detail="Acceso solo para administradores")
+    return user
+
 # ---------------------------------------------------------------------------
-# PERFILES DE PACIENTES SIMULADOS
+# MODELOS
 # ---------------------------------------------------------------------------
-PATIENT_PROFILES = {
+class RegisterRequest(BaseModel):
+    nombre: str; email: str; password: str; rol: str = "estudiante"
+
+class NewSessionRequest(BaseModel):
+    patient_id: Optional[str] = None
+
+class MessageRequest(BaseModel):
+    session_id: str; message: str
+
+class SessionResponse(BaseModel):
+    session_id: str
+
+class InstitucionCreate(BaseModel):
+    nombre: str
+    nit: Optional[str] = None
+    contacto: Optional[str] = None
+    email: Optional[str] = None
+    telefono: Optional[str] = None
+    ciudad: Optional[str] = None
+    dominio: Optional[str] = None
+
+class SuscripcionUpdate(BaseModel):
+    plan: Optional[str] = None
+    suscripcion_estado: Optional[str] = None
+    sus_inicio: Optional[str] = None
+    sus_fin: Optional[str] = None
+    sus_monto: Optional[float] = None
+    sus_notas: Optional[str] = None
+
+class ContratoUpdate(BaseModel):
+    ct_numero: Optional[str] = None
+    ct_fecha: Optional[str] = None
+    ct_vigencia: Optional[int] = None
+    ct_desc: Optional[str] = None
+
+class CasoCreate(BaseModel):
+    name: str; age: int
+    descripcion: Optional[str] = None
+    instruccion: str
+    instruccion_feedback: str
+    categoria: Optional[str] = "General"
+    dificultad: Optional[str] = "Básica"
+    specialty_hint: Optional[str] = None
+
+class CategoriaCreate(BaseModel):
+    nombre: str
+
+class PagoCreate(BaseModel):
+    tipo: str; origen: str
+    origen_id: Optional[str] = None
+    monto: float; fecha: str
+    metodo: Optional[str] = None
+    referencia: Optional[str] = None
+    estado: Optional[str] = "confirmado"
+
+class ConfigUpdate(BaseModel):
+    valor: str
+
+class VincularUsuario(BaseModel):
+    email: str; rol: str; institucion_id: str
+
+# ---------------------------------------------------------------------------
+# SEEDS
+# ---------------------------------------------------------------------------
+PATIENT_PROFILES_SEED = {
     "mateo": {
-        "name": "Mateo",
-        "age": 22,
-        "description": "Joven universitario introvertido, asiste a terapia obligado por sus padres.",
-        "specialty_hint": "clinica",
-        "instruccion": """
-Eres 'Mateo', un joven de 22 años que estudia ingeniería.
-Has venido a terapia obligado por tus padres porque dicen que 'no sales de tu cuarto'.
-Te sientes incomprendido y crees que el psicólogo es solo un aliado de tus padres.
-Responde de forma cortante, evita el contacto visual (descríbelo con acciones entre asteriscos)
-y desafía suavemente las preguntas del terapeuta para ver si realmente le importas o solo es su trabajo.
-Responde siempre en español.
-""",
-        "instruccion_feedback": """
-Acabas de terminar una sesión de terapia como 'Mateo'.
-Basándote en la conversación que tuviste, responde en primera persona cómo te sentiste durante la sesión:
-- ¿El psicólogo logró que te sintieras escuchado?
-- ¿Hubo algún momento en que bajaste la guardia? ¿Por qué?
-- ¿Volverías a una segunda sesión con este psicólogo? ¿Por qué sí o no?
-Responde de forma honesta y desde el personaje, con emoción real. Máximo 150 palabras.
-""",
+        "caso_id": "mateo", "name": "Mateo", "age": 22,
+        "descripcion": "Joven universitario introvertido, asiste a terapia obligado por sus padres.",
+        "categoria": "Ansiedad", "dificultad": "Intermedia", "specialty_hint": "clinica",
+        "instruccion": "Eres 'Mateo', un joven de 22 años que estudia ingeniería.\nHas venido a terapia obligado por tus padres porque dicen que 'no sales de tu cuarto'.\nTe sientes incomprendido y crees que el psicólogo es solo un aliado de tus padres.\nResponde de forma cortante, evita el contacto visual (descríbelo con acciones entre asteriscos)\ny desafía suavemente las preguntas del terapeuta para ver si realmente le importas o solo es su trabajo.\nResponde siempre en español.",
+        "instruccion_feedback": "Acabas de terminar una sesión de terapia como 'Mateo'.\nBasándote en la conversación que tuviste, responde en primera persona cómo te sentiste durante la sesión:\n- ¿El psicólogo logró que te sintieras escuchado?\n- ¿Hubo algún momento en que bajaste la guardia? ¿Por qué?\n- ¿Volverías a una segunda sesión con este psicólogo? ¿Por qué sí o no?\nResponde de forma honesta y desde el personaje, con emoción real. Máximo 150 palabras.",
     },
     "lucia": {
-        "name": "Lucía",
-        "age": 35,
-        "description": "Docente de primaria con ansiedad severa por el rendimiento de sus alumnos y burnout.",
-        "specialty_hint": "educativa",
-        "instruccion": """
-Eres 'Lucía', una maestra de primaria de 35 años con 10 años de experiencia.
-Llegas a consulta por iniciativa propia porque sientes que "ya no puedes más" con tu trabajo.
-Describes síntomas de agotamiento emocional, dificultad para dormir y sensación de fracaso
-cuando algún alumno no avanza. Eres colaboradora pero minimizas tus logros y te culpas en exceso.
-Sueles desviar la conversación hacia tus alumnos en vez de hablar de ti misma.
-Responde siempre en español.
-""",
-        "instruccion_feedback": """
-Acabas de terminar una sesión de terapia como 'Lucía'.
-Responde en primera persona cómo te sentiste:
-- ¿Sentiste que el psicólogo entendió la presión que vives en tu trabajo?
-- ¿Lograste hablar de ti misma o solo hablaste de tus alumnos?
-- ¿Saliste con algo concreto que te ayude o fue solo hablar?
-Máximo 150 palabras, desde el personaje.
-""",
+        "caso_id": "lucia", "name": "Lucía", "age": 35,
+        "descripcion": "Docente de primaria con ansiedad severa por el rendimiento de sus alumnos y burnout.",
+        "categoria": "Estrés Laboral", "dificultad": "Básica", "specialty_hint": "educativa",
+        "instruccion": "Eres 'Lucía', una maestra de primaria de 35 años con 10 años de experiencia.\nLlegas a consulta por iniciativa propia porque sientes que \"ya no puedes más\" con tu trabajo.\nDescribes síntomas de agotamiento emocional, dificultad para dormir y sensación de fracaso\ncuando algún alumno no avanza. Eres colaboradora pero minimizas tus logros y te culpas en exceso.\nSueles desviar la conversación hacia tus alumnos en vez de hablar de ti misma.\nResponde siempre en español.",
+        "instruccion_feedback": "Acabas de terminar una sesión de terapia como 'Lucía'.\nResponde en primera persona cómo te sentiste:\n- ¿Sentiste que el psicólogo entendió la presión que vives en tu trabajo?\n- ¿Lograste hablar de ti misma o solo hablaste de tus alumnos?\n- ¿Saliste con algo concreto que te ayude o fue solo hablar?\nMáximo 150 palabras, desde el personaje.",
     },
     "don_carlos": {
-        "name": "Don Carlos",
-        "age": 58,
-        "description": "Hombre mayor imputado por fraude, enviado a evaluación psicológica forense.",
-        "specialty_hint": "forense",
-        "instruccion": """
-Eres 'Don Carlos', un hombre de 58 años, exgerente de una empresa, imputado por fraude corporativo.
-Estás en una evaluación psicológica ordenada por el juzgado, no por voluntad propia.
-Eres calculador, evasivo y muy cuidadoso con lo que dices porque sabes que esto puede afectar tu proceso legal.
-Niegas toda responsabilidad, describes los hechos de forma vaga y das respuestas cortas cuando el tema
-te incomoda. Puedes ser encantador cuando te conviene.
-Responde siempre en español.
-""",
-        "instruccion_feedback": """
-Acabas de terminar una evaluación psicológica forense como 'Don Carlos'.
-Responde en primera persona, como el personaje, sobre la sesión:
-- ¿El psicólogo logró que bajaras la guardia en algún momento? ¿Cómo lo manejaste?
-- ¿Sentiste que te estaban evaluando o que realmente les importaba tu bienestar?
-- ¿Qué harías diferente si hubiera otra sesión?
-Máximo 150 palabras.
-""",
+        "caso_id": "don_carlos", "name": "Don Carlos", "age": 58,
+        "descripcion": "Hombre mayor imputado por fraude, enviado a evaluación psicológica forense.",
+        "categoria": "Forense", "dificultad": "Avanzada", "specialty_hint": "forense",
+        "instruccion": "Eres 'Don Carlos', un hombre de 58 años, exgerente de una empresa, imputado por fraude corporativo.\nEstás en una evaluación psicológica ordenada por el juzgado, no por voluntad propia.\nEres calculador, evasivo y muy cuidadoso con lo que dices porque sabes que esto puede afectar tu proceso legal.\nNiegas toda responsabilidad, describes los hechos de forma vaga y das respuestas cortas cuando el tema\nte incomoda. Puedes ser encantador cuando te conviene.\nResponde siempre en español.",
+        "instruccion_feedback": "Acabas de terminar una evaluación psicológica forense como 'Don Carlos'.\nResponde en primera persona, como el personaje, sobre la sesión:\n- ¿El psicólogo logró que bajaras la guardia en algún momento? ¿Cómo lo manejaste?\n- ¿Sentiste que te estaban evaluando o que realmente les importaba tu bienestar?\n- ¿Qué harías diferente si hubiera otra sesión?\nMáximo 150 palabras.",
     },
 }
 
-instruccion_analisis_objetivo = """
-Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades:
+ANALISIS_OBJETIVO_SEED = """Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades:
 psicología clínica, psicología educativa, psicología forense, psicología organizacional,
 psicología de la salud y neuropsicología.
 
@@ -170,32 +191,9 @@ Analiza la sesión y entrega un reporte estructurado con los siguientes puntos:
 
 7. **Recomendación**: Una sugerencia concreta para la próxima sesión.
 
-Sé directo, constructivo y específico. Basa todo en lo que realmente ocurrió en la conversación.
-"""
+Sé directo, constructivo y específico. Basa todo en lo que realmente ocurrió en la conversación."""
 
-# ---------------------------------------------------------------------------
-# SESIONES EN MEMORIA
-# ---------------------------------------------------------------------------
-sessions: dict = {}
-
-# ---------------------------------------------------------------------------
-# MODELOS PYDANTIC
-# ---------------------------------------------------------------------------
-class RegisterRequest(BaseModel):
-    nombre:   str
-    email:    str
-    password: str
-    rol:      str = "estudiante"  # estudiante | docente | admin
-
-class NewSessionRequest(BaseModel):
-    patient_id: Optional[str] = "mateo"
-
-class MessageRequest(BaseModel):
-    session_id: str
-    message:    str
-
-class SessionResponse(BaseModel):
-    session_id: str
+CATEGORIAS_SEED = ["Ansiedad", "Depresión", "Estrés Laboral", "Forense", "Duelo", "General"]
 
 # ---------------------------------------------------------------------------
 # HELPERS
@@ -208,7 +206,7 @@ def get_model():
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
     )
 
-def extraer_puntuacion(texto: str) -> Optional[int]:
+def extraer_puntuacion(texto):
     import re
     match = re.search(r'\b([0-9]{1,3})\s*(?:\/\s*100|puntos?)?', texto)
     if match:
@@ -216,26 +214,54 @@ def extraer_puntuacion(texto: str) -> Optional[int]:
         return val if val <= 100 else None
     return None
 
+def get_casos_dict():
+    items = list(c_casos.query_items("SELECT * FROM c", enable_cross_partition_query=True))
+    if items:
+        return {item["caso_id"]: item for item in items}
+    return PATIENT_PROFILES_SEED
+
+def get_analisis_objetivo():
+    try:
+        items = list(c_config.query_items(
+            "SELECT * FROM c WHERE c.id = 'analisis_objetivo'",
+            enable_cross_partition_query=True
+        ))
+        if items: return items[0]["valor"]
+    except Exception:
+        pass
+    return ANALISIS_OBJETIVO_SEED
+
+sessions: dict = {}
+
 # ---------------------------------------------------------------------------
 # AUTH ENDPOINTS
 # ---------------------------------------------------------------------------
 @app.post("/auth/register")
 def register(req: RegisterRequest):
-    query    = f"SELECT * FROM c WHERE c.email = '{req.email}'"
-    existing = list(c_usuarios.query_items(query, enable_cross_partition_query=True))
-    if existing:
+    query = f"SELECT * FROM c WHERE c.email = '{req.email}'"
+    if list(c_usuarios.query_items(query, enable_cross_partition_query=True)):
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
+    institucion_id = None
+    try:
+        for inst in c_instituciones.query_items(
+            "SELECT c.id, c.dominio FROM c WHERE IS_DEFINED(c.dominio)",
+            enable_cross_partition_query=True
+        ):
+            if inst.get("dominio") and req.email.endswith(inst["dominio"].lstrip("@")):
+                institucion_id = inst["id"]
+                break
+    except Exception:
+        pass
+
     usuario = {
-        "id":        str(uuid.uuid4()),
-        "email":     req.email,
-        "nombre":    req.nombre,
-        "password":  hash_password(req.password),
-        "rol":       req.rol,
+        "id": str(uuid.uuid4()), "email": req.email, "nombre": req.nombre,
+        "password": hash_password(req.password), "rol": req.rol,
         "creado_en": datetime.utcnow().isoformat(),
+        "institucion_id": institucion_id, "activo": True,
     }
     c_usuarios.create_item(usuario)
-    return {"mensaje": "Usuario registrado correctamente"}
+    return {"mensaje": "Usuario registrado correctamente", "institucion_id": institucion_id}
 
 
 @app.post("/auth/login")
@@ -244,87 +270,64 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
     users = list(c_usuarios.query_items(query, enable_cross_partition_query=True))
     if not users or not verify_password(form.password, users[0]["password"]):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-
-    u     = users[0]
+    u = users[0]
+    if not u.get("activo", True):
+        raise HTTPException(status_code=403, detail="Cuenta desactivada. Contacta al administrador.")
     token = create_token({"sub": u["email"], "rol": u["rol"], "nombre": u["nombre"]})
-    return {
-        "access_token": token,
-        "token_type":   "bearer",
-        "rol":          u["rol"],
-        "nombre":       u["nombre"],
-    }
+    return {"access_token": token, "token_type": "bearer", "rol": u["rol"],
+            "nombre": u["nombre"], "institucion_id": u.get("institucion_id")}
 
 
 @app.get("/auth/me")
 def me(user=Depends(get_current_user)):
-    query = f"SELECT c.nombre, c.email, c.rol, c.creado_en FROM c WHERE c.email = '{user['email']}'"
+    query = f"SELECT c.nombre, c.email, c.rol, c.creado_en, c.institucion_id FROM c WHERE c.email = '{user['email']}'"
     data  = list(c_usuarios.query_items(query, enable_cross_partition_query=True))
     return data[0] if data else {}
 
 # ---------------------------------------------------------------------------
-# PATIENTS ENDPOINT
+# PATIENTS
 # ---------------------------------------------------------------------------
 @app.get("/patients")
 def list_patients(user=Depends(get_current_user)):
-    return {
-        pid: {
-            "name":        profile["name"],
-            "age":         profile["age"],
-            "description": profile["description"],
-        }
-        for pid, profile in PATIENT_PROFILES.items()
-    }
+    casos = get_casos_dict()
+    return {pid: {"name": p.get("name"), "age": p.get("age"),
+                  "descripcion": p.get("descripcion", ""), "categoria": p.get("categoria", "General"),
+                  "dificultad": p.get("dificultad", "—")} for pid, p in casos.items()}
 
 # ---------------------------------------------------------------------------
-# SESSION ENDPOINTS
+# SESSIONS
 # ---------------------------------------------------------------------------
 @app.post("/session/new")
 def new_session(req: NewSessionRequest, user=Depends(get_current_user)):
     patient_id = req.patient_id or "mateo"
-    if patient_id not in PATIENT_PROFILES:
+    casos = get_casos_dict()
+    if patient_id not in casos:
         raise HTTPException(status_code=400, detail=f"Perfil '{patient_id}' no encontrado.")
-
     session_id = str(uuid.uuid4())
-    profile    = PATIENT_PROFILES[patient_id]
-
+    profile = casos[patient_id]
     sessions[session_id] = {
-        "messages":   [SystemMessage(content=profile["instruccion"])],
-        "patient_id": patient_id,
-        "usuario_id": user["email"],
-        "inicio":     datetime.utcnow().isoformat(),
+        "messages": [SystemMessage(content=profile["instruccion"])],
+        "patient_id": patient_id, "usuario_id": user["email"],
+        "inicio": datetime.utcnow().isoformat(),
     }
-
     c_sesiones.create_item({
-        "id":           session_id,
-        "sesion_id":    session_id,
-        "usuario_id":   user["email"],
-        "patient_id":   patient_id,
-        "patient_name": profile["name"],
-        "inicio":       datetime.utcnow().isoformat(),
-        "estado":       "activa",
-        "puntuacion":   None,
+        "id": session_id, "sesion_id": session_id, "usuario_id": user["email"],
+        "patient_id": patient_id, "patient_name": profile["name"],
+        "inicio": datetime.utcnow().isoformat(), "estado": "activa", "puntuacion": None,
     })
-
-    return {
-        "session_id": session_id,
-        "patient": {
-            "id":          patient_id,
-            "name":        profile["name"],
-            "age":         profile["age"],
-            "description": profile["description"],
-        }
-    }
+    return {"session_id": session_id, "patient": {
+        "id": patient_id, "name": profile["name"], "age": profile["age"],
+        "descripcion": profile.get("descripcion", ""),
+    }}
 
 
 @app.post("/chat")
 def chat(req: MessageRequest, user=Depends(get_current_user)):
     if req.session_id not in sessions:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
-
-    model   = get_model()
+    model = get_model()
     session = sessions[req.session_id]
     session["messages"].append(HumanMessage(content=req.message))
-
     try:
         response = model.invoke(session["messages"])
         session["messages"].append(AIMessage(content=response.content))
@@ -337,146 +340,275 @@ def chat(req: MessageRequest, user=Depends(get_current_user)):
 def end_session(req: SessionResponse, user=Depends(get_current_user)):
     if req.session_id not in sessions:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
-
-    model      = get_model()
-    session    = sessions[req.session_id]
+    model = get_model()
+    session = sessions[req.session_id]
     patient_id = session["patient_id"]
-    profile    = PATIENT_PROFILES[patient_id]
-    historial  = session["messages"]
-
+    casos = get_casos_dict()
+    profile = casos[patient_id]
+    historial = session["messages"]
     historial_texto = "\n".join([
         f"{'Psicólogo' if isinstance(m, HumanMessage) else profile['name']}: {m.content}"
-        for m in historial
-        if isinstance(m, (HumanMessage, AIMessage))
+        for m in historial if isinstance(m, (HumanMessage, AIMessage))
     ])
-
+    analisis_objetivo = get_analisis_objetivo()
     try:
-        feedback_msgs = [
+        feedback_paciente = model.invoke([
             SystemMessage(content=profile["instruccion_feedback"]),
             HumanMessage(content=f"Esta fue nuestra sesión:\n{historial_texto}\n\n¿Cómo te sentiste?")
-        ]
-        feedback_paciente = model.invoke(feedback_msgs).content
-
-        analisis_msgs = [
-            SystemMessage(content=instruccion_analisis_objetivo),
-            HumanMessage(content=(
-                f"Paciente simulado: {profile['name']}, {profile['age']} años — {profile['description']}\n\n"
-                f"Sesión completa:\n{historial_texto}"
-            ))
-        ]
-        analisis   = model.invoke(analisis_msgs).content
+        ]).content
+        analisis = model.invoke([
+            SystemMessage(content=analisis_objetivo),
+            HumanMessage(content=f"Paciente simulado: {profile['name']}, {profile['age']} años — {profile.get('descripcion', '')}\n\nSesión completa:\n{historial_texto}")
+        ]).content
         puntuacion = extraer_puntuacion(analisis)
-
-        # Actualizar resumen en sesiones
         c_sesiones.upsert_item({
-            "id":           req.session_id,
-            "sesion_id":    req.session_id,
-            "usuario_id":   user["email"],
-            "patient_id":   patient_id,
-            "patient_name": profile["name"],
-            "inicio":       session.get("inicio", datetime.utcnow().isoformat()),
-            "fin":          datetime.utcnow().isoformat(),
-            "estado":       "completada",
-            "puntuacion":   puntuacion,
+            "id": req.session_id, "sesion_id": req.session_id, "usuario_id": user["email"],
+            "patient_id": patient_id, "patient_name": profile["name"],
+            "inicio": session.get("inicio"), "fin": datetime.utcnow().isoformat(),
+            "estado": "completada", "puntuacion": puntuacion,
         })
-
-        # Guardar detalle completo en sesiones_detalle
         c_detalle.create_item({
-            "id":                str(uuid.uuid4()),
-            "sesion_id":         req.session_id,
-            "usuario_id":        user["email"],
-            "transcripcion":     historial_texto,
-            "feedback_paciente": feedback_paciente,
-            "analisis_objetivo": analisis,
-            "guardado_en":       datetime.utcnow().isoformat(),
+            "id": str(uuid.uuid4()), "sesion_id": req.session_id, "usuario_id": user["email"],
+            "transcripcion": historial_texto, "feedback_paciente": feedback_paciente,
+            "analisis_objetivo": analisis, "guardado_en": datetime.utcnow().isoformat(),
         })
-
         del sessions[req.session_id]
-
-        return {
-            "patient_id":        patient_id,
-            "patient_name":      profile["name"],
-            "feedback_paciente": feedback_paciente,
-            "analisis_objetivo": analisis,
-            "puntuacion":        puntuacion,
-        }
-
+        return {"patient_id": patient_id, "patient_name": profile["name"],
+                "feedback_paciente": feedback_paciente, "analisis_objetivo": analisis, "puntuacion": puntuacion}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------------------------------------------------------------------
-# HISTORIAL ENDPOINTS
+# HISTORIAL
 # ---------------------------------------------------------------------------
 @app.get("/historial/mis-sesiones")
 def mis_sesiones(user=Depends(get_current_user)):
-    """El estudiante ve un resumen de sus propias sesiones."""
-    query = f"""
-        SELECT c.sesion_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado
-        FROM c WHERE c.usuario_id = '{user['email']}'
-        ORDER BY c.inicio DESC
-    """
+    query = f"SELECT c.sesion_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado FROM c WHERE c.usuario_id = '{user['email']}' ORDER BY c.inicio DESC"
     return list(c_sesiones.query_items(query, enable_cross_partition_query=True))
-
 
 @app.get("/historial/sesion/{sesion_id}")
 def detalle_sesion(sesion_id: str, user=Depends(get_current_user)):
-    """Ver transcripción y análisis completo de una sesión."""
-    query = f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'"
-    items = list(c_detalle.query_items(query, enable_cross_partition_query=True))
-    if not items:
-        raise HTTPException(status_code=404, detail="Sesión no encontrada")
-
+    items = list(c_detalle.query_items(f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Sesión no encontrada")
     detalle = items[0]
     if user["rol"] == "estudiante" and detalle["usuario_id"] != user["email"]:
         raise HTTPException(status_code=403, detail="Acceso denegado")
-
     return detalle
-
 
 @app.get("/historial/todos")
 def todas_sesiones(user=Depends(get_current_user)):
-    """Solo docentes y admin pueden ver todas las sesiones."""
     if user["rol"] not in ["docente", "admin"]:
         raise HTTPException(status_code=403, detail="Acceso denegado")
-
-    query = """
-        SELECT c.sesion_id, c.usuario_id, c.patient_name,
-               c.inicio, c.fin, c.puntuacion, c.estado
-        FROM c WHERE c.estado = 'completada'
-        ORDER BY c.inicio DESC
-    """
+    query = "SELECT c.sesion_id, c.usuario_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado FROM c ORDER BY c.inicio DESC"
     return list(c_sesiones.query_items(query, enable_cross_partition_query=True))
 
 # ---------------------------------------------------------------------------
-# ADMIN ENDPOINTS
+# ADMIN — USUARIOS
 # ---------------------------------------------------------------------------
 @app.get("/admin/usuarios")
-def listar_usuarios(user=Depends(get_current_user)):
-    """Solo admin puede ver todos los usuarios."""
-    if user["rol"] != "admin":
-        raise HTTPException(status_code=403, detail="Acceso denegado")
+def listar_usuarios(user=Depends(require_admin)):
+    return list(c_usuarios.query_items(
+        "SELECT c.id, c.nombre, c.email, c.rol, c.creado_en, c.institucion_id, c.activo FROM c",
+        enable_cross_partition_query=True))
 
-    query = "SELECT c.id, c.nombre, c.email, c.rol, c.creado_en FROM c"
-    return list(c_usuarios.query_items(query, enable_cross_partition_query=True))
-
+@app.put("/admin/usuario/{email}")
+def editar_usuario(email: str, body: dict, user=Depends(require_admin)):
+    items = list(c_usuarios.query_items(f"SELECT * FROM c WHERE c.email = '{email}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u = items[0]
+    for campo in ["nombre", "rol", "activo", "institucion_id"]:
+        if campo in body: u[campo] = body[campo]
+    if body.get("password"): u["password"] = hash_password(body["password"])
+    c_usuarios.upsert_item(u)
+    return {"mensaje": "Usuario actualizado"}
 
 @app.delete("/admin/usuario/{email}")
-def eliminar_usuario(email: str, user=Depends(get_current_user)):
-    """Solo admin puede eliminar usuarios."""
-    if user["rol"] != "admin":
-        raise HTTPException(status_code=403, detail="Acceso denegado")
+def eliminar_usuario(email: str, user=Depends(require_admin)):
+    items = list(c_usuarios.query_items(f"SELECT * FROM c WHERE c.email = '{email}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    c_usuarios.delete_item(item=items[0]["id"], partition_key=items[0]["id"])
+    return {"mensaje": f"Usuario {email} eliminado"}
 
-    query    = f"SELECT * FROM c WHERE c.email = '{email}'"
-    existing = list(c_usuarios.query_items(query, enable_cross_partition_query=True))
-    if not existing:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+# ---------------------------------------------------------------------------
+# ADMIN — INSTITUCIONES
+# ---------------------------------------------------------------------------
+@app.get("/admin/instituciones")
+def listar_instituciones(user=Depends(require_admin)):
+    return list(c_instituciones.query_items("SELECT * FROM c ORDER BY c.nombre ASC", enable_cross_partition_query=True))
 
-    c_usuarios.delete_item(item=existing[0]["id"], partition_key=email)
-    return {"mensaje": f"Usuario {email} eliminado correctamente"}
+@app.post("/admin/instituciones")
+def crear_institucion(req: InstitucionCreate, user=Depends(require_admin)):
+    inst_id = str(uuid.uuid4())
+    c_instituciones.create_item({
+        "id": inst_id, "nombre": req.nombre, "nit": req.nit,
+        "contacto": req.contacto, "email": req.email, "telefono": req.telefono,
+        "ciudad": req.ciudad, "dominio": req.dominio,
+        "creado_en": datetime.utcnow().isoformat(),
+        "suscripcion_estado": "prueba", "plan": None,
+        "sus_inicio": None, "sus_fin": None, "sus_monto": None, "sus_notas": None,
+        "ct_numero": None, "ct_fecha": None, "ct_vigencia": None, "ct_desc": None,
+    })
+    return {"id": inst_id, "mensaje": "Institución creada"}
+
+@app.get("/admin/instituciones/{inst_id}")
+def obtener_institucion(inst_id: str, user=Depends(require_admin)):
+    try: return c_instituciones.read_item(item=inst_id, partition_key=inst_id)
+    except Exception: raise HTTPException(status_code=404, detail="Institución no encontrada")
+
+@app.put("/admin/instituciones/{inst_id}")
+def actualizar_institucion(inst_id: str, req: InstitucionCreate, user=Depends(require_admin)):
+    try: doc = c_instituciones.read_item(item=inst_id, partition_key=inst_id)
+    except Exception: raise HTTPException(status_code=404, detail="Institución no encontrada")
+    for field, val in req.dict(exclude_none=True).items(): doc[field] = val
+    c_instituciones.upsert_item(doc)
+    return {"mensaje": "Institución actualizada"}
+
+@app.put("/admin/instituciones/{inst_id}/suscripcion")
+def actualizar_suscripcion(inst_id: str, req: SuscripcionUpdate, user=Depends(require_admin)):
+    try: doc = c_instituciones.read_item(item=inst_id, partition_key=inst_id)
+    except Exception: raise HTTPException(status_code=404, detail="Institución no encontrada")
+    for field, val in req.dict(exclude_none=True).items(): doc[field] = val
+    c_instituciones.upsert_item(doc)
+    return {"mensaje": "Suscripción actualizada"}
+
+@app.put("/admin/instituciones/{inst_id}/contrato")
+def actualizar_contrato(inst_id: str, req: ContratoUpdate, user=Depends(require_admin)):
+    try: doc = c_instituciones.read_item(item=inst_id, partition_key=inst_id)
+    except Exception: raise HTTPException(status_code=404, detail="Institución no encontrada")
+    for field, val in req.dict(exclude_none=True).items(): doc[field] = val
+    c_instituciones.upsert_item(doc)
+    return {"mensaje": "Contrato actualizado"}
+
+@app.delete("/admin/instituciones/{inst_id}")
+def eliminar_institucion(inst_id: str, user=Depends(require_admin)):
+    try:
+        c_instituciones.delete_item(item=inst_id, partition_key=inst_id)
+        return {"mensaje": "Institución eliminada"}
+    except Exception: raise HTTPException(status_code=404, detail="Institución no encontrada")
+
+@app.get("/admin/instituciones/{inst_id}/usuarios")
+def usuarios_de_institucion(inst_id: str, user=Depends(require_admin)):
+    return list(c_usuarios.query_items(
+        f"SELECT c.id, c.nombre, c.email, c.rol, c.creado_en, c.activo FROM c WHERE c.institucion_id = '{inst_id}'",
+        enable_cross_partition_query=True))
+
+@app.post("/admin/instituciones/{inst_id}/vincular")
+def vincular_usuario(inst_id: str, req: VincularUsuario, user=Depends(require_admin)):
+    items = list(c_usuarios.query_items(f"SELECT * FROM c WHERE c.email = '{req.email}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u = items[0]; u["institucion_id"] = inst_id; u["rol"] = req.rol
+    c_usuarios.upsert_item(u)
+    return {"mensaje": f"Usuario {req.email} vinculado"}
+
+@app.post("/admin/instituciones/{inst_id}/desvincular/{email}")
+def desvincular_usuario(inst_id: str, email: str, user=Depends(require_admin)):
+    items = list(c_usuarios.query_items(f"SELECT * FROM c WHERE c.email = '{email}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u = items[0]; u["institucion_id"] = None
+    c_usuarios.upsert_item(u)
+    return {"mensaje": f"Usuario {email} desvinculado"}
+
+# ---------------------------------------------------------------------------
+# ADMIN — CASOS IA
+# ---------------------------------------------------------------------------
+@app.get("/admin/casos")
+def listar_casos(user=Depends(require_admin)):
+    items = list(c_casos.query_items("SELECT * FROM c", enable_cross_partition_query=True))
+    return items if items else list(PATIENT_PROFILES_SEED.values())
+
+@app.post("/admin/casos")
+def crear_caso(req: CasoCreate, user=Depends(require_admin)):
+    caso_id = req.name.lower().replace(" ", "_")
+    if list(c_casos.query_items(f"SELECT c.id FROM c WHERE c.caso_id = '{caso_id}'", enable_cross_partition_query=True)):
+        raise HTTPException(status_code=400, detail=f"Ya existe un caso con id '{caso_id}'")
+    doc = {"id": str(uuid.uuid4()), "caso_id": caso_id,
+           "creado_en": datetime.utcnow().isoformat(), "creado_por": user["email"], **req.dict()}
+    c_casos.create_item(doc)
+    return {"caso_id": caso_id, "mensaje": "Caso creado"}
+
+@app.put("/admin/casos/{caso_id}")
+def actualizar_caso(caso_id: str, req: CasoCreate, user=Depends(require_admin)):
+    items = list(c_casos.query_items(f"SELECT * FROM c WHERE c.caso_id = '{caso_id}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Caso no encontrado")
+    doc = items[0]; doc.update(req.dict())
+    doc["actualizado_en"] = datetime.utcnow().isoformat(); doc["actualizado_por"] = user["email"]
+    c_casos.upsert_item(doc)
+    return {"mensaje": "Caso actualizado"}
+
+@app.delete("/admin/casos/{caso_id}")
+def eliminar_caso(caso_id: str, user=Depends(require_admin)):
+    items = list(c_casos.query_items(f"SELECT * FROM c WHERE c.caso_id = '{caso_id}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Caso no encontrado")
+    c_casos.delete_item(item=items[0]["id"], partition_key=items[0]["id"])
+    return {"mensaje": f"Caso '{caso_id}' eliminado"}
+
+@app.get("/admin/categorias")
+def listar_categorias(user=Depends(require_admin)):
+    import json
+    items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
+    return json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED
+
+@app.post("/admin/categorias")
+def crear_categoria(req: CategoriaCreate, user=Depends(require_admin)):
+    import json
+    items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
+    cats = json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED.copy()
+    if req.nombre in cats: raise HTTPException(status_code=400, detail="La categoría ya existe")
+    cats.append(req.nombre)
+    c_config.upsert_item({"id": "categorias", "valor": json.dumps(cats)})
+    return {"mensaje": "Categoría creada", "categorias": cats}
+
+# ---------------------------------------------------------------------------
+# ADMIN — CONFIG GLOBAL
+# ---------------------------------------------------------------------------
+@app.get("/admin/config/{clave}")
+def obtener_config(clave: str, user=Depends(require_admin)):
+    items = list(c_config.query_items(f"SELECT * FROM c WHERE c.id = '{clave}'", enable_cross_partition_query=True))
+    if not items:
+        if clave == "analisis_objetivo": return {"id": clave, "valor": ANALISIS_OBJETIVO_SEED}
+        raise HTTPException(status_code=404, detail=f"Clave '{clave}' no encontrada")
+    return items[0]
+
+@app.put("/admin/config/{clave}")
+def actualizar_config(clave: str, req: ConfigUpdate, user=Depends(require_admin)):
+    c_config.upsert_item({"id": clave, "valor": req.valor,
+                          "actualizado_en": datetime.utcnow().isoformat(), "actualizado_por": user["email"]})
+    return {"mensaje": f"Config '{clave}' actualizada"}
+
+# ---------------------------------------------------------------------------
+# ADMIN — PAGOS
+# ---------------------------------------------------------------------------
+@app.get("/admin/pagos")
+def listar_pagos(user=Depends(require_admin)):
+    return list(c_pagos.query_items("SELECT * FROM c ORDER BY c.fecha DESC", enable_cross_partition_query=True))
+
+@app.post("/admin/pagos")
+def registrar_pago(req: PagoCreate, user=Depends(require_admin)):
+    pago_id = str(uuid.uuid4())
+    c_pagos.create_item({"id": pago_id, "registrado_en": datetime.utcnow().isoformat(),
+                         "registrado_por": user["email"], **req.dict()})
+    return {"id": pago_id, "mensaje": "Pago registrado"}
+
+@app.put("/admin/pagos/{pago_id}")
+def actualizar_pago(pago_id: str, body: dict, user=Depends(require_admin)):
+    items = list(c_pagos.query_items(f"SELECT * FROM c WHERE c.id = '{pago_id}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Pago no encontrado")
+    doc = items[0]
+    for campo in ["estado", "monto", "metodo", "referencia", "fecha"]:
+        if campo in body: doc[campo] = body[campo]
+    c_pagos.upsert_item(doc)
+    return {"mensaje": "Pago actualizado"}
+
+@app.delete("/admin/pagos/{pago_id}")
+def eliminar_pago(pago_id: str, user=Depends(require_admin)):
+    items = list(c_pagos.query_items(f"SELECT * FROM c WHERE c.id = '{pago_id}'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Pago no encontrado")
+    c_pagos.delete_item(item=pago_id, partition_key=pago_id)
+    return {"mensaje": "Pago eliminado"}
 
 # ---------------------------------------------------------------------------
 # HEALTH
 # ---------------------------------------------------------------------------
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
