@@ -616,7 +616,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
           <div class="panel-header">
             <div><div class="panel-title">Casos IA</div><div class="panel-sub">Gestión de pacientes simulados</div></div>
             <div style="display:flex;gap:8px">
-              <button class="btn-ghost" onclick="openAdminModal('modal-analisis-objetivo')">✏️ Análisis objetivo global</button>
+              <button class="btn-ghost" onclick="openAdminModal_analisisObjetivo()">✏️ Análisis objetivo global</button>
               <button class="btn-accent" onclick="abrirNuevoCaso()">+ Nuevo caso</button>
             </div>
           </div>
@@ -839,7 +839,7 @@ function showScreen(id) {
 }
 
 function authHeaders() {
-  return { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` };
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 }
 
 function formatDate(iso) {
@@ -1243,13 +1243,10 @@ async function loadDocente() {
 // ── ADMIN PANEL ───────────────────────────────────────────
 
 // ---- State ----
-let adminData = { usuarios:[], instituciones:[], pagos:[], casos:PATIENT_PROFILES_LOCAL, categorias:['Ansiedad','Depresión','Estrés Laboral','Forense','Duelo'] };
-let selectedInstId = null;
-let selectedCasoId = null;
+let adminData = { usuarios:[], instituciones:[], pagos:[], casos:{}, categorias:[] };
+let selectedInstId   = null;
+let selectedCasoId   = null;
 let selectedCatIndex = null;
-
-// Local mirror of PATIENT_PROFILES for admin editing (seed from backend on load)
-let PATIENT_PROFILES_LOCAL = {};
 
 // ---- Navigation ----
 function adminNav(btn, panelId) {
@@ -1322,7 +1319,26 @@ async function loadSesionesOverview() {
 }
 
 // ---- INSTITUCIONES ----
-function loadInstituciones() {
+// ═══════════════════════════════════════════════════════════
+// INSTITUCIONES — Conectado al backend real
+// ═══════════════════════════════════════════════════════════
+
+async function loadInstituciones() {
+  const list = document.getElementById('inst-list');
+  list.innerHTML = '<div style="grid-column:1/-1;padding:32px;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
+  try {
+    const res  = await fetch(`${API}/admin/instituciones`, { headers: authHeaders() });
+    const data = await res.json();
+    adminData.instituciones = Array.isArray(data) ? data : [];
+    renderInstCards();
+    loadInstitOverview();
+    document.getElementById('kpi-inst').textContent = adminData.instituciones.length;
+  } catch(e) {
+    list.innerHTML = '<div style="grid-column:1/-1" class="ov-empty" style="color:var(--red)">Error cargando instituciones</div>';
+  }
+}
+
+function renderInstCards() {
   const list = document.getElementById('inst-list');
   if (!adminData.instituciones.length) {
     list.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);background:var(--card);border:1px dashed var(--border);border-radius:14px">
@@ -1332,140 +1348,259 @@ function loadInstituciones() {
     </div>`;
     return;
   }
-  list.innerHTML = adminData.instituciones.map((inst,i)=>`
+  list.innerHTML = adminData.instituciones.map((inst, i) => `
     <div class="inst-card" onclick="abrirInstitucion(${i})">
       <div class="inst-card-name">${inst.nombre}</div>
-      <div class="inst-card-meta">${inst.ciudad||''} · ${inst.email||''}</div>
+      <div class="inst-card-meta">${inst.ciudad || ''} ${inst.ciudad && inst.email ? '·' : ''} ${inst.email || ''}</div>
       <div class="inst-card-pills">
-        <span class="inst-pill inst-pill-active">${inst.suscripcion_estado||'activa'}</span>
-        <span class="inst-pill inst-pill-plan">${inst.plan||'Sin plan'}</span>
-        <span class="inst-pill" style="background:rgba(167,139,250,.1);color:var(--accent2);border:1px solid rgba(167,139,250,.2)">${inst.usuarios?.length||0} usuarios</span>
+        <span class="inst-pill inst-pill-active">${inst.suscripcion_estado || 'prueba'}</span>
+        <span class="inst-pill inst-pill-plan">${inst.plan || 'Sin plan'}</span>
       </div>
     </div>`).join('');
 }
 
-function abrirInstitucion(idx) {
+async function abrirInstitucion(idx) {
   selectedInstId = idx;
   const inst = adminData.instituciones[idx];
   document.getElementById('inst-list').style.display = 'none';
-  const det = document.getElementById('inst-detail');
-  det.style.display = 'block';
-  // Fill info tab
-  document.getElementById('di-nombre').value   = inst.nombre||'';
-  document.getElementById('di-nit').value       = inst.nit||'';
-  document.getElementById('di-contacto').value  = inst.contacto||'';
-  document.getElementById('di-email').value     = inst.email||'';
-  document.getElementById('di-telefono').value  = inst.telefono||'';
-  document.getElementById('di-ciudad').value    = inst.ciudad||'';
-  document.getElementById('di-dominio').value   = inst.dominio||'';
-  // Suscripcion
-  document.getElementById('sus-plan-name').textContent  = inst.plan||'Sin plan';
-  document.getElementById('sus-inicio').textContent     = inst.sus_inicio ? formatDate(inst.sus_inicio) : '—';
-  document.getElementById('sus-vence').textContent      = inst.sus_fin   ? formatDate(inst.sus_fin)   : '—';
-  document.getElementById('sus-monto').textContent      = inst.sus_monto ? '$'+inst.sus_monto.toLocaleString() : '—';
-  // Activate first dtab
-  document.querySelectorAll('.dtab').forEach((t,i)=>t.classList.toggle('active',i===0));
-  document.querySelectorAll('.dtab-panel').forEach((p,i)=>p.classList.toggle('active',i===0));
-  // Usuarios
-  renderInstUsuarios(inst);
-  // Pagos
-  renderInstPagos(idx);
+  document.getElementById('inst-detail').style.display = 'block';
+
+  // Info básica
+  document.getElementById('di-nombre').value   = inst.nombre   || '';
+  document.getElementById('di-nit').value       = inst.nit      || '';
+  document.getElementById('di-contacto').value  = inst.contacto || '';
+  document.getElementById('di-email').value     = inst.email    || '';
+  document.getElementById('di-telefono').value  = inst.telefono || '';
+  document.getElementById('di-ciudad').value    = inst.ciudad   || '';
+  document.getElementById('di-dominio').value   = inst.dominio  || '';
+
+  // Suscripción — estado visual
+  document.getElementById('sus-plan-name').textContent = inst.plan || 'Sin plan';
+  document.getElementById('sus-inicio').textContent    = inst.sus_inicio ? formatDate(inst.sus_inicio) : '—';
+  document.getElementById('sus-vence').textContent     = inst.sus_fin    ? formatDate(inst.sus_fin)    : '—';
+  document.getElementById('sus-monto').textContent     = inst.sus_monto  ? '$' + Number(inst.sus_monto).toLocaleString() : '—';
+  const badge = document.getElementById('sus-badge-estado');
+  if (badge) { badge.textContent = inst.suscripcion_estado || 'prueba'; }
+
+  // Suscripción — formulario
+  document.getElementById('sus-plan-sel').value       = inst.plan || '';
+  document.getElementById('sus-fecha-inicio').value   = inst.sus_inicio || '';
+  document.getElementById('sus-fecha-fin').value      = inst.sus_fin    || '';
+  document.getElementById('sus-monto-input').value    = inst.sus_monto  || '';
+  document.getElementById('sus-estado-sel').value     = inst.suscripcion_estado || 'prueba';
+  document.getElementById('sus-notas').value          = inst.sus_notas  || '';
+
+  // Contrato
+  document.getElementById('ct-numero').value   = inst.ct_numero   || '';
+  document.getElementById('ct-fecha').value    = inst.ct_fecha    || '';
+  document.getElementById('ct-vigencia').value = inst.ct_vigencia || '';
+  document.getElementById('ct-desc').value     = inst.ct_desc     || '';
+
+  // Reset tabs
+  document.querySelectorAll('#inst-detail .dtab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('#inst-detail .dtab-panel').forEach((p, i) => p.classList.toggle('active', i === 0));
+
+  // Cargar usuarios de la institución desde backend
+  await loadInstUsuarios(inst.id);
+  // Cargar pagos de la institución
+  renderInstPagos(inst.nombre);
 }
 
-function closeInstDetail() {
-  document.getElementById('inst-detail').style.display='none';
-  document.getElementById('inst-list').style.display='grid';
+async function loadInstUsuarios(instId) {
+  document.getElementById('inst-docentes-tbody').innerHTML   = '<tr><td colspan="5" class="empty-table"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  document.getElementById('inst-estudiantes-tbody').innerHTML = '<tr><td colspan="5" class="empty-table"></td></tr>';
+  try {
+    const res  = await fetch(`${API}/admin/instituciones/${instId}/usuarios`, { headers: authHeaders() });
+    const data = await res.json();
+    const docentes    = data.filter(u => u.rol === 'docente');
+    const estudiantes = data.filter(u => u.rol === 'estudiante');
+
+    document.getElementById('inst-docentes-tbody').innerHTML = docentes.length
+      ? docentes.map(u => `<tr>
+          <td>${u.nombre}</td>
+          <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
+          <td>—</td>
+          <td><span class="status-pill ${u.activo !== false ? 'status-completada' : 'status-activa'}">${u.activo !== false ? 'Activo' : 'Inactivo'}</span></td>
+          <td><button class="btn-danger" onclick="desvincularUsuario('${u.email}','${instId}')">Desvincular</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="empty-table">Sin docentes vinculados</td></tr>';
+
+    document.getElementById('inst-estudiantes-tbody').innerHTML = estudiantes.length
+      ? estudiantes.map(u => `<tr>
+          <td>${u.nombre}</td>
+          <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
+          <td>—</td>
+          <td style="font-size:.78rem;color:var(--muted)">${formatDate(u.creado_en)}</td>
+          <td><button class="btn-danger" onclick="desvincularUsuario('${u.email}','${instId}')">Desvincular</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="empty-table">Sin estudiantes vinculados</td></tr>';
+  } catch(e) {
+    document.getElementById('inst-docentes-tbody').innerHTML = '<tr><td colspan="5" class="empty-table" style="color:var(--red)">Error cargando usuarios</td></tr>';
+  }
 }
 
-function renderInstUsuarios(inst) {
-  const docentes = (inst.usuarios||[]).filter(u=>u.rol==='docente');
-  const estudiantes = (inst.usuarios||[]).filter(u=>u.rol==='estudiante');
-  document.getElementById('inst-docentes-tbody').innerHTML = docentes.length
-    ? docentes.map(u=>`<tr><td>${u.nombre}</td><td style="font-size:.8rem;color:var(--muted)">${u.email}</td><td>—</td><td><span class="status-pill status-completada">Activo</span></td><td><button class="btn-danger" onclick="desvincularUsuario('${u.email}')">Desvincular</button></td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty-table">Sin docentes vinculados</td></tr>';
-  document.getElementById('inst-estudiantes-tbody').innerHTML = estudiantes.length
-    ? estudiantes.map(u=>`<tr><td>${u.nombre}</td><td style="font-size:.8rem;color:var(--muted)">${u.email}</td><td>—</td><td style="font-size:.78rem;color:var(--muted)">—</td><td><button class="btn-danger" onclick="desvincularUsuario('${u.email}')">Desvincular</button></td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty-table">Sin estudiantes vinculados</td></tr>';
-}
-
-function renderInstPagos(idx) {
-  const inst = adminData.instituciones[idx];
-  const pagos = (adminData.pagos||[]).filter(p=>p.origen===inst.nombre);
+function renderInstPagos(nombreInst) {
+  const pagos = (adminData.pagos || []).filter(p => p.origen === nombreInst);
   document.getElementById('inst-pagos-tbody').innerHTML = pagos.length
-    ? pagos.map(p=>`<tr><td style="font-size:.8rem">${formatDate(p.fecha)}</td><td>$${Number(p.monto).toLocaleString()}</td><td style="font-size:.8rem;color:var(--muted)">${p.metodo||'—'}</td><td style="font-size:.78rem;color:var(--muted)">${p.referencia||'—'}</td><td><span class="status-pill ${p.estado==='confirmado'?'status-completada':'status-activa'}">${p.estado}</span></td><td></td></tr>`).join('')
+    ? pagos.map(p => `<tr>
+        <td style="font-size:.8rem">${formatDate(p.fecha)}</td>
+        <td><strong>$${Number(p.monto || 0).toLocaleString()}</strong></td>
+        <td style="font-size:.8rem;color:var(--muted)">${p.metodo || '—'}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${p.referencia || '—'}</td>
+        <td><span class="status-pill ${p.estado === 'confirmado' ? 'status-completada' : 'status-activa'}">${p.estado || '—'}</span></td>
+        <td></td>
+      </tr>`).join('')
     : '<tr><td colspan="6" class="empty-table">Sin pagos registrados</td></tr>';
 }
 
-function guardarInstitucion() {
+function closeInstDetail() {
+  document.getElementById('inst-detail').style.display = 'none';
+  document.getElementById('inst-list').style.display   = 'grid';
+}
+
+async function guardarInstitucion() {
   if (selectedInstId === null) return;
   const inst = adminData.instituciones[selectedInstId];
-  inst.nombre   = document.getElementById('di-nombre').value;
-  inst.nit      = document.getElementById('di-nit').value;
-  inst.contacto = document.getElementById('di-contacto').value;
-  inst.email    = document.getElementById('di-email').value;
-  inst.telefono = document.getElementById('di-telefono').value;
-  inst.ciudad   = document.getElementById('di-ciudad').value;
-  inst.dominio  = document.getElementById('di-dominio').value;
-  showToast('Institución guardada ✓');
-  // TODO: POST /admin/instituciones/:id con authHeaders()
+  const payload = {
+    nombre:   document.getElementById('di-nombre').value.trim(),
+    nit:      document.getElementById('di-nit').value.trim(),
+    contacto: document.getElementById('di-contacto').value.trim(),
+    email:    document.getElementById('di-email').value.trim(),
+    telefono: document.getElementById('di-telefono').value.trim(),
+    ciudad:   document.getElementById('di-ciudad').value.trim(),
+    dominio:  document.getElementById('di-dominio').value.trim(),
+  };
+  if (!payload.nombre) { showToast('El nombre es requerido', true); return; }
+  try {
+    const res = await fetch(`${API}/admin/instituciones/${inst.id}`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    Object.assign(adminData.instituciones[selectedInstId], payload);
+    showToast('Institución guardada ✓');
+  } catch(e) { showToast('Error al guardar: ' + e.message, true); }
 }
 
-function guardarSuscripcion() {
+async function guardarSuscripcion() {
   if (selectedInstId === null) return;
   const inst = adminData.instituciones[selectedInstId];
-  inst.plan             = document.getElementById('sus-plan-sel').value;
-  inst.sus_inicio       = document.getElementById('sus-fecha-inicio').value;
-  inst.sus_fin          = document.getElementById('sus-fecha-fin').value;
-  inst.sus_monto        = Number(document.getElementById('sus-monto-input').value);
-  inst.suscripcion_estado = document.getElementById('sus-estado-sel').value;
-  showToast('Suscripción actualizada ✓');
+  const payload = {
+    plan:               document.getElementById('sus-plan-sel').value,
+    sus_inicio:         document.getElementById('sus-fecha-inicio').value,
+    sus_fin:            document.getElementById('sus-fecha-fin').value,
+    sus_monto:          Number(document.getElementById('sus-monto-input').value) || null,
+    suscripcion_estado: document.getElementById('sus-estado-sel').value,
+    sus_notas:          document.getElementById('sus-notas').value,
+  };
+  try {
+    const res = await fetch(`${API}/admin/instituciones/${inst.id}/suscripcion`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    Object.assign(adminData.instituciones[selectedInstId], payload);
+    document.getElementById('sus-plan-name').textContent = payload.plan || 'Sin plan';
+    document.getElementById('sus-inicio').textContent    = payload.sus_inicio ? formatDate(payload.sus_inicio) : '—';
+    document.getElementById('sus-vence').textContent     = payload.sus_fin    ? formatDate(payload.sus_fin)    : '—';
+    document.getElementById('sus-monto').textContent     = payload.sus_monto  ? '$' + payload.sus_monto.toLocaleString() : '—';
+    showToast('Suscripción actualizada ✓');
+  } catch(e) { showToast('Error al guardar: ' + e.message, true); }
 }
 
-function guardarContrato() {
+async function guardarContrato() {
   if (selectedInstId === null) return;
-  showToast('Contrato guardado ✓');
+  const inst = adminData.instituciones[selectedInstId];
+  const payload = {
+    ct_numero:   document.getElementById('ct-numero').value.trim(),
+    ct_fecha:    document.getElementById('ct-fecha').value,
+    ct_vigencia: Number(document.getElementById('ct-vigencia').value) || null,
+    ct_desc:     document.getElementById('ct-desc').value.trim(),
+  };
+  try {
+    const res = await fetch(`${API}/admin/instituciones/${inst.id}/contrato`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    Object.assign(adminData.instituciones[selectedInstId], payload);
+    showToast('Contrato guardado ✓');
+  } catch(e) { showToast('Error al guardar: ' + e.message, true); }
 }
 
-function crearInstitucion() {
+async function crearInstitucion() {
   const nombre = document.getElementById('ni-nombre').value.trim();
-  if (!nombre) { alert('El nombre es requerido.'); return; }
-  adminData.instituciones.push({
+  if (!nombre) { showToast('El nombre es requerido', true); return; }
+  const payload = {
     nombre,
-    nit:      document.getElementById('ni-nit').value,
-    contacto: document.getElementById('ni-contacto').value,
-    email:    document.getElementById('ni-email').value,
-    ciudad:   document.getElementById('ni-ciudad').value,
-    dominio:  document.getElementById('ni-dominio').value,
-    usuarios: [], suscripcion_estado:'prueba', plan:'Sin plan'
-  });
-  closeAdminModal('modal-nueva-inst');
-  loadInstituciones();
-  loadInstitOverview();
-  document.getElementById('kpi-inst').textContent = adminData.instituciones.length;
-  showToast('Institución creada ✓');
+    nit:      document.getElementById('ni-nit').value.trim(),
+    contacto: document.getElementById('ni-contacto').value.trim(),
+    email:    document.getElementById('ni-email').value.trim(),
+    ciudad:   document.getElementById('ni-ciudad').value.trim(),
+    dominio:  document.getElementById('ni-dominio').value.trim(),
+  };
+  try {
+    const res  = await fetch(`${API}/admin/instituciones`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    closeAdminModal('modal-nueva-inst');
+    // Limpiar campos
+    ['ni-nombre','ni-nit','ni-contacto','ni-email','ni-ciudad','ni-dominio'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    await loadInstituciones();
+    showToast(`"${nombre}" creada ✓`);
+  } catch(e) { showToast('Error al crear: ' + e.message, true); }
 }
 
-function invitarUsuario() {
+async function invitarUsuario() {
   if (selectedInstId === null) return;
+  const inst  = adminData.instituciones[selectedInstId];
   const email = document.getElementById('inv-email').value.trim();
   const rol   = document.getElementById('inv-rol').value;
-  const usuario = adminData.usuarios.find(u=>u.email===email);
-  if (!usuario) { alert('No se encontró un usuario con ese correo.'); return; }
-  const inst = adminData.instituciones[selectedInstId];
-  if (!inst.usuarios) inst.usuarios = [];
-  if (inst.usuarios.find(u=>u.email===email)) { alert('Este usuario ya está vinculado.'); return; }
-  inst.usuarios.push({...usuario, rol});
-  closeAdminModal('modal-invitar-usuario');
-  renderInstUsuarios(inst);
-  showToast('Usuario vinculado ✓');
+  if (!email) { showToast('Ingresa un correo', true); return; }
+  try {
+    const res = await fetch(`${API}/admin/instituciones/${inst.id}/vincular`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ email, rol, institucion_id: inst.id }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    closeAdminModal('modal-invitar-usuario');
+    document.getElementById('inv-email').value = '';
+    await loadInstUsuarios(inst.id);
+    showToast('Usuario vinculado ✓');
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
-function desvincularUsuario(email) {
+async function desvincularUsuario(email, instId) {
   if (!confirm('¿Desvincular este usuario de la institución?')) return;
-  const inst = adminData.instituciones[selectedInstId];
-  inst.usuarios = (inst.usuarios||[]).filter(u=>u.email!==email);
-  renderInstUsuarios(inst);
-  showToast('Usuario desvinculado');
+  try {
+    const res = await fetch(`${API}/admin/instituciones/${instId}/desvincular/${encodeURIComponent(email)}`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    await loadInstUsuarios(instId);
+    showToast('Usuario desvinculado');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGOS — Conectado al backend real
+// ═══════════════════════════════════════════════════════════
+
+async function loadContabilidad() {
+  const tbody = document.getElementById('cont-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-table"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  try {
+    const res  = await fetch(`${API}/admin/pagos`, { headers: authHeaders() });
+    const data = await res.json();
+    adminData.pagos = Array.isArray(data) ? data : [];
+    loadContabilidadKpis();
+    filtrarPagos();
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table" style="color:var(--red)">Error cargando pagos</td></tr>';
+  }
 }
 
 // ---- PARTICULARES ----
@@ -1518,24 +1653,60 @@ function verParticular(email) {
 }
 
 // ---- CASOS IA ----
-function loadCasosAdmin() {
-  // Seed from hardcoded profiles if empty
-  if (!Object.keys(adminData.casos||{}).length) {
-    adminData.casos = {
-      mateo:     { name:'Mateo', age:22, descripcion:'Joven universitario introvertido, asiste a terapia obligado por sus padres.', instruccion:'Eres Mateo...', instruccion_feedback:'Acabas de terminar una sesión...', categoria:'Ansiedad', dificultad:'Intermedia' },
-      lucia:     { name:'Lucía', age:35, descripcion:'Docente de primaria con burnout y ansiedad severa.', instruccion:'Eres Lucía...', instruccion_feedback:'Acabas de terminar una sesión...', categoria:'Estrés Laboral', dificultad:'Básica' },
-      don_carlos:{ name:'Don Carlos', age:58, descripcion:'Hombre imputado por fraude, en evaluación forense.', instruccion:'Eres Don Carlos...', instruccion_feedback:'Acabas de terminar una evaluación...', categoria:'Forense', dificultad:'Avanzada' },
-    };
+// ═══════════════════════════════════════════════════════════
+// CASOS IA — Conectado al backend real
+// ═══════════════════════════════════════════════════════════
+
+async function loadCasosAdmin() {
+  setCasosLoading(true);
+  try {
+    // Carga casos y categorías en paralelo
+    const [resCasos, resCats] = await Promise.all([
+      fetch(`${API}/admin/casos`,      { headers: authHeaders() }),
+      fetch(`${API}/admin/categorias`, { headers: authHeaders() }),
+    ]);
+    const casos = await resCasos.json();
+    const cats  = await resCats.json();
+
+    // Guarda en adminData como dict keyed por caso_id
+    adminData.casos = {};
+    (Array.isArray(casos) ? casos : []).forEach(c => {
+      adminData.casos[c.caso_id || c.name?.toLowerCase().replace(/\s+/g,'_')] = c;
+    });
+    adminData.categorias = Array.isArray(cats) ? cats : [];
+
+    document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
+    renderCategorias();
+
+    // Si no hay categoría seleccionada y hay categorías, selecciona la primera
+    if (selectedCatIndex === null && adminData.categorias.length) {
+      seleccionarCategoria(0, adminData.categorias[0]);
+    } else if (selectedCatIndex !== null) {
+      seleccionarCategoria(selectedCatIndex, adminData.categorias[selectedCatIndex]);
+    }
+  } catch(e) {
+    document.getElementById('casos-cat-list').innerHTML =
+      '<div class="ov-empty" style="color:var(--red)">Error cargando casos.<br>Verifica la conexión al backend.</div>';
+  } finally {
+    setCasosLoading(false);
   }
-  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
-  renderCategorias();
+}
+
+function setCasosLoading(on) {
+  const wrap = document.getElementById('casos-list-wrap');
+  if (on) wrap.innerHTML = '<div class="ov-empty"><div class="spinner" style="margin:12px auto"></div></div>';
 }
 
 function renderCategorias() {
   const list = document.getElementById('casos-cat-list');
-  list.innerHTML = adminData.categorias.map((cat,i)=>{
-    const count = Object.values(adminData.casos).filter(c=>c.categoria===cat).length;
-    return `<div class="cat-item${i===selectedCatIndex?' active':''}" onclick="seleccionarCategoria(${i},'${cat}')">
+  if (!adminData.categorias.length) {
+    list.innerHTML = '<div class="ov-empty" style="font-size:.78rem">Sin categorías</div>';
+    return;
+  }
+  list.innerHTML = adminData.categorias.map((cat, i) => {
+    const count = Object.values(adminData.casos).filter(c => c.categoria === cat).length;
+    return `<div class="cat-item${i === selectedCatIndex ? ' active' : ''}"
+      onclick="seleccionarCategoria(${i},'${cat.replace(/'/g,"\\'")}')">
       <span>${cat}</span><span class="cat-count">${count}</span>
     </div>`;
   }).join('');
@@ -1544,97 +1715,196 @@ function renderCategorias() {
 function seleccionarCategoria(idx, cat) {
   selectedCatIndex = idx;
   renderCategorias();
-  const casos = Object.entries(adminData.casos).filter(([,c])=>c.categoria===cat);
+  const casos = Object.entries(adminData.casos).filter(([, c]) => c.categoria === cat);
   const wrap  = document.getElementById('casos-list-wrap');
   wrap.innerHTML = casos.length
-    ? casos.map(([id,c])=>`<div class="caso-item" onclick="abrirCasoEditor('${id}')">
-        <div class="caso-item-name">${c.name} <span style="font-size:.72rem;color:var(--muted);">(${c.age} años)</span></div>
-        <div class="caso-item-meta">${c.dificultad||'—'} · ${c.descripcion?.slice(0,50)||''}...</div>
-      </div>`).join('')
-    : '<div class="ov-empty">No hay casos en esta categoría.<br><small>Crea uno con "+ Nuevo caso"</small></div>';
+    ? casos.map(([id, c]) => `
+        <div class="caso-item" onclick="abrirCasoEditor('${id}', event)">
+          <div class="caso-item-name">${c.name}
+            <span style="font-size:.72rem;color:var(--muted)">(${c.age} años)</span>
+            <span class="inst-pill inst-pill-plan" style="float:right;font-size:.65rem">${c.dificultad||'—'}</span>
+          </div>
+          <div class="caso-item-meta">${(c.descripcion||'').slice(0, 55)}${c.descripcion?.length > 55 ? '…' : ''}</div>
+        </div>`).join('')
+    : '<div class="ov-empty">Sin casos en esta categoría.<br><small>Crea uno con "+ Nuevo caso"</small></div>';
 }
 
 function abrirNuevoCaso() {
   selectedCasoId = null;
   document.getElementById('editor-caso-title').textContent = 'Nuevo caso';
-  document.getElementById('ce-nombre').value = '';
-  document.getElementById('ce-edad').value = '';
-  document.getElementById('ce-desc').value = '';
+  document.getElementById('ce-nombre').value      = '';
+  document.getElementById('ce-edad').value        = '';
+  document.getElementById('ce-dificultad').value  = 'Básica';
+  document.getElementById('ce-desc').value        = '';
   document.getElementById('ce-instruccion').value = '';
-  document.getElementById('ce-feedback').value = '';
+  document.getElementById('ce-feedback').value    = '';
   document.getElementById('btn-eliminar-caso').style.display = 'none';
   document.getElementById('caso-editor').style.display = 'flex';
+  document.getElementById('caso-editor').style.flexDirection = 'column';
 }
 
-function abrirCasoEditor(id) {
+function abrirCasoEditor(id, evt) {
   selectedCasoId = id;
   const c = adminData.casos[id];
   document.getElementById('editor-caso-title').textContent = 'Editando: ' + c.name;
-  document.getElementById('ce-nombre').value     = c.name||'';
-  document.getElementById('ce-edad').value       = c.age||'';
-  document.getElementById('ce-dificultad').value = c.dificultad||'Básica';
-  document.getElementById('ce-desc').value       = c.descripcion||'';
-  document.getElementById('ce-instruccion').value= c.instruccion||'';
-  document.getElementById('ce-feedback').value   = c.instruccion_feedback||'';
+  document.getElementById('ce-nombre').value      = c.name || '';
+  document.getElementById('ce-edad').value        = c.age  || '';
+  document.getElementById('ce-dificultad').value  = c.dificultad || 'Básica';
+  document.getElementById('ce-desc').value        = c.descripcion || '';
+  document.getElementById('ce-instruccion').value = c.instruccion || '';
+  document.getElementById('ce-feedback').value    = c.instruccion_feedback || '';
   document.getElementById('btn-eliminar-caso').style.display = 'inline-block';
   document.getElementById('caso-editor').style.display = 'flex';
-  document.querySelectorAll('.caso-item').forEach(el=>el.classList.remove('active'));
-  event.currentTarget?.classList.add('active');
+  document.getElementById('caso-editor').style.flexDirection = 'column';
+  document.querySelectorAll('.caso-item').forEach(el => el.classList.remove('active'));
+  evt?.currentTarget?.classList.add('active');
 }
 
-function guardarCaso() {
+async function guardarCaso() {
   const nombre = document.getElementById('ce-nombre').value.trim();
-  if (!nombre) { alert('El nombre del paciente es requerido.'); return; }
-  const id = selectedCasoId || nombre.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-  adminData.casos[id] = {
-    name: nombre,
-    age:  Number(document.getElementById('ce-edad').value)||0,
-    dificultad: document.getElementById('ce-dificultad').value,
-    descripcion: document.getElementById('ce-desc').value,
-    instruccion: document.getElementById('ce-instruccion').value,
-    instruccion_feedback: document.getElementById('ce-feedback').value,
-    categoria: adminData.categorias[selectedCatIndex]||adminData.categorias[0]||'General',
+  if (!nombre) { showToast('El nombre del paciente es requerido', true); return; }
+
+  const payload = {
+    name:                 nombre,
+    age:                  Number(document.getElementById('ce-edad').value) || 0,
+    dificultad:           document.getElementById('ce-dificultad').value,
+    descripcion:          document.getElementById('ce-desc').value.trim(),
+    instruccion:          document.getElementById('ce-instruccion').value.trim(),
+    instruccion_feedback: document.getElementById('ce-feedback').value.trim(),
+    categoria:            adminData.categorias[selectedCatIndex] || adminData.categorias[0] || 'General',
   };
-  document.getElementById('caso-editor').style.display = 'none';
-  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
-  if (selectedCatIndex !== null) seleccionarCategoria(selectedCatIndex, adminData.categorias[selectedCatIndex]);
-  renderCategorias();
-  showToast(selectedCasoId?'Caso actualizado ✓':'Caso creado ✓');
-  selectedCasoId = null;
-  // TODO: POST/PUT /admin/casos/:id con authHeaders()
+
+  if (!payload.instruccion)          { showToast('Las instrucciones de comportamiento son requeridas', true); return; }
+  if (!payload.instruccion_feedback) { showToast('Las instrucciones de feedback son requeridas', true); return; }
+
+  // Deshabilitar botón mientras guarda
+  const btn = document.querySelector('#caso-editor .btn-accent');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  try {
+    let res;
+    if (selectedCasoId) {
+      // PUT — actualizar existente
+      res = await fetch(`${API}/admin/casos/${selectedCasoId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+    } else {
+      // POST — crear nuevo
+      res = await fetch(`${API}/admin/casos`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+
+    document.getElementById('caso-editor').style.display = 'none';
+    showToast(selectedCasoId ? `"${nombre}" actualizado ✓` : `"${nombre}" creado ✓`);
+    selectedCasoId = null;
+    await loadCasosAdmin(); // Recarga desde el backend
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+  }
 }
 
-function eliminarCaso() {
+async function eliminarCaso() {
   if (!selectedCasoId) return;
-  if (!confirm(`¿Eliminar el caso "${adminData.casos[selectedCasoId]?.name}"?`)) return;
-  delete adminData.casos[selectedCasoId];
-  selectedCasoId = null;
-  document.getElementById('caso-editor').style.display = 'none';
-  if (selectedCatIndex !== null) seleccionarCategoria(selectedCatIndex, adminData.categorias[selectedCatIndex]);
-  renderCategorias();
-  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos).length;
-  showToast('Caso eliminado');
+  const nombre = adminData.casos[selectedCasoId]?.name || selectedCasoId;
+  if (!confirm(`¿Eliminar el caso "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
+
+  const btn = document.getElementById('btn-eliminar-caso');
+  if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
+
+  try {
+    const res = await fetch(`${API}/admin/casos/${selectedCasoId}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+
+    document.getElementById('caso-editor').style.display = 'none';
+    selectedCasoId = null;
+    showToast(`"${nombre}" eliminado`);
+    await loadCasosAdmin();
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+  }
 }
 
-function crearCategoria() {
+async function crearCategoria() {
   const nombre = document.getElementById('nc-nombre').value.trim();
   if (!nombre) return;
-  if (!adminData.categorias.includes(nombre)) adminData.categorias.push(nombre);
-  closeAdminModal('modal-nueva-categoria');
-  renderCategorias();
-  showToast('Categoría creada ✓');
+
+  try {
+    const res = await fetch(`${API}/admin/categorias`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ nombre }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    const data = await res.json();
+    adminData.categorias = data.categorias || [...adminData.categorias, nombre];
+    closeAdminModal('modal-nueva-categoria');
+    document.getElementById('nc-nombre').value = '';
+    renderCategorias();
+    showToast(`Categoría "${nombre}" creada ✓`);
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
 }
 
-function openModal_analisisObjetivo() {
-  // Fill with current prompt from backend (hardcoded seed for now)
-  document.getElementById('ao-instruccion').value = `Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades...\n\n[Edita aquí el prompt completo del análisis objetivo]`;
+// ── Análisis objetivo global ──────────────────────────────
+async function openAdminModal_analisisObjetivo() {
   openAdminModal('modal-analisis-objetivo');
+  const textarea = document.getElementById('ao-instruccion');
+  textarea.value = 'Cargando…';
+  textarea.disabled = true;
+
+  try {
+    const res  = await fetch(`${API}/admin/config/analisis_objetivo`, { headers: authHeaders() });
+    const data = await res.json();
+    textarea.value = data.valor || '';
+  } catch(e) {
+    textarea.value = '';
+    showToast('No se pudo cargar el análisis objetivo', true);
+  } finally {
+    textarea.disabled = false;
+  }
 }
 
-function guardarAnalisisObjetivo() {
-  closeAdminModal('modal-analisis-objetivo');
-  showToast('Análisis objetivo guardado ✓');
-  // TODO: POST /admin/analisis-objetivo con authHeaders()
+async function guardarAnalisisObjetivo() {
+  const valor = document.getElementById('ao-instruccion').value.trim();
+  if (!valor) { showToast('El texto no puede estar vacío', true); return; }
+
+  const btn = document.querySelector('#modal-analisis-objetivo .btn-accent');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  try {
+    const res = await fetch(`${API}/admin/config/analisis_objetivo`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ valor }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    closeAdminModal('modal-analisis-objetivo');
+    showToast('Análisis objetivo actualizado ✓');
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+  }
 }
 
 // ---- SESIONES ADMIN ----
@@ -1686,66 +1956,82 @@ async function verSesionAdmin(sesionId) {
 }
 
 // ---- CONTABILIDAD ----
-function loadContabilidad() {
-  filtrarPagos();
-  loadContabilidadKpis();
-}
-
 function loadContabilidadKpis() {
-  const pagos = adminData.pagos||[];
-  const total = pagos.reduce((s,p)=>s+Number(p.monto||0),0);
-  const inst  = pagos.filter(p=>p.tipo==='institucional').reduce((s,p)=>s+Number(p.monto||0),0);
-  const part  = pagos.filter(p=>p.tipo==='particular').reduce((s,p)=>s+Number(p.monto||0),0);
-  const mes   = pagos.filter(p=>{
+  const pagos = adminData.pagos || [];
+  const total = pagos.reduce((s, p) => s + Number(p.monto || 0), 0);
+  const inst  = pagos.filter(p => p.tipo === 'institucional').reduce((s, p) => s + Number(p.monto || 0), 0);
+  const part  = pagos.filter(p => p.tipo === 'particular').reduce((s, p) => s + Number(p.monto || 0), 0);
+  const ahora = new Date();
+  const mes   = pagos.filter(p => {
     if (!p.fecha) return false;
-    const d = new Date(p.fecha); const n = new Date();
-    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
-  }).reduce((s,p)=>s+Number(p.monto||0),0);
-  document.getElementById('kpi-revenue').textContent = total?'$'+total.toLocaleString():'$0';
-  document.getElementById('ck-total').textContent = '$'+total.toLocaleString();
-  document.getElementById('ck-inst').textContent  = '$'+inst.toLocaleString();
-  document.getElementById('ck-part').textContent  = '$'+part.toLocaleString();
-  document.getElementById('ck-mes').textContent   = '$'+mes.toLocaleString();
+    const d = new Date(p.fecha);
+    return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear();
+  }).reduce((s, p) => s + Number(p.monto || 0), 0);
+
+  document.getElementById('kpi-revenue').textContent = total ? '$' + total.toLocaleString() : '$0';
+  document.getElementById('ck-total').textContent = '$' + total.toLocaleString();
+  document.getElementById('ck-inst').textContent  = '$' + inst.toLocaleString();
+  document.getElementById('ck-part').textContent  = '$' + part.toLocaleString();
+  document.getElementById('ck-mes').textContent   = '$' + mes.toLocaleString();
 }
 
 function filtrarPagos() {
-  const tipo = document.getElementById('cont-filter-tipo')?.value||'';
-  const mes  = document.getElementById('cont-filter-mes')?.value||'';
-  let pagos  = adminData.pagos||[];
-  if (tipo) pagos = pagos.filter(p=>p.tipo===tipo);
-  if (mes)  pagos = pagos.filter(p=>p.fecha?.startsWith(mes));
+  const tipo = document.getElementById('cont-filter-tipo')?.value || '';
+  const mes  = document.getElementById('cont-filter-mes')?.value  || '';
+  let pagos  = adminData.pagos || [];
+  if (tipo) pagos = pagos.filter(p => p.tipo === tipo);
+  if (mes)  pagos = pagos.filter(p => p.fecha?.startsWith(mes));
   const tbody = document.getElementById('cont-tbody');
   tbody.innerHTML = pagos.length
-    ? pagos.map(p=>`<tr>
+    ? pagos.map(p => `<tr>
         <td style="font-size:.8rem">${formatDate(p.fecha)}</td>
-        <td>${p.origen||'—'}</td>
-        <td><span class="inst-pill ${p.tipo==='institucional'?'inst-pill-plan':'inst-pill-active'}">${p.tipo||'—'}</span></td>
-        <td><strong>$${Number(p.monto||0).toLocaleString()}</strong></td>
-        <td style="font-size:.78rem;color:var(--muted)">${p.metodo||'—'}</td>
-        <td style="font-size:.78rem;color:var(--muted)">${p.referencia||'—'}</td>
-        <td><span class="status-pill ${p.estado==='confirmado'?'status-completada':'status-activa'}">${p.estado||'pendiente'}</span></td>
+        <td>${p.origen || '—'}</td>
+        <td><span class="inst-pill ${p.tipo === 'institucional' ? 'inst-pill-plan' : 'inst-pill-active'}">${p.tipo || '—'}</span></td>
+        <td><strong>$${Number(p.monto || 0).toLocaleString()}</strong></td>
+        <td style="font-size:.78rem;color:var(--muted)">${p.metodo || '—'}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${p.referencia || '—'}</td>
+        <td><span class="status-pill ${p.estado === 'confirmado' ? 'status-completada' : 'status-activa'}">${p.estado || 'pendiente'}</span></td>
       </tr>`).join('')
     : '<tr><td colspan="7" class="empty-table">Sin registros de pago</td></tr>';
 }
 
-function registrarPago() {
+async function registrarPago() {
   const pago = {
     tipo:       document.getElementById('pago-tipo').value,
-    origen:     document.getElementById('pago-origen').value,
-    monto:      Number(document.getElementById('pago-monto').value)||0,
+    origen:     document.getElementById('pago-origen').value.trim(),
+    monto:      Number(document.getElementById('pago-monto').value) || 0,
     fecha:      document.getElementById('pago-fecha').value,
     metodo:     document.getElementById('pago-metodo').value,
-    referencia: document.getElementById('pago-ref').value,
+    referencia: document.getElementById('pago-ref').value.trim(),
     estado:     document.getElementById('pago-estado').value,
   };
-  if (!pago.origen||!pago.monto) { alert('Completa al menos el origen y el monto.'); return; }
-  if (!adminData.pagos) adminData.pagos = [];
-  adminData.pagos.unshift(pago);
-  closeAdminModal('modal-registro-pago');
-  loadContabilidad();
-  if (selectedInstId !== null) renderInstPagos(selectedInstId);
-  showToast('Pago registrado ✓');
-  // TODO: POST /admin/pagos con authHeaders()
+  if (!pago.origen || !pago.monto) { showToast('Completa al menos el origen y el monto', true); return; }
+  if (!pago.fecha) { showToast('La fecha es requerida', true); return; }
+
+  const btn = document.querySelector('#modal-registro-pago .btn-accent');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  try {
+    const res = await fetch(`${API}/admin/pagos`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(pago),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    closeAdminModal('modal-registro-pago');
+    // Limpiar campos
+    ['pago-origen','pago-monto','pago-fecha','pago-ref'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    await loadContabilidad();
+    // Si hay institución abierta, refresca sus pagos también
+    if (selectedInstId !== null) {
+      renderInstPagos(adminData.instituciones[selectedInstId]?.nombre);
+    }
+    showToast('Pago registrado ✓');
+  } catch(e) {
+    showToast('Error al registrar: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar pago'; }
+  }
 }
 
 // ---- ADMIN MODAL HELPERS ----
@@ -1790,17 +2076,20 @@ function handleContratoFile(input) {
 }
 
 // ---- TOAST ----
-function showToast(msg) {
+function showToast(msg, isError = false) {
   let t = document.getElementById('admin-toast');
   if (!t) {
     t = document.createElement('div');
     t.id = 'admin-toast';
-    t.style.cssText = 'position:fixed;bottom:28px;right:28px;background:var(--green);color:#0a1a0a;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;';
+    t.style.cssText = 'position:fixed;bottom:28px;right:28px;padding:11px 22px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s,background .3s;max-width:320px;';
     document.body.appendChild(t);
   }
   t.textContent = msg;
-  t.style.opacity = '1';
-  setTimeout(()=>t.style.opacity='0', 2500);
+  t.style.background = isError ? '#DC2626' : 'var(--green)';
+  t.style.color      = isError ? '#fff'    : '#0a1a0a';
+  t.style.opacity    = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', isError ? 4000 : 2500);
 }
 
 // Keep deleteUser from old admin
