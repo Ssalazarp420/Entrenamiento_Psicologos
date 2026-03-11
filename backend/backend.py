@@ -119,7 +119,7 @@ class CasoCreate(BaseModel):
     instruccion: str
     instruccion_feedback: str
     categoria: Optional[str] = "General"
-    dificultad: Optional[str] = "Básica"
+    dificultad: Optional[str] = "Leve"
     specialty_hint: Optional[str] = None
 
 class CategoriaCreate(BaseModel):

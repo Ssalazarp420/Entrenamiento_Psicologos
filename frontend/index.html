@@ -1168,7 +1168,14 @@ async function loadPatients() {
       fetch(`${API}/patients`,    { headers: authHeaders() }),
       fetch(`${API}/categorias`,  { headers: authHeaders() }),
     ]);
-    allPatients = await resPat.json();
+    const rawPatients = await resPat.json();
+    // Normaliza: asegura que allPatients sea un objeto {pid: {...}}
+    if (Array.isArray(rawPatients)) {
+      allPatients = {};
+      rawPatients.forEach(p => { allPatients[p.caso_id || p.id || p.name] = p; });
+    } else {
+      allPatients = rawPatients || {};
+    }
     const cats  = await resCats.json();
 
     // Renderiza botones de categoría
@@ -1209,10 +1216,13 @@ function selectDificultad(dif) {
 
 function renderPatientCards() {
   const container = document.getElementById('patients-container');
-  const filtered  = Object.entries(allPatients).filter(([, p]) =>
-    p.categoria  === selectedCategoria &&
-    p.dificultad === selectedDificultad
-  );
+  const catNorm = (selectedCategoria || '').trim().toLowerCase();
+  const difNorm = (selectedDificultad || '').trim().toLowerCase();
+  const filtered  = Object.entries(allPatients).filter(([, p]) => {
+    const pCat = (p.categoria || '').trim().toLowerCase();
+    const pDif = (p.dificultad || '').trim().toLowerCase();
+    return pCat === catNorm && pDif === difNorm;
+  });
 
   if (!filtered.length) {
     container.innerHTML = `
@@ -1230,7 +1240,6 @@ function renderPatientCards() {
       <div class="avatar-lg">👤</div>
       <h3>${p.name}</h3>
       <div class="age-tag">${p.age} años</div>
-      ${p.descripcion ? `<div class="patient-desc">${p.descripcion}</div>` : ''}
       <div class="start-label">Iniciar sesión →</div>
     </div>`).join('');
 }
