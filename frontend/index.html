@@ -70,13 +70,16 @@ main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-di
 /* SELECTION */
 .section-title { font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);margin-bottom:4px; }
 .section-sub { font-size:.83rem;color:var(--muted);line-height:1.6; }
-.patients-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px; }
-.patient-option { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 20px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center; }
-.patient-option:hover { border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 24px rgba(91,141,238,.12); }
-.avatar-lg { width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#3b4f6e,#5b8dee);display:flex;align-items:center;justify-content:center;font-size:1.8rem; }
-.patient-option h3 { font-family:'Playfair Display',serif;font-size:1.05rem; }
-.age-tag { font-size:.78rem;color:var(--muted);background:rgba(255,255,255,.05);padding:3px 10px;border-radius:20px;border:1px solid var(--border); }
-.start-label { font-size:.78rem;color:var(--accent);opacity:0;transition:opacity .2s;margin-top:2px; }
+.patients-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px; }
+.patient-option { background:var(--card);border:2px solid var(--border);border-radius:20px;padding:32px 24px;cursor:pointer;transition:all .25s;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;position:relative;overflow:hidden; }
+.patient-option::before { content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(91,141,238,.06),transparent);opacity:0;transition:opacity .25s; }
+.patient-option:hover { border-color:var(--accent);transform:translateY(-5px);box-shadow:0 12px 32px rgba(91,141,238,.18); }
+.patient-option:hover::before { opacity:1; }
+.avatar-lg { width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#3b4f6e,#5b8dee);display:flex;align-items:center;justify-content:center;font-size:2.2rem;box-shadow:0 4px 16px rgba(91,141,238,.25); }
+.patient-option h3 { font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700; }
+.patient-desc { font-size:.8rem;color:var(--muted);line-height:1.5;max-width:180px; }
+.age-tag { font-size:.8rem;color:var(--muted);background:rgba(255,255,255,.07);padding:4px 14px;border-radius:20px;border:1px solid var(--border); }
+.start-label { font-size:.82rem;color:var(--accent);font-weight:600;opacity:0;transition:opacity .2s;margin-top:4px;letter-spacing:.02em; }
 .patient-option:hover .start-label { opacity:1; }
 /* Filtros de categoría y dificultad */
 .filter-cat-btn { padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s; }
@@ -161,6 +164,9 @@ tr:hover td { background:rgba(255,255,255,.02); }
 /* MODAL */
 #modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;padding:20px; }
 #modal-overlay.active { display:flex; }
+.modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px; }
+.modal-overlay.open { display:flex !important; }
+.modal-box { background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 32px;width:min(640px,95vw);max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.55); }
 .modal { background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:680px;max-height:88vh;overflow-y:auto;padding:32px;animation:modalIn .35s cubic-bezier(.34,1.56,.64,1); }
 @keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-title { font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:6px; }
@@ -402,7 +408,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
   </div>
 
   <!-- MODAL RETROALIMENTACIONES DOCENTE -->
-  <div class="modal-overlay" id="modal-retro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
+  <div class="modal-overlay" id="modal-retro">
     <div class="modal-box" style="width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;">
       <div class="modal-header">
         <div>
@@ -496,59 +502,6 @@ tr:hover td { background:rgba(255,255,255,.02); }
       </div>
     </div>
 
-    <!-- Modal sesiones de un estudiante -->
-    <div class="modal-overlay" id="modal-docente-sesiones" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
-      <div class="modal-box" style="width:min(720px,95vw);max-height:85vh;display:flex;flex-direction:column;">
-        <div class="modal-header">
-          <div>
-            <div class="modal-title">📋 Sesiones de <span id="modal-ses-nombre">—</span></div>
-            <div class="modal-subtitle">Haz clic en "Comentar" para dejar retroalimentación sobre una sesión.</div>
-          </div>
-          <button class="modal-close" onclick="closeAdminModal('modal-docente-sesiones')">✕</button>
-        </div>
-        <div id="modal-ses-list" style="overflow-y:auto;flex:1;"></div>
-      </div>
-    </div>
-
-    <!-- Modal escribir retroalimentación -->
-    <div class="modal-overlay" id="modal-escribir-retro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:center;justify-content:center;">
-      <div class="modal-box" style="width:min(580px,95vw);">
-        <div class="modal-header">
-          <div>
-            <div class="modal-title">✏️ Retroalimentación</div>
-            <div class="modal-subtitle">Escribe un comentario sobre la sesión de <span id="retro-est-nombre">—</span></div>
-          </div>
-          <button class="modal-close" onclick="closeAdminModal('modal-escribir-retro')">✕</button>
-        </div>
-        <div style="padding:0 0 8px;">
-          <textarea id="retro-comentario" rows="6"
-            placeholder="Escribe aquí tu retroalimentación para el estudiante..."
-            style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.88rem;resize:vertical;box-sizing:border-box;"></textarea>
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-          <button class="btn-ghost" onclick="closeAdminModal('modal-escribir-retro')">Cancelar</button>
-          <button class="btn-accent" onclick="guardarRetroalimentacion()">Enviar retroalimentación</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal crear grupo -->
-    <div class="modal-overlay" id="modal-crear-grupo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
-      <div class="modal-box" style="width:min(480px,95vw);">
-        <div class="modal-header">
-          <div class="modal-title">👥 Nuevo grupo</div>
-          <button class="modal-close" onclick="closeAdminModal('modal-crear-grupo')">✕</button>
-        </div>
-        <div class="field">
-          <label>Nombre del grupo</label>
-          <input id="ng-nombre" type="text" placeholder="Ej: Clínica 2026-1"/>
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
-          <button class="btn-ghost" onclick="closeAdminModal('modal-crear-grupo')">Cancelar</button>
-          <button class="btn-accent" onclick="docenteCrearGrupo()">Crear grupo</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- PANEL ADMIN -->
@@ -835,6 +788,61 @@ tr:hover td { background:rgba(255,255,255,.02); }
     </div><!-- /admin-layout -->
   </div><!-- /screen-admin -->
 
+
+    <!-- Modal sesiones de un estudiante -->
+    <div class="modal-overlay" id="modal-docente-sesiones">
+      <div class="modal-box" style="width:min(720px,95vw);max-height:85vh;display:flex;flex-direction:column;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">📋 Sesiones de <span id="modal-ses-nombre">—</span></div>
+            <div class="modal-subtitle">Haz clic en "Comentar" para dejar retroalimentación sobre una sesión.</div>
+          </div>
+          <button class="modal-close" onclick="closeAdminModal('modal-docente-sesiones')">✕</button>
+        </div>
+        <div id="modal-ses-list" style="overflow-y:auto;flex:1;"></div>
+      </div>
+    </div>
+
+    <!-- Modal escribir retroalimentación -->
+    <div class="modal-overlay" id="modal-escribir-retro">
+      <div class="modal-box" style="width:min(580px,95vw);">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">✏️ Retroalimentación</div>
+            <div class="modal-subtitle">Escribe un comentario sobre la sesión de <span id="retro-est-nombre">—</span></div>
+          </div>
+          <button class="modal-close" onclick="closeAdminModal('modal-escribir-retro')">✕</button>
+        </div>
+        <div style="padding:0 0 8px;">
+          <textarea id="retro-comentario" rows="6"
+            placeholder="Escribe aquí tu retroalimentación para el estudiante..."
+            style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.88rem;resize:vertical;box-sizing:border-box;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn-ghost" onclick="closeAdminModal('modal-escribir-retro')">Cancelar</button>
+          <button class="btn-accent" onclick="guardarRetroalimentacion()">Enviar retroalimentación</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal crear grupo -->
+    <div class="modal-overlay" id="modal-crear-grupo">
+      <div class="modal-box" style="width:min(480px,95vw);">
+        <div class="modal-header">
+          <div class="modal-title">👥 Nuevo grupo</div>
+          <button class="modal-close" onclick="closeAdminModal('modal-crear-grupo')">✕</button>
+        </div>
+        <div class="field">
+          <label>Nombre del grupo</label>
+          <input id="ng-nombre" type="text" placeholder="Ej: Clínica 2026-1"/>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+          <button class="btn-ghost" onclick="closeAdminModal('modal-crear-grupo')">Cancelar</button>
+          <button class="btn-accent" onclick="docenteCrearGrupo()">Crear grupo</button>
+        </div>
+      </div>
+    </div>
+
 </main>
 
 <footer>SimPsi · Plataforma de entrenamiento clínico · Powered by Azure OpenAI + GPT-4o mini</footer>
@@ -966,6 +974,41 @@ let patientName = '';
 let patientId   = '';
 let isLoading   = false;
 
+// ── PERSISTENCIA DE SESIÓN ────────────────────────────────
+// Guarda token y usuario en sessionStorage (persiste al recargar,
+// se borra al cerrar el tab — más seguro que localStorage para tokens)
+function saveSession() {
+  sessionStorage.setItem('simpsi_token', token);
+  sessionStorage.setItem('simpsi_user',  JSON.stringify(currentUser));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('simpsi_token');
+  sessionStorage.removeItem('simpsi_user');
+}
+
+function restoreSession() {
+  const savedToken = sessionStorage.getItem('simpsi_token');
+  const savedUser  = sessionStorage.getItem('simpsi_user');
+  if (!savedToken || !savedUser) return false;
+  try {
+    token       = savedToken;
+    currentUser = JSON.parse(savedUser);
+    return true;
+  } catch(e) {
+    clearSession();
+    return false;
+  }
+}
+
+// Al cargar la página, intenta restaurar sesión previa
+document.addEventListener('DOMContentLoaded', () => {
+  if (restoreSession()) {
+    setupHeader();
+    routeByRole();
+  }
+});
+
 // ── UTILS ─────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1031,6 +1074,7 @@ async function doLogin() {
 
     token       = data.access_token;
     currentUser = { email, rol: data.rol, nombre: data.nombre };
+    saveSession();
 
     setupHeader();
     routeByRole();
@@ -1090,6 +1134,7 @@ function routeByRole() {
 
 function logout() {
   token = null; currentUser = null; sessionId = null;
+  clearSession();
   document.getElementById('header-auth').style.display  = 'none';
   document.getElementById('header-guest').style.display = 'block';
   document.getElementById('login-email').value    = '';
@@ -1179,6 +1224,7 @@ function renderPatientCards() {
       <div class="avatar-lg">👤</div>
       <h3>${p.name}</h3>
       <div class="age-tag">${p.age} años</div>
+      ${p.descripcion ? `<div class="patient-desc">${p.descripcion}</div>` : ''}
       <div class="start-label">Iniciar sesión →</div>
     </div>`).join('');
 }
@@ -2508,7 +2554,12 @@ async function registrarPago() {
 function openAdminModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.style.display = 'flex';
+  // Use .open class for .modal-overlay elements (gives proper backdrop-filter)
+  if (el.classList.contains('modal-overlay') || el.classList.contains('admin-modal-overlay')) {
+    el.style.display = 'flex';
+  } else {
+    el.style.display = 'flex';
+  }
   if (id==='modal-analisis-objetivo' && !document.getElementById('ao-instruccion').value) {
     document.getElementById('ao-instruccion').value = 'Eres un supervisor clínico experto en psicología con conocimiento en múltiples especialidades...\n\n[Edita aquí el prompt completo del análisis objetivo global]';
   }
