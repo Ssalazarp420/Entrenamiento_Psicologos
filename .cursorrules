@@ -26,12 +26,12 @@
 - No modifiques el archivo `.env` a menos que sea para añadir una nueva variable necesaria.
 - Siempre que hagas un cambio multi-archivo, explica brevemente cómo interactúan el front y el back.
 
-## 6. LangChain & Azure OpenAI (gpt-4o-mini)
-- **SDK Preferido:** Usar siempre `from langchain_openai import AzureChatOpenAI`. Evitar librerías obsoletas como `langchain.chat_models`.
-- **Configuración del Modelo:** - El `deployment_name` para gpt-4o-mini debe leerse de `AZURE_OPENAI_DEPLOYMENT_NAME` en el `.env`.
-  - Asegurarse de pasar siempre el `api_version` (ej. "2024-08-01-preview" o la que uses actualmente).
-- **Patrones de LangChain:**
-  - Priorizar el uso de **LCEL (LangChain Expression Language)** con el operador pipe `|`.
-  - Para cadenas de extracción de datos, usar `.with_structured_output()` con Pydantic si es posible.
-- **Optimización de gpt-4o-mini:** - Al ser un modelo "mini", las instrucciones deben ser directas y concisas. 
-  - Para tareas complejas de razonamiento, sugerir el uso de Few-Shot prompting.
+## 6. LangChain & Azure OpenAI
+- **SDK:** `from langchain_openai import AzureChatOpenAI`.
+- **Memoria:** Priorizar `CosmosDBChatMessageHistory` para persistencia de sesiones de práctica.
+- **LCEL:** Usar el operador `|` y `RunnableWithMessageHistory` para la gestión de cadenas con memoria.
+- **Salidas Estructuradas:** Obligatorio usar `.with_structured_output(PydanticModel)` para extraer métricas de la sesión (ej. empatía, uso de técnicas del estudiante).
+
+## 7. Reglas de Simulación (Psicología)
+- **Consistencia:** El modelo gpt-4o-mini debe recibir instrucciones de "no romper el personaje" (no actuar como asistente de IA).
+- **Seguridad:** Si el código toca temas sensibles (crisis de salud mental), asegurar que existan validaciones o "guardrails" en el prompt.
