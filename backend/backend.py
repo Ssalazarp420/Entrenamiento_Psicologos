@@ -186,7 +186,7 @@ Analiza la sesión y entrega un reporte estructurado con los siguientes puntos:
 
 Sé directo, constructivo y específico. Basa todo en lo que realmente ocurrió en la conversación."""
 
-CATEGORIAS_SEED = ["Ansiedad", "Depresión", "Estrés Laboral", "Forense", "Duelo", "General"]
+CATEGORIAS_SEED = ["Ansiedad", "Depresión", "Estrés Laboral", "Duelo", "General"]
 
 # ---------------------------------------------------------------------------
 # HELPERS

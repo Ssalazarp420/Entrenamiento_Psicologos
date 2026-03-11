@@ -82,13 +82,14 @@ main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-di
 .start-label { font-size:.82rem;color:var(--accent);font-weight:600;opacity:0;transition:opacity .2s;margin-top:4px;letter-spacing:.02em; }
 .patient-option:hover .start-label { opacity:1; }
 /* Filtros de categoría y dificultad */
-.filter-cat-btn { padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s; }
-.filter-cat-btn:hover,.filter-cat-btn.active { border-color:var(--accent);background:rgba(91,141,238,.12);color:var(--accent); }
-.filter-dif-btn { padding:8px 20px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.84rem;cursor:pointer;transition:all .2s;font-weight:500; }
+.filter-cat-btn { padding:9px 20px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .2s;letter-spacing:.01em; }
+.filter-cat-btn:hover { border-color:var(--accent);background:rgba(91,141,238,.08);color:var(--accent); }
+.filter-cat-btn.active { border-color:var(--accent);background:rgba(91,141,238,.15);color:var(--accent);font-weight:600; }
+.filter-dif-btn { padding:10px 24px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:.86rem;font-weight:500;cursor:pointer;transition:all .2s; }
 .filter-dif-btn:hover { border-color:var(--accent); }
-.filter-dif-btn.active[data-dif="Leve"]     { background:rgba(5,150,105,.15);color:#059669;border-color:rgba(5,150,105,.4); }
-.filter-dif-btn.active[data-dif="Moderada"] { background:rgba(217,119,6,.15);color:#D97706;border-color:rgba(217,119,6,.4); }
-.filter-dif-btn.active[data-dif="Severa"]   { background:rgba(220,38,38,.15);color:#DC2626;border-color:rgba(220,38,38,.4); }
+.filter-dif-btn.active[data-dif="Leve"]     { background:rgba(5,150,105,.15);color:#059669;border-color:rgba(5,150,105,.5); }
+.filter-dif-btn.active[data-dif="Moderada"] { background:rgba(217,119,6,.15);color:#D97706;border-color:rgba(217,119,6,.5); }
+.filter-dif-btn.active[data-dif="Severa"]   { background:rgba(220,38,38,.15);color:#DC2626;border-color:rgba(220,38,38,.5); }
 /* Tarjetas de grupos docente */
 .grupo-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s; }
 .grupo-card:hover { border-color:var(--accent);transform:translateY(-2px); }
@@ -178,6 +179,11 @@ tr:hover td { background:rgba(255,255,255,.02); }
 .section-label { font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px; }
 .section-label::after { content:'';flex:1;height:1px;background:var(--border); }
 .feedback-block { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;font-size:.87rem;line-height:1.75;margin-bottom:20px;white-space:pre-wrap; }
+.modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px; }
+.modal-header .modal-title { margin-bottom:4px; }
+.modal-header .modal-subtitle { margin-bottom:0; }
+.modal-close-x { width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--muted);font-size:.95rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s; }
+.modal-close-x:hover { background:rgba(220,38,38,.15);color:var(--red);border-color:rgba(220,38,38,.3); }
 .modal-close { width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;margin-top:10px;transition:background .2s; }
 .modal-close:hover { background:#4a7ee0; }
 .spinner { width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto; }
@@ -415,7 +421,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
           <div class="modal-title">💬 Retroalimentaciones del docente</div>
           <div class="modal-subtitle">Comentarios que tus docentes han dejado sobre tus sesiones.</div>
         </div>
-        <button class="modal-close" onclick="closeRetroModal()">✕</button>
+        <button class="modal-close-x" onclick="closeRetroModal()">✕</button>
       </div>
       <div id="retro-list" style="overflow-y:auto;flex:1;padding:4px 0;">
         <div class="spinner" style="margin:32px auto;"></div>
@@ -797,7 +803,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
             <div class="modal-title">📋 Sesiones de <span id="modal-ses-nombre">—</span></div>
             <div class="modal-subtitle">Haz clic en "Comentar" para dejar retroalimentación sobre una sesión.</div>
           </div>
-          <button class="modal-close" onclick="closeAdminModal('modal-docente-sesiones')">✕</button>
+          <button class="modal-close-x" onclick="closeAdminModal('modal-docente-sesiones')">✕</button>
         </div>
         <div id="modal-ses-list" style="overflow-y:auto;flex:1;"></div>
       </div>
@@ -811,7 +817,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
             <div class="modal-title">✏️ Retroalimentación</div>
             <div class="modal-subtitle">Escribe un comentario sobre la sesión de <span id="retro-est-nombre">—</span></div>
           </div>
-          <button class="modal-close" onclick="closeAdminModal('modal-escribir-retro')">✕</button>
+          <button class="modal-close-x" onclick="closeAdminModal('modal-escribir-retro')">✕</button>
         </div>
         <div style="padding:0 0 8px;">
           <textarea id="retro-comentario" rows="6"
@@ -830,7 +836,7 @@ tr:hover td { background:rgba(255,255,255,.02); }
       <div class="modal-box" style="width:min(480px,95vw);">
         <div class="modal-header">
           <div class="modal-title">👥 Nuevo grupo</div>
-          <button class="modal-close" onclick="closeAdminModal('modal-crear-grupo')">✕</button>
+          <button class="modal-close-x" onclick="closeAdminModal('modal-crear-grupo')">✕</button>
         </div>
         <div class="field">
           <label>Nombre del grupo</label>
@@ -1304,12 +1310,12 @@ async function loadHistorial() {
       <tr>
         <td><strong>${s.patient_name || '—'}</strong></td>
         <td style="font-size:.8rem;color:var(--muted)">${formatDate(s.inicio)}</td>
-        <td style="font-size:.8rem;color:var(--muted)">${calcDuracion(s.inicio, s.fin)}</td>
+        <td style="font-size:.8rem;color:var(--muted)">${formatDuration(s.inicio, s.fin)}</td>
         <td>${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
         <td><span class="status-pill status-${s.estado || 'activa'}">${s.estado || '—'}</span></td>
         <td style="display:flex;gap:6px;align-items:center;">
           <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
-            onclick="verSesion('${s.sesion_id}')">Ver</button>
+            onclick="loadDetalle('${s.sesion_id}')">Ver</button>
           <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
             onclick="eliminarSesion('${s.sesion_id}', this)">🗑</button>
         </td>
