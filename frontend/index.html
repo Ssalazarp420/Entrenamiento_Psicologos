@@ -1221,6 +1221,12 @@ function renderPatientCards() {
   const filtered  = Object.entries(allPatients).filter(([, p]) => {
     const pCat = (p.categoria || '').trim().toLowerCase();
     const pDif = (p.dificultad || '').trim().toLowerCase();
+    // Si la categoría seleccionada es "general", ignoramos la categoría del caso
+    // y mostramos todos los pacientes que coincidan con la dificultad elegida.
+    if (catNorm === 'general') {
+      return pDif === difNorm;
+    }
+    // En cualquier otra categoría, filtramos por categoría y dificultad.
     return pCat === catNorm && pDif === difNorm;
   });
 
