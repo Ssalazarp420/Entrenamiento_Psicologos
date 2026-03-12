@@ -1356,13 +1356,16 @@ function renderPatientCards() {
     return;
   }
 
-  container.innerHTML = filtered.map(([pid, p]) => `
-    <div class="patient-option" onclick="selectPatient('${pid}','${p.name}',${p.age})">
+  container.innerHTML = filtered.map(([pid, p]) => {
+    const safeName = String(p.name || '').replace(/'/g, "\\'");
+    return `
+    <div class="patient-option" onclick="selectPatient('${pid}','${safeName}',${p.age})">
       <div class="avatar-lg">👤</div>
       <h3>${p.name}</h3>
       <div class="age-tag">${p.age} años</div>
       <div class="start-label">Iniciar sesión →</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function selectPatient(pid, name, age) {
