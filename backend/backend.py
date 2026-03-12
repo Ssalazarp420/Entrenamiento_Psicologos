@@ -684,6 +684,288 @@ def todas_sesiones(user=Depends(get_current_user)):
     query = "SELECT c.sesion_id, c.usuario_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado FROM c ORDER BY c.inicio DESC"
     return list(c_sesiones.query_items(query, enable_cross_partition_query=True))
 
+
+# ---------------------------------------------------------------------------
+# ADMIN — RESÚMENES DE SESIONES (ESTUDIANTES / DOCENTES)
+# ---------------------------------------------------------------------------
+@app.get("/admin/sesiones/estudiantes")
+def admin_sesiones_estudiantes(user=Depends(require_admin)):
+    """
+    Resumen agregado por estudiante:
+    - total de sesiones
+    - minutos totales de práctica
+    - promedio de puntuación
+    - fecha de última sesión
+    """
+    # Mapa de nombre por email solo para estudiantes
+    usuarios = list(c_usuarios.query_items(
+        "SELECT c.email, c.nombre, c.rol FROM c",
+        enable_cross_partition_query=True
+    ))
+    nombres_est = {
+        u["email"]: u.get("nombre", u["email"])
+        for u in usuarios if u.get("rol") == "estudiante"
+    }
+
+    sesiones = list(c_sesiones.query_items(
+        "SELECT * FROM c",
+        enable_cross_partition_query=True
+    ))
+
+    agg = {}
+    for s in sesiones:
+        email = s.get("usuario_id")
+        if not email or email not in nombres_est:
+            continue
+        inicio = s.get("inicio")
+        fin = s.get("fin")
+        dur_min = 0.0
+        if inicio and fin:
+            try:
+                dt_ini = datetime.fromisoformat(inicio)
+                dt_fin = datetime.fromisoformat(fin)
+                dur_min = max(0.0, (dt_fin - dt_ini).total_seconds() / 60.0)
+            except Exception:
+                pass
+        key = email
+        if key not in agg:
+            agg[key] = {
+                "usuario_id": email,
+                "nombre": nombres_est[email],
+                "total_sesiones": 0,
+                "minutos_totales": 0.0,
+                "puntuacion_promedio": None,
+                "ultima_sesion": None,
+            }
+        entry = agg[key]
+        entry["total_sesiones"] += 1
+        entry["minutos_totales"] += dur_min
+        punt = s.get("puntuacion")
+        if punt is not None:
+            if entry["puntuacion_promedio"] is None:
+                entry["puntuacion_promedio"] = float(punt)
+            else:
+                # promedio incremental simple basado en conteo de sesiones con puntuación
+                # (para simplicidad, recalculamos al final)
+                pass
+        if inicio:
+            try:
+                dt_ini = datetime.fromisoformat(inicio)
+                if not entry["ultima_sesion"] or dt_ini > entry["ultima_sesion"]:
+                    entry["ultima_sesion"] = dt_ini
+            except Exception:
+                pass
+
+    # Recalcular promedio de puntuación correctamente
+    # (segundo pase para no complicar arriba)
+    for s in sesiones:
+        email = s.get("usuario_id")
+        if not email or email not in agg:
+            continue
+        punt = s.get("puntuacion")
+        if punt is None:
+            continue
+        entry = agg[email]
+        if "sum_p" not in entry:
+            entry["sum_p"] = 0.0
+            entry["cnt_p"] = 0
+        entry["sum_p"] += float(punt)
+        entry["cnt_p"] += 1
+
+    resultado = []
+    for email, entry in agg.items():
+        if entry.get("cnt_p"):
+            entry["puntuacion_promedio"] = round(entry["sum_p"] / entry["cnt_p"], 1)
+        else:
+            entry["puntuacion_promedio"] = None
+        entry.pop("sum_p", None)
+        entry.pop("cnt_p", None)
+        if entry["ultima_sesion"] is not None:
+            entry["ultima_sesion"] = entry["ultima_sesion"].isoformat()
+        entry["minutos_totales"] = round(entry["minutos_totales"])
+        resultado.append(entry)
+
+    # Ordenar por última sesión (desc) para que los más activos aparezcan arriba
+    resultado.sort(key=lambda x: x.get("ultima_sesion") or "", reverse=True)
+    return resultado
+
+
+@app.get("/admin/sesiones/estudiante/{email}")
+def admin_sesiones_estudiante(email: str, user=Depends(require_admin)):
+    """
+    Devuelve todas las sesiones de un estudiante específico,
+    incluyendo duración en minutos y número de sesión.
+    """
+    query = (
+        "SELECT * FROM c "
+        f"WHERE c.usuario_id = '{email}' "
+        "ORDER BY c.inicio DESC"
+    )
+    sesiones = list(c_sesiones.query_items(query, enable_cross_partition_query=True))
+    resultado = []
+    for s in sesiones:
+        inicio = s.get("inicio")
+        fin = s.get("fin")
+        dur_min = None
+        if inicio and fin:
+            try:
+                dt_ini = datetime.fromisoformat(inicio)
+                dt_fin = datetime.fromisoformat(fin)
+                dur_min = max(0.0, (dt_fin - dt_ini).total_seconds() / 60.0)
+            except Exception:
+                pass
+        resultado.append({
+            "sesion_id": s.get("sesion_id"),
+            "patient_name": s.get("patient_name"),
+            "inicio": inicio,
+            "fin": fin,
+            "minutos": round(dur_min) if dur_min is not None else None,
+            "numero_sesion": s.get("numero_sesion"),
+            "puntuacion": s.get("puntuacion"),
+            "estado": s.get("estado"),
+            "alta": s.get("alta", False),
+        })
+    return resultado
+
+
+@app.get("/admin/sesiones/docentes")
+def admin_sesiones_docentes(user=Depends(require_admin)):
+    """
+    Resumen agregado por docente a partir de las retroalimentaciones:
+    - total de retroalimentaciones
+    - número de estudiantes distintos
+    - fecha de última retroalimentación
+    """
+    usuarios = list(c_usuarios.query_items(
+        "SELECT c.email, c.nombre, c.rol FROM c",
+        enable_cross_partition_query=True
+    ))
+    nombres_doc = {
+        u["email"]: u.get("nombre", u["email"])
+        for u in usuarios if u.get("rol") in ["docente", "admin"]
+    }
+
+    retros = list(c_retroalimentaciones.query_items(
+        "SELECT * FROM c",
+        enable_cross_partition_query=True
+    ))
+
+    agg = {}
+    for r in retros:
+        dmail = r.get("docente_email")
+        if not dmail or dmail not in nombres_doc:
+            continue
+        creado = r.get("creado_en")
+        if dmail not in agg:
+            agg[dmail] = {
+                "docente_email": dmail,
+                "docente_nombre": nombres_doc[dmail],
+                "total_retro": 0,
+                "total_estudiantes": 0,
+                "ultima_retro": None,
+                "_estudiantes": set(),
+            }
+        entry = agg[dmail]
+        entry["total_retro"] += 1
+        est_email = r.get("estudiante_email")
+        if est_email:
+            entry["_estudiantes"].add(est_email)
+        if creado:
+            try:
+                dt_cre = datetime.fromisoformat(creado)
+                if not entry["ultima_retro"] or dt_cre > entry["ultima_retro"]:
+                    entry["ultima_retro"] = dt_cre
+            except Exception:
+                pass
+
+    resultado = []
+    for dmail, entry in agg.items():
+        entry["total_estudiantes"] = len(entry["_estudiantes"])
+        entry.pop("_estudiantes", None)
+        if entry["ultima_retro"] is not None:
+            entry["ultima_retro"] = entry["ultima_retro"].isoformat()
+        resultado.append(entry)
+
+    resultado.sort(key=lambda x: x.get("ultima_retro") or "", reverse=True)
+    return resultado
+
+
+@app.get("/admin/sesiones/docente/{email}")
+def admin_sesiones_docente_detalle(email: str, user=Depends(require_admin)):
+    """
+    Detalle por docente:
+    - una entrada por estudiante con:
+      - total de comentarios
+      - última fecha
+      - lista de comentarios con paciente y puntuación asociados
+    """
+    # Mapa de nombre de estudiante por email
+    usuarios = list(c_usuarios.query_items(
+        "SELECT c.email, c.nombre, c.rol FROM c",
+        enable_cross_partition_query=True
+    ))
+    nombres_est = {
+        u["email"]: u.get("nombre", u["email"])
+        for u in usuarios if u.get("rol") == "estudiante"
+    }
+
+    # Mapa de sesión -> info básica (paciente, puntuación)
+    sesiones = list(c_sesiones.query_items(
+        "SELECT c.sesion_id, c.patient_name, c.puntuacion FROM c",
+        enable_cross_partition_query=True
+    ))
+    ses_map = {s["sesion_id"]: s for s in sesiones if s.get("sesion_id")}
+
+    retros = list(c_retroalimentaciones.query_items(
+        f"SELECT * FROM c WHERE c.docente_email = '{email}'",
+        enable_cross_partition_query=True
+    ))
+
+    agg = {}
+    for r in retros:
+        est_email = r.get("estudiante_email")
+        if not est_email:
+            continue
+        key = est_email
+        if key not in agg:
+            agg[key] = {
+                "estudiante_email": est_email,
+                "estudiante_nombre": nombres_est.get(est_email, est_email),
+                "total_comentarios": 0,
+                "ultima_fecha": None,
+                "comentarios": [],
+            }
+        entry = agg[key]
+        entry["total_comentarios"] += 1
+        creado = r.get("creado_en")
+        if creado:
+            try:
+                dt_cre = datetime.fromisoformat(creado)
+                if not entry["ultima_fecha"] or dt_cre > entry["ultima_fecha"]:
+                    entry["ultima_fecha"] = dt_cre
+            except Exception:
+                pass
+        ses_id = r.get("sesion_id")
+        ses_info = ses_map.get(ses_id, {})
+        entry["comentarios"].append({
+            "sesion_id": ses_id,
+            "patient_name": ses_info.get("patient_name"),
+            "puntuacion": ses_info.get("puntuacion"),
+            "creado_en": creado,
+            "comentario": r.get("comentario"),
+        })
+
+    resultado = []
+    for _, entry in agg.items():
+        if entry["ultima_fecha"] is not None:
+            entry["ultima_fecha"] = entry["ultima_fecha"].isoformat()
+        # Ordenar comentarios del más reciente al más antiguo
+        entry["comentarios"].sort(key=lambda c: c.get("creado_en") or "", reverse=True)
+        resultado.append(entry)
+
+    resultado.sort(key=lambda x: x.get("ultima_fecha") or "", reverse=True)
+    return resultado
+
 # ---------------------------------------------------------------------------
 # ADMIN — USUARIOS
 # ---------------------------------------------------------------------------
