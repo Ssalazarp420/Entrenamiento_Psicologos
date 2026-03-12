@@ -1412,6 +1412,10 @@ async function loadHistorial() {
         <td>${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
         <td><span class="status-pill status-${s.estado || 'activa'}">${s.estado || '—'}</span></td>
         <td style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-accent" style="padding:5px 10px;font-size:.75rem;"
+            onclick="reanudarSesion('${s.sesion_id}','${(s.patient_name||'').replace(/'/g,"\\'")}')">
+            ↩ Continuar
+          </button>
           <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
             onclick="loadDetalle('${s.sesion_id}')">Ver</button>
           <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
@@ -1436,6 +1440,47 @@ async function eliminarSesion(sesionId, btn) {
   } catch(e) {
     showToast('Error al eliminar: ' + e.message, true);
     btn.disabled = false; btn.textContent = '🗑';
+  }
+}
+
+async function reanudarSesion(sesionId, patientNameFromList) {
+  try {
+    const res = await fetch(`${API}/session/resume/${sesionId}`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.detail || `Error ${res.status}`;
+      showToast('No se pudo reanudar la sesión: ' + msg, true);
+      return;
+    }
+
+    sessionId  = data.session_id;
+    patientId  = data.patient.id;
+    patientName = data.patient.name || patientNameFromList || 'Paciente';
+
+    const cardTitle = document.getElementById('card-name');
+    if (cardTitle) cardTitle.textContent = `${patientName}, ${data.patient.age} años`;
+    const emptyLabel = document.getElementById('empty-label');
+    if (emptyLabel) emptyLabel.textContent = `Continúa la sesión con ${patientName}.`;
+
+    const chatBox = document.getElementById('chat-box');
+    if (chatBox) {
+      chatBox.innerHTML = '';
+      (data.history || []).forEach(m => {
+        if (m && m.text && m.role) appendMsg(m.role, m.text);
+      });
+    }
+
+    showScreen('screen-chat');
+    setNavActive('screen-selection');
+    document.getElementById('user-input').disabled = false;
+    document.getElementById('send-btn').disabled   = false;
+    document.getElementById('end-btn').disabled    = false;
+    document.getElementById('user-input').focus();
+  } catch (e) {
+    showToast('No se pudo reanudar la sesión', true);
   }
 }
 

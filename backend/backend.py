@@ -314,6 +314,84 @@ def new_session(req: NewSessionRequest, user=Depends(get_current_user)):
     }}
 
 
+@app.post("/session/resume/{sesion_id}")
+def resume_session(sesion_id: str, user=Depends(get_current_user)):
+    """
+    Permite reanudar una sesión ya completada reconstruyendo el historial
+    de mensajes a partir de la transcripción guardada en CosmosDB.
+    """
+    # Verifica que la sesión exista y pertenezca al usuario
+    ses_items = list(c_sesiones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
+        enable_cross_partition_query=True,
+    ))
+    if not ses_items:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    ses = ses_items[0]
+    if ses.get("usuario_id") != user["email"] and user.get("rol") != "admin":
+        raise HTTPException(status_code=403, detail="No tienes acceso a esta sesión")
+
+    # Busca el detalle con la transcripción previa
+    det_items = list(c_detalle.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
+        enable_cross_partition_query=True,
+    ))
+    if not det_items:
+        raise HTTPException(status_code=404, detail="La sesión no tiene historial para reanudar")
+
+    detalle = det_items[0]
+    patient_id = ses.get("patient_id")
+    casos = get_casos_dict()
+    if patient_id not in casos:
+        raise HTTPException(status_code=400, detail="Perfil de paciente no encontrado para esta sesión")
+    profile = casos[patient_id]
+
+    # Reconstruye los mensajes para el modelo a partir de la transcripción
+    transcripcion = detalle.get("transcripcion", "") or ""
+    mensajes_lm: List = [SystemMessage(content=profile["instruccion"])]
+    history_for_client = []
+
+    nombre_paciente = profile["name"]
+    for linea in transcripcion.splitlines():
+        linea = linea.strip()
+        if not linea:
+            continue
+        # Espera formato "Psicólogo: ..." o "<NombrePaciente>: ..."
+        if linea.startswith("Psicólogo:"):
+            contenido = linea.split(":", 1)[1].strip()
+            if contenido:
+                mensajes_lm.append(HumanMessage(content=contenido))
+                history_for_client.append({"role": "psi", "text": contenido})
+        elif linea.startswith(f"{nombre_paciente}:"):
+            contenido = linea.split(":", 1)[1].strip()
+            if contenido:
+                mensajes_lm.append(AIMessage(content=contenido))
+                history_for_client.append({"role": "patient", "text": contenido})
+
+    if len(mensajes_lm) == 1:
+        # No se pudo reconstruir nada útil
+        raise HTTPException(status_code=400, detail="No se pudo reconstruir el historial de la sesión")
+
+    # Registra la sesión en memoria para continuar el chat
+    sessions[sesion_id] = {
+        "messages": mensajes_lm,
+        "patient_id": patient_id,
+        "usuario_id": user["email"],
+        "inicio": ses.get("inicio") or datetime.utcnow().isoformat(),
+    }
+
+    return {
+        "session_id": sesion_id,
+        "patient": {
+            "id": patient_id,
+            "name": profile["name"],
+            "age": profile["age"],
+            "descripcion": profile.get("descripcion", ""),
+        },
+        "history": history_for_client,
+    }
+
+
 @app.post("/chat")
 def chat(req: MessageRequest, user=Depends(get_current_user)):
     if req.session_id not in sessions:
