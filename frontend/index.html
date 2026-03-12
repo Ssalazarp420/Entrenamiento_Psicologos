@@ -1402,16 +1402,23 @@ async function selectPatient(pid, name, age) {
     </div>`;
 
   try {
+    console.log('Iniciando solicitud de sesión:', { pid, name, age });
+    
     const res  = await fetch(`${API}/session/new`, {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ patient_id: pid })
+      method: 'POST', 
+      headers: authHeaders(),
+      body: JSON.stringify({ patient_id: pid }),
+      signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
     });
+    
+    console.log('Respuesta recibida:', res.status, res.statusText);
     
     if (!res.ok) {
       throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
     }
     
     const data = await res.json();
+    console.log('Datos recibidos:', data);
     
     if (!data.session_id) {
       throw new Error('El servidor no devolvió un ID de sesión válido');
@@ -1436,10 +1443,19 @@ async function selectPatient(pid, name, age) {
     patientCard.style.pointerEvents = 'auto';
     patientCard.innerHTML = originalContent;
     
-    // Opcional: Mostrar una notificación más visible
+    // Mostrar notificación más específica según el error
+    let errorMessage = 'Error al conectar con el servidor. Intenta de nuevo.';
+    if (e.name === 'TimeoutError') {
+      errorMessage = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
+    } else if (e.message.includes('401')) {
+      errorMessage = 'Sesión expirada. Inicia sesión nuevamente.';
+      logout();
+      return;
+    }
+    
     const errorDiv = document.createElement('div');
     errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
-    errorDiv.textContent = 'Error al conectar con el servidor. Intenta de nuevo.';
+    errorDiv.textContent = errorMessage;
     document.body.appendChild(errorDiv);
     setTimeout(() => errorDiv.remove(), 3000);
   }
