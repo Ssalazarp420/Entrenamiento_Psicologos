@@ -502,12 +502,12 @@ def resume_session(sesion_id: str, user=Depends(get_current_user)):
                         mensajes_lm.append(AIMessage(content=contenido))
                         history_for_client.append({"role": "patient", "text": contenido})
         else:
-            # 3) Sin detalle guardado y sin sesión en memoria: no es posible reconstruir el historial
-            raise HTTPException(
-                status_code=400,
-                detail="No hay historial almacenado para esta sesión. "
-                       "Es posible que se haya iniciado en otro servidor o que el historial no se haya guardado todavía."
-            )
+            # 3) Sin detalle guardado y sin sesión en memoria: crear sesión vacía pero funcional
+            # Esto evita que se corrompa el historial cuando se reinicia el backend
+            logger.warning(f"Sesión {sesion_id} sin transcripción guardada. Creando sesión base.")
+            mensajes_lm = [SystemMessage(content=profile["instruccion"])]
+            # No hay historial para mostrar, pero la sesión puede continuar
+            history_for_client = []
 
     # Registra la sesión en memoria para continuar el chat
     sessions[sesion_id] = {

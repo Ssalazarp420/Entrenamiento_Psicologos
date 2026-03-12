@@ -2041,9 +2041,23 @@ async function endSession() {
 function closeSessionModal() {
   closeModal();
   sessionId = null;
+  patientId = '';
+  patientName = '';
+  
+  // Limpiar completamente el estado del chat
+  document.getElementById('chat-box').innerHTML = `
+    <div class="empty-state" id="empty-msg">
+      <div class="icon">🛋️</div>
+      <span>Selecciona un paciente para comenzar una nueva sesión.</span>
+    </div>`;
+  document.getElementById('card-name').textContent = 'Paciente seleccionado';
+  document.getElementById('empty-label').textContent = 'Escribe tu primera intervención para iniciar la sesión.';
+  
   document.getElementById('user-input').disabled = false;
   document.getElementById('send-btn').disabled   = false;
   document.getElementById('end-btn').disabled    = false;
+  document.getElementById('user-input').value = '';
+  
   showScreen('screen-selection');
   loadPatients();
   setNavActive('screen-selection');
