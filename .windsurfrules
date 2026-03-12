@@ -1,0 +1,37 @@
+# Reglas de Proyecto: Fullstack Azure (Python & Node.js)
+
+## 1. Estructura del Proyecto
+- **Backend (Python):** Localizado en `/backend`. Usa siempre entornos virtuales.
+- **Frontend (Node.js/React/Next):** Localizado en `/frontend`. Usa `npm` para gestión de paquetes.
+- **Base de Datos:** Azure Cosmos DB (NoSQL).
+
+## 2. Reglas de Código - Python (Backend)
+- Seguir estándares PEP 8.
+- Usar 'type hints' en todas las funciones para mejorar la legibilidad.
+- Para interactuar con Cosmos DB, usar siempre el SDK oficial `azure-cosmos`.
+- Las credenciales deben leerse estrictamente de `os.getenv()` o `dotenv`. NUNCA hardcodear keys.
+
+## 3. Reglas de Código - Node.js (Frontend)
+- Usar arquitectura de componentes funcionales.
+- Mantener los estilos separados de la lógica (CSS Modules o Tailwind).
+- Todas las llamadas a la API deben apuntar a las rutas definidas en el backend de Python.
+
+## 4. Integración con Azure y Cosmos DB
+- **Conexiones:** Validar siempre que el `endpoint` y la `key` provengan del archivo `.env`.
+- **Thunder Client:** Al crear nuevos endpoints en el backend, genera automáticamente el JSON de la request para probarlo en Thunder Client.
+- **Estructura de Datos:** Recuerda que Cosmos DB es NoSQL; asegúrate de que cada item tenga un campo `id` único y una `partitionKey` lógica.
+
+## 5. Flujo de Trabajo y Git
+- Antes de proponer cambios, revisa el archivo `.github/workflows` para asegurar que no se rompa el CI/CD.
+- No modifiques el archivo `.env` a menos que sea para añadir una nueva variable necesaria.
+- Siempre que hagas un cambio multi-archivo, explica brevemente cómo interactúan el front y el back.
+
+## 6. LangChain & Azure OpenAI
+- **SDK:** `from langchain_openai import AzureChatOpenAI`.
+- **Memoria:** Priorizar `CosmosDBChatMessageHistory` para persistencia de sesiones de práctica.
+- **LCEL:** Usar el operador `|` y `RunnableWithMessageHistory` para la gestión de cadenas con memoria.
+- **Salidas Estructuradas:** Obligatorio usar `.with_structured_output(PydanticModel)` para extraer métricas de la sesión (ej. empatía, uso de técnicas del estudiante).
+
+## 7. Reglas de Simulación (Psicología)
+- **Consistencia:** El modelo gpt-4o-mini debe recibir instrucciones de "no romper el personaje" (no actuar como asistente de IA).
+- **Seguridad:** Si el código toca temas sensibles (crisis de salud mental), asegurar que existan validaciones o "guardrails" en el prompt.

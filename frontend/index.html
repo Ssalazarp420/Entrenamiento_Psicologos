@@ -1369,6 +1369,27 @@ function renderPatientCards() {
 }
 
 async function selectPatient(pid, name, age) {
+  // Validar que exista token de autenticación
+  if (!token) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
+    errorDiv.textContent = 'Sesión expirada. Por favor inicia sesión nuevamente.';
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 3000);
+    logout();
+    return;
+  }
+
+  // Mostrar indicador de carga inmediatamente
+  const patientCard = event.currentTarget;
+  const originalContent = patientCard.innerHTML;
+  patientCard.style.opacity = '0.6';
+  patientCard.style.pointerEvents = 'none';
+  patientCard.innerHTML = `
+    <div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;"></div>
+    <div style="color:var(--muted);font-size:.8rem;">Iniciando sesión...</div>
+  `;
+
   patientId   = pid;
   patientName = name;
 
@@ -1385,18 +1406,43 @@ async function selectPatient(pid, name, age) {
       method: 'POST', headers: authHeaders(),
       body: JSON.stringify({ patient_id: pid })
     });
+    
+    if (!res.ok) {
+      throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
+    }
+    
     const data = await res.json();
+    
+    if (!data.session_id) {
+      throw new Error('El servidor no devolvió un ID de sesión válido');
+    }
+    
     sessionId  = data.session_id;
+    
+    // Solo mostrar la pantalla del chat si todo fue exitoso
+    showScreen('screen-chat');
+    setNavActive('screen-selection');
+    document.getElementById('user-input').disabled = false;
+    document.getElementById('send-btn').disabled   = false;
+    document.getElementById('end-btn').disabled    = false;
+    document.getElementById('user-input').focus();
+    
   } catch(e) {
-    appendMsg('sistema', '⚠ No se pudo conectar con el servidor.');
+    console.error('Error al crear sesión:', e);
+    appendMsg('sistema', `⚠ No se pudo iniciar la sesión: ${e.message}`);
+    
+    // Restaurar la tarjeta del paciente a su estado original
+    patientCard.style.opacity = '1';
+    patientCard.style.pointerEvents = 'auto';
+    patientCard.innerHTML = originalContent;
+    
+    // Opcional: Mostrar una notificación más visible
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
+    errorDiv.textContent = 'Error al conectar con el servidor. Intenta de nuevo.';
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 3000);
   }
-
-  showScreen('screen-chat');
-  setNavActive('screen-selection');
-  document.getElementById('user-input').disabled = false;
-  document.getElementById('send-btn').disabled   = false;
-  document.getElementById('end-btn').disabled    = false;
-  document.getElementById('user-input').focus();
 }
 
 // ── Retroalimentaciones del docente (vista estudiante) ────
