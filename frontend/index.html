@@ -142,9 +142,32 @@ main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-di
 }
 .patient-option:hover .start-label { opacity:1;transform:translateY(-1px); }
 /* Filtros de categoría y dificultad */
-.filter-cat-btn { padding:9px 20px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .2s;letter-spacing:.01em; }
-.filter-cat-btn:hover { border-color:var(--accent);background:rgba(91,141,238,.08);color:var(--accent); }
-.filter-cat-btn.active { border-color:var(--accent);background:rgba(91,141,238,.15);color:var(--accent);font-weight:600; }
+.filter-cat-btn {
+  padding:9px 22px;
+  border-radius:999px;
+  border:1.5px solid rgba(148,163,184,.7);
+  background:radial-gradient(circle at top left,rgba(51,65,85,.9),rgba(15,23,42,1));
+  color:#e5e7eb;
+  font-size:.84rem;
+  font-weight:500;
+  cursor:pointer;
+  transition:transform .16s ease,box-shadow .22s ease,border-color .16s ease,background .22s ease,color .16s ease;
+  letter-spacing:.03em;
+}
+.filter-cat-btn:hover {
+  border-color:var(--accent);
+  background:linear-gradient(120deg,rgba(59,130,246,.85),rgba(147,51,234,.85));
+  color:#f9fafb;
+  box-shadow:0 10px 26px rgba(15,23,42,.75);
+  transform:translateY(-2px);
+}
+.filter-cat-btn.active {
+  border-color:transparent;
+  background:linear-gradient(120deg,#38bdf8,#6366f1,#ec4899);
+  color:#0f172a;
+  font-weight:600;
+  box-shadow:0 12px 30px rgba(15,23,42,.9);
+}
 .filter-dif-btn { padding:10px 24px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:.86rem;font-weight:500;cursor:pointer;transition:all .2s; }
 .filter-dif-btn:hover { border-color:var(--accent); }
 .filter-dif-btn.active[data-dif="Leve"]     { background:rgba(5,150,105,.15);color:#059669;border-color:rgba(5,150,105,.5); }
