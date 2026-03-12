@@ -139,6 +139,11 @@ class ConfigUpdate(BaseModel):
 class VincularUsuario(BaseModel):
     email: str; rol: str; institucion_id: str
 
+
+class AltaRequest(BaseModel):
+    sesion_id: str
+    reflexion: Optional[str] = None
+
 # ---------------------------------------------------------------------------
 # SEEDS
 # ---------------------------------------------------------------------------
@@ -188,6 +193,50 @@ Sé directo, constructivo y específico. Basa todo en lo que realmente ocurrió 
 
 CATEGORIAS_SEED = ["Ansiedad", "Depresión", "Estrés Laboral", "Duelo", "General"]
 
+ALTA_OBJETIVO_SEED = """Eres un supervisor clínico experto encargado de evaluar si un proceso terapéutico
+está listo para darse de alta (cierre) o si conviene continuar.
+
+Dispones de:
+- El perfil del paciente simulado.
+- Un resumen de la sesión (transcripción abreviada).
+- El análisis objetivo previo de la sesión.
+- El número total de sesiones realizadas con este paciente.
+- Una reflexión escrita por el estudiante respondiendo, en esencia, a estas preguntas:
+  1) ¿Qué pasaría si hoy surgiera el mismo problema que trajo al paciente?
+  2) ¿Siente que tiene recursos para manejar futuras crisis por sí mismo?
+  3) ¿La terapia se ha vuelto repetitiva o aún hay material clínico importante?
+  4) ¿Cómo visualiza su vida a seis meses sin venir a consulta?
+
+Con toda esta información, entrega un informe de ALTA estructurado en los siguientes apartados:
+
+1. **Resumen del proceso y número de sesiones**
+   - Sintetiza brevemente el problema principal, la dificultad del caso y cuántas sesiones se han realizado.
+
+2. **Recursos y autonomía del paciente**
+   - Evalúa si el paciente parece contar con estrategias y herramientas para manejar recaídas o crisis.
+
+3. **Riesgo clínico y factores de vulnerabilidad**
+   - Señala si aún se observan riesgos importantes (ideación suicida, violencia, consumo problemático, etc.)
+     o factores de vulnerabilidad que justifican continuar.
+
+4. **Valoración de las respuestas de cierre del estudiante**
+   - Analiza de forma crítica la reflexión del estudiante basada en las preguntas de alta
+     (capacidad de anticipar recaídas, visión de futuro, repetitividad de las sesiones, etc.).
+
+5. **Juicio sobre el alta**
+   - Indica claramente si, desde tu rol de supervisor, el alta es:
+     - Altamente recomendable
+     - Posible pero con condiciones (ej. seguimiento, plan de recaídas)
+     - No recomendable todavía
+   - Justifica tu juicio en máximo 3–4 frases.
+
+6. **Recomendaciones finales para el estudiante**
+   - Menciona 2–3 orientaciones prácticas: qué vigilar, cómo cerrar la relación terapéutica,
+     o qué revisar si decide no dar todavía el alta.
+
+Usa un tono profesional, claro y pedagógico, pensado para un psicólogo en formación.
+Responde siempre en español."""
+
 # ---------------------------------------------------------------------------
 # HELPERS
 # ---------------------------------------------------------------------------
@@ -212,6 +261,68 @@ def get_casos_dict():
     if items:
         return {item["caso_id"]: item for item in items}
     return PATIENT_PROFILES_SEED
+
+
+def contar_sesiones_usuario_paciente(usuario_email: str, patient_id: str) -> int:
+    """
+    Cuenta cuántas sesiones COMPLETADAS tiene este usuario con un paciente dado.
+    Se usa para numerar sesiones y para el proceso de alta.
+    """
+    query = (
+        "SELECT VALUE COUNT(1) FROM c "
+        f"WHERE c.usuario_id = '{usuario_email}' "
+        f"AND c.patient_id = '{patient_id}' "
+        "AND c.estado = 'completada'"
+    )
+    try:
+        res = list(c_sesiones.query_items(query, enable_cross_partition_query=True))
+        return int(res[0]) if res else 0
+    except Exception:
+        return 0
+
+
+def construir_sugerencia_alta(profile: dict, num_sesiones: int) -> str:
+    """
+    Genera un texto orientativo (no vinculante) sobre la pertinencia de valorar el alta,
+    en función de la dificultad del caso y del número de sesiones realizadas.
+    """
+    dificultad = (profile.get("dificultad") or "Leve").strip()
+    nombre = profile.get("name") or "el paciente"
+
+    # Umbrales orientativos por dificultad
+    umbrales = {
+        "Leve": 3,
+        "Moderada": 6,
+        "Severa": 10,
+    }
+    umbral = umbrales.get(dificultad, 5)
+
+    base = (
+        f"Hasta ahora has realizado {num_sesiones} sesión(es) con {nombre} "
+        f"en un caso de dificultad {dificultad}."
+    )
+
+    if num_sesiones >= umbral:
+        estado = (
+            "Según la cantidad de sesiones y la dificultad del caso, este es un buen momento "
+            "para valorar formalmente el ALTA terapéutica."
+        )
+    else:
+        faltan = max(1, umbral - num_sesiones)
+        estado = (
+            "Por la dificultad del caso, aún podría ser útil continuar el proceso algunas "
+            f"sesiones más antes de plantear un alta definitiva (aprox. {faltan} sesión(es) adicionales)."
+        )
+
+    preguntas = (
+        "Para tomar la decisión, reflexiona brevemente sobre estas preguntas y respóndelas en el cuadro de alta:\n"
+        "• ¿Qué pasaría si hoy surgiera el mismo problema que trajo al paciente?\n"
+        "• ¿Sientes que el paciente tiene recursos para manejar futuras crisis solo?\n"
+        "• ¿La terapia se ha vuelto repetitiva o aún hay material clínico importante?\n"
+        "• ¿Cómo imaginas la vida del paciente a seis meses sin venir a consulta?"
+    )
+
+    return f"{base}\n\n{estado}\n\n{preguntas}"
 
 def get_analisis_objetivo():
     try:
@@ -331,6 +442,9 @@ def resume_session(sesion_id: str, user=Depends(get_current_user)):
     if ses.get("usuario_id") != user["email"] and user.get("rol") != "admin":
         raise HTTPException(status_code=403, detail="No tienes acceso a esta sesión")
 
+    if ses.get("alta"):
+        raise HTTPException(status_code=400, detail="Esta sesión ya fue dada de alta y no puede reanudarse")
+
     patient_id = ses.get("patient_id")
     casos = get_casos_dict()
     if patient_id not in casos:
@@ -398,6 +512,77 @@ def resume_session(sesion_id: str, user=Depends(get_current_user)):
     }
 
 
+@app.post("/session/alta")
+def marcar_alta(req: AltaRequest, user=Depends(get_current_user)):
+    """
+    Marca una sesión como ALTA terapéutica y genera un informe de alta
+    utilizando el modelo supervisado.
+    """
+    ses_items = list(c_sesiones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{req.sesion_id}'",
+        enable_cross_partition_query=True,
+    ))
+    if not ses_items:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    ses = ses_items[0]
+    if ses.get("usuario_id") != user["email"] and user.get("rol") != "admin":
+        raise HTTPException(status_code=403, detail="No tienes acceso a esta sesión")
+
+    patient_id = ses.get("patient_id")
+    casos = get_casos_dict()
+    if patient_id not in casos:
+        raise HTTPException(status_code=400, detail="Perfil de paciente no encontrado para esta sesión")
+    profile = casos[patient_id]
+
+    # Detalle con transcripción y análisis objetivo
+    det_items = list(c_detalle.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{req.sesion_id}'",
+        enable_cross_partition_query=True,
+    ))
+    if not det_items:
+        raise HTTPException(status_code=404, detail="No se encontró detalle de la sesión para generar el alta")
+    detalle = det_items[0]
+
+    num_sesiones = contar_sesiones_usuario_paciente(user["email"], patient_id)
+
+    resumen_historial = detalle.get("transcripcion", "") or ""
+    analisis_prev = detalle.get("analisis_objetivo", "") or ""
+    reflexion = req.reflexion or ""
+
+    model = get_model()
+    alta_reporte = model.invoke([
+        SystemMessage(content=ALTA_OBJETIVO_SEED),
+        HumanMessage(content=(
+            f"Paciente simulado: {profile['name']}, {profile['age']} años — dificultad {profile.get('dificultad', 'Leve')}.\n"
+            f"Número total de sesiones realizadas con este paciente: {num_sesiones}.\n\n"
+            "Transcripción abreviada de la sesión (texto tal como se registró):\n"
+            f"{resumen_historial}\n\n"
+            "Análisis objetivo previo de la sesión:\n"
+            f"{analisis_prev}\n\n"
+            "Reflexión del estudiante sobre el posible alta (respuestas a las preguntas de cierre):\n"
+            f"{reflexion}\n\n"
+            "Con toda esta información, emite el informe de alta siguiendo la estructura indicada."
+        ))
+    ]).content
+
+    # Marca la sesión como alta en c_sesiones
+    ses["alta"] = True
+    ses["fecha_alta"] = datetime.utcnow().isoformat()
+    c_sesiones.upsert_item(ses)
+
+    # Actualiza el detalle con el reporte de alta
+    detalle["alta_reporte"] = alta_reporte
+    detalle["alta_reflexion_estudiante"] = reflexion
+    detalle["fecha_alta"] = ses["fecha_alta"]
+    c_detalle.upsert_item(detalle)
+
+    return {
+        "mensaje": "Paciente dado de alta para esta sesión.",
+        "alta_reporte": alta_reporte,
+        "fecha_alta": ses["fecha_alta"],
+    }
+
+
 @app.post("/chat")
 def chat(req: MessageRequest, user=Depends(get_current_user)):
     if req.session_id not in sessions:
@@ -438,11 +623,23 @@ def end_session(req: SessionResponse, user=Depends(get_current_user)):
             HumanMessage(content=f"Paciente simulado: {profile['name']}, {profile['age']} años — {profile.get('descripcion', '')}\n\nSesión completa:\n{historial_texto}")
         ]).content
         puntuacion = extraer_puntuacion(analisis)
+
+        # Número de sesiones COMPLETADAS previas con este paciente
+        prev_count = contar_sesiones_usuario_paciente(user["email"], patient_id)
+        numero_sesion = prev_count + 1
+
         c_sesiones.upsert_item({
-            "id": req.session_id, "sesion_id": req.session_id, "usuario_id": user["email"],
-            "patient_id": patient_id, "patient_name": profile["name"],
-            "inicio": session.get("inicio"), "fin": datetime.utcnow().isoformat(),
-            "estado": "completada", "puntuacion": puntuacion,
+            "id": req.session_id,
+            "sesion_id": req.session_id,
+            "usuario_id": user["email"],
+            "patient_id": patient_id,
+            "patient_name": profile["name"],
+            "inicio": session.get("inicio"),
+            "fin": datetime.utcnow().isoformat(),
+            "estado": "completada",
+            "puntuacion": puntuacion,
+            "numero_sesion": numero_sesion,
+            "alta": False,
         })
         c_detalle.create_item({
             "id": str(uuid.uuid4()), "sesion_id": req.session_id, "usuario_id": user["email"],
@@ -450,8 +647,16 @@ def end_session(req: SessionResponse, user=Depends(get_current_user)):
             "analisis_objetivo": analisis, "guardado_en": datetime.utcnow().isoformat(),
         })
         del sessions[req.session_id]
-        return {"patient_id": patient_id, "patient_name": profile["name"],
-                "feedback_paciente": feedback_paciente, "analisis_objetivo": analisis, "puntuacion": puntuacion}
+        sugerencia_alta = construir_sugerencia_alta(profile, numero_sesion)
+        return {
+            "patient_id": patient_id,
+            "patient_name": profile["name"],
+            "feedback_paciente": feedback_paciente,
+            "analisis_objetivo": analisis,
+            "puntuacion": puntuacion,
+            "numero_sesion": numero_sesion,
+            "sugerencia_alta": sugerencia_alta,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

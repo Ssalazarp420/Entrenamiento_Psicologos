@@ -1922,7 +1922,9 @@ async function endSession() {
 
     mc.innerHTML = `
       <div class="modal-title">Reporte de sesión</div>
-      <div class="modal-subtitle">Sesión con ${data.patient_name} · Análisis generado por IA supervisora</div>
+      <div class="modal-subtitle">
+        Sesión #${data.numero_sesion || 1} con ${data.patient_name} · Análisis generado por IA supervisora
+      </div>
       ${score !== null ? `
       <div class="score-ring" style="background:conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);">
         <span class="score-value">${score}</span>
@@ -1932,7 +1934,23 @@ async function endSession() {
       <div class="feedback-block">${data.feedback_paciente}</div>
       <div class="section-label">Análisis clínico objetivo</div>
       <div class="feedback-block">${data.analisis_objetivo}</div>
-      <button class="modal-close" onclick="closeSessionModal()">Cerrar y nueva sesión</button>`;
+      <div class="section-label">Alta terapéutica (cierre del proceso)</div>
+      <div class="feedback-block">
+        <p style="white-space:pre-line;font-size:.82rem;color:var(--muted);margin-bottom:12px;">
+          ${data.sugerencia_alta || ''}
+        </p>
+        <label style="display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px;">
+          Reflexiona brevemente respondiendo a las preguntas anteriores (opcional):
+        </label>
+        <textarea id="alta-reflexion" style="width:100%;min-height:90px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:10px;font-size:.8rem;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:10px;margin-top:12px;">
+        <button class="btn-danger" style="width:50%;padding:10px 14px;font-size:.8rem;"
+          onclick="darAltaSesion()">
+          Dar de alta a este paciente
+        </button>
+        <button class="modal-close" style="width:50%;" onclick="closeSessionModal()">Cerrar y nueva sesión</button>
+      </div>`;
   } catch(e) {
     mc.innerHTML = `
       <div class="modal-title">Error</div>
@@ -1950,6 +1968,54 @@ function closeSessionModal() {
   showScreen('screen-selection');
   loadPatients();
   setNavActive('screen-selection');
+}
+
+async function darAltaSesion() {
+  if (!sessionId) {
+    closeSessionModal();
+    return;
+  }
+  const reflexion = (document.getElementById('alta-reflexion')?.value || '').trim();
+  if (!confirm('Esta acción dará de alta al paciente para esta sesión.\nLuego no podrás reanudar esta conversación.\n\n¿Confirmas el alta?')) {
+    return;
+  }
+
+  const overlay = document.getElementById('modal-overlay');
+  const mc      = document.getElementById('modal-content');
+  overlay.classList.add('active');
+  mc.innerHTML = `
+    <div class="modal-title">Generando informe de alta…</div>
+    <div class="modal-subtitle">El supervisor IA está evaluando el cierre del proceso.</div>
+    <div class="spinner"></div>`;
+
+  try {
+    const res = await fetch(`${API}/session/alta`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ sesion_id: sessionId, reflexion }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.detail || `Error ${res.status}`;
+      mc.innerHTML = `
+        <div class="modal-title">Error al dar de alta</div>
+        <div class="modal-subtitle">${msg}</div>
+        <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
+      return;
+    }
+
+    mc.innerHTML = `
+      <div class="modal-title">Alta terapéutica registrada</div>
+      <div class="modal-subtitle">El paciente ha sido dado de alta para esta sesión.</div>
+      <div class="section-label">Informe de alta del supervisor</div>
+      <div class="feedback-block">${data.alta_reporte}</div>
+      <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
+  } catch (e) {
+    mc.innerHTML = `
+      <div class="modal-title">Error</div>
+      <div class="modal-subtitle">No se pudo completar el alta. Intenta de nuevo más tarde.</div>
+      <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
+  }
 }
 
 
