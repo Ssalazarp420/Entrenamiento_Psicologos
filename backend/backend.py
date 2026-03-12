@@ -469,8 +469,8 @@ def resume_session(sesion_id: str, user=Depends(get_current_user)):
             enable_cross_partition_query=True,
         ))
 
-        mensajes_lm: List = [SystemMessage(content=profile["instruccion"])]
         if det_items:
+            mensajes_lm: List = [SystemMessage(content=profile["instruccion"])]
             detalle = det_items[0]
             transcripcion = detalle.get("transcripcion", "") or ""
             nombre_paciente = profile["name"]
@@ -489,8 +489,12 @@ def resume_session(sesion_id: str, user=Depends(get_current_user)):
                         mensajes_lm.append(AIMessage(content=contenido))
                         history_for_client.append({"role": "patient", "text": contenido})
         else:
-            # 3) Sin detalle guardado y sin sesión en memoria: se reinicia la conversación
-            mensajes_lm = [SystemMessage(content=profile["instruccion"])]
+            # 3) Sin detalle guardado y sin sesión en memoria: no es posible reconstruir el historial
+            raise HTTPException(
+                status_code=400,
+                detail="No hay historial almacenado para esta sesión. "
+                       "Es posible que se haya iniciado en otro servidor o que el historial no se haya guardado todavía."
+            )
 
     # Registra la sesión en memoria para continuar el chat
     sessions[sesion_id] = {
