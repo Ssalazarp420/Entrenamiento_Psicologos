@@ -541,14 +541,32 @@ tr:hover td { background:rgba(255,255,255,.02); }
         <div class="section-title">Mis sesiones</div>
         <div class="section-sub">Historial de tus prácticas anteriores</div>
       </div>
-      <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;"
-        onclick="showScreen('screen-selection');loadPatients();setNavActive('screen-selection');">
-        Nueva sesión
-      </button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button id="btn-delete-selected" class="btn-danger" style="padding:8px 16px;font-size:.8rem;" disabled
+          onclick="eliminarSesionesSeleccionadas()">
+          Eliminar seleccionadas
+        </button>
+        <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;"
+          onclick="showScreen('screen-selection');loadPatients();setNavActive('screen-selection');">
+          Nueva sesión
+        </button>
+      </div>
     </div>
     <div class="table-wrap anim anim-2">
       <table>
-        <thead><tr><th>Paciente</th><th>Fecha</th><th>Duración</th><th>Puntuación</th><th>Estado</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th style="width:32px;text-align:center;">
+              <input type="checkbox" id="hist-select-all" onclick="toggleHistSelectAll(this)" />
+            </th>
+            <th>Paciente</th>
+            <th>Fecha</th>
+            <th>Duración</th>
+            <th>Puntuación</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
         <tbody id="historial-tbody"></tbody>
       </table>
     </div>
@@ -1394,18 +1412,28 @@ function closeRetroModal() {
 // ═══════════════════════════════════════════════════════════
 // HISTORIAL — con botón eliminar
 // ═══════════════════════════════════════════════════════════
+let historialSeleccionadas = new Set();
+
 async function loadHistorial() {
   const tbody = document.getElementById('historial-tbody');
   tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
   try {
     const res  = await fetch(`${API}/historial/mis-sesiones`, { headers: authHeaders() });
     const data = await res.json();
+    historialSeleccionadas = new Set();
+    const selectAll = document.getElementById('hist-select-all');
+    if (selectAll) selectAll.checked = false;
+    actualizarBotonEliminarSeleccionadas();
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-table">No tienes sesiones completadas aún.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-table">No tienes sesiones completadas aún.</td></tr>';
       return;
     }
     tbody.innerHTML = data.map(s => `
-      <tr>
+      <tr data-sid="${s.sesion_id}">
+        <td style="text-align:center;">
+          <input type="checkbox" class="hist-check" data-sid="${s.sesion_id}"
+            onclick="toggleHistSelect(this,'${s.sesion_id}')">
+        </td>
         <td><strong>${s.patient_name || '—'}</strong></td>
         <td style="font-size:.8rem;color:var(--muted)">${formatDate(s.inicio)}</td>
         <td style="font-size:.8rem;color:var(--muted)">${formatDuration(s.inicio, s.fin)}</td>
@@ -1423,7 +1451,7 @@ async function loadHistorial() {
         </td>
       </tr>`).join('');
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red)">Error cargando historial.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table" style="color:var(--red)">Error cargando historial.</td></tr>';
   }
 }
 
@@ -1436,11 +1464,63 @@ async function eliminarSesion(sesionId, btn) {
     });
     if (!res.ok) throw new Error(`Error ${res.status}`);
     showToast('Sesión eliminada');
+    if (historialSeleccionadas.has(sesionId)) {
+      historialSeleccionadas.delete(sesionId);
+      actualizarBotonEliminarSeleccionadas();
+    }
     loadHistorial();
   } catch(e) {
     showToast('Error al eliminar: ' + e.message, true);
     btn.disabled = false; btn.textContent = '🗑';
   }
+}
+
+function toggleHistSelect(checkbox, sesionId) {
+  if (checkbox.checked) historialSeleccionadas.add(sesionId);
+  else historialSeleccionadas.delete(sesionId);
+  actualizarBotonEliminarSeleccionadas();
+}
+
+function toggleHistSelectAll(master) {
+  const checks = document.querySelectorAll('#historial-tbody .hist-check');
+  historialSeleccionadas = new Set();
+  checks.forEach(ch => {
+    ch.checked = master.checked;
+    if (master.checked && ch.dataset.sid) historialSeleccionadas.add(ch.dataset.sid);
+  });
+  actualizarBotonEliminarSeleccionadas();
+}
+
+function actualizarBotonEliminarSeleccionadas() {
+  const btn = document.getElementById('btn-delete-selected');
+  if (!btn) return;
+  const count = historialSeleccionadas.size;
+  btn.disabled = count === 0;
+  btn.textContent = count > 0 ? `Eliminar seleccionadas (${count})` : 'Eliminar seleccionadas';
+}
+
+async function eliminarSesionesSeleccionadas() {
+  const ids = Array.from(historialSeleccionadas);
+  if (!ids.length) return;
+  if (!confirm(`¿Eliminar ${ids.length} sesión(es)?\nSe borrarán completamente incluyendo el análisis y las retroalimentaciones.`)) return;
+  let ok = 0, fail = 0;
+  for (const sid of ids) {
+    try {
+      const res = await fetch(`${API}/historial/sesion/${sid}`, {
+        method: 'DELETE', headers: authHeaders()
+      });
+      if (res.ok) ok++;
+      else fail++;
+    } catch(e) {
+      fail++;
+    }
+  }
+  showToast(`Sesiones eliminadas: ${ok}${fail ? ` · Errores: ${fail}` : ''}`);
+  historialSeleccionadas = new Set();
+  const selectAll = document.getElementById('hist-select-all');
+  if (selectAll) selectAll.checked = false;
+  actualizarBotonEliminarSeleccionadas();
+  loadHistorial();
 }
 
 async function reanudarSesion(sesionId, patientNameFromList) {

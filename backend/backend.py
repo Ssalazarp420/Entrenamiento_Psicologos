@@ -957,25 +957,46 @@ def eliminar_sesion(sesion_id: str, user=Depends(get_current_user)):
     if ses_items[0]["usuario_id"] != user["email"] and user["rol"] != "admin":
         raise HTTPException(status_code=403, detail="No puedes eliminar sesiones de otros usuarios")
 
-    # Elimina de sesiones
-    try: c_sesiones.delete_item(item=ses_items[0]["id"], partition_key=ses_items[0]["sesion_id"])
-    except Exception: pass
+    # Elimina de sesiones (intentando con claves de partición más comunes)
+    try:
+        # Caso típico: partición en /id
+        c_sesiones.delete_item(item=ses_items[0]["id"], partition_key=ses_items[0]["id"])
+    except Exception:
+        try:
+            # Alternativa: partición en /sesion_id
+            c_sesiones.delete_item(item=ses_items[0]["id"], partition_key=ses_items[0]["sesion_id"])
+        except Exception:
+            try:
+                # Alternativa: partición en /usuario_id
+                c_sesiones.delete_item(item=ses_items[0]["id"], partition_key=ses_items[0]["usuario_id"])
+            except Exception:
+                pass
 
     # Elimina detalle
     det_items = list(c_detalle.query_items(
         f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
         enable_cross_partition_query=True))
     for d in det_items:
-        try: c_detalle.delete_item(item=d["id"], partition_key=d["sesion_id"])
-        except Exception: pass
+        try:
+            c_detalle.delete_item(item=d["id"], partition_key=d["id"])
+        except Exception:
+            try:
+                c_detalle.delete_item(item=d["id"], partition_key=d["sesion_id"])
+            except Exception:
+                pass
 
     # Elimina retroalimentaciones asociadas
     retro_items = list(c_retroalimentaciones.query_items(
         f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
         enable_cross_partition_query=True))
     for r in retro_items:
-        try: c_retroalimentaciones.delete_item(item=r["id"], partition_key=r["sesion_id"])
-        except Exception: pass
+        try:
+            c_retroalimentaciones.delete_item(item=r["id"], partition_key=r["id"])
+        except Exception:
+            try:
+                c_retroalimentaciones.delete_item(item=r["id"], partition_key=r["sesion_id"])
+            except Exception:
+                pass
 
     return {"mensaje": "Sesión eliminada completamente"}
 
