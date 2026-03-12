@@ -847,17 +847,31 @@ tr:hover td { background:rgba(255,255,255,.02); }
         <!-- SESIONES ADMIN -->
         <div class="admin-panel" id="panel-sesiones">
           <div class="panel-header">
-            <div><div class="panel-title">Sesiones de práctica</div><div class="panel-sub">Historial global de todas las sesiones</div></div>
+            <div>
+              <div class="panel-title">Sesiones de práctica</div>
+              <div class="panel-sub">Resumen de práctica clínica por estudiante y retroalimentación por docente</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button id="ses-mode-est" class="btn-ghost" style="padding:6px 14px;font-size:.78rem;border-radius:999px;border:1px solid var(--accent);background:rgba(59,130,246,.15);color:var(--accent);"
+                onclick="setSesionesMode('estudiantes')">
+                Estudiantes
+              </button>
+              <button id="ses-mode-doc" class="btn-ghost" style="padding:6px 14px;font-size:.78rem;border-radius:999px;"
+                onclick="setSesionesMode('docentes')">
+                Docentes
+              </button>
+            </div>
           </div>
           <div class="filter-bar">
-            <input type="text" id="ses-search" placeholder="🔍 Buscar usuario o paciente..." class="search-input" oninput="filtrarSesiones()"/>
+            <input type="text" id="ses-search" placeholder="🔍 Buscar por nombre o correo..." class="search-input" oninput="filtrarSesiones()"/>
             <select id="ses-filter-estado" class="filter-select" onchange="filtrarSesiones()">
-              <option value="">Todos</option><option value="completada">Completadas</option><option value="activa">Activas</option>
+              <option value="">Todos los estados</option>
+              <option value="completada">Solo con sesiones completadas</option>
             </select>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Estudiante</th><th>Paciente</th><th>Inicio</th><th>Puntuación</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr id="admin-ses-head-row"><th>Estudiante</th><th>Paciente</th><th>Inicio</th><th>Puntuación</th><th>Estado</th><th></th></tr></thead>
               <tbody id="admin-ses-tbody"><tr><td colspan="6" class="empty-table">Cargando...</td></tr></tbody>
             </table>
           </div>
@@ -2719,51 +2733,267 @@ async function guardarAnalisisObjetivo() {
 }
 
 // ---- SESIONES ADMIN ----
+let adminSesMode = 'estudiantes';
+let adminSesEstudiantes = [];
+let adminSesDocentes   = [];
+let adminSesDocenteDetalle = [];
+
 async function loadAdminSesiones() {
+  await setSesionesMode(adminSesMode || 'estudiantes');
+}
+
+async function setSesionesMode(mode) {
+  adminSesMode = mode;
   const tbody = document.getElementById('admin-ses-tbody');
+  const headRow = document.getElementById('admin-ses-head-row');
+  if (!tbody || !headRow) return;
   tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:0 auto"></div></td></tr>';
-  try {
-    const res  = await fetch(`${API}/historial/todos`, { headers: authHeaders() });
-    const data = await res.json();
-    adminData.sesiones = data;
-    renderSesionesAdmin(data);
-  } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red)">Error cargando sesiones</td></tr>';
+
+  const btnEst = document.getElementById('ses-mode-est');
+  const btnDoc = document.getElementById('ses-mode-doc');
+  if (btnEst && btnDoc) {
+    if (mode === 'estudiantes') {
+      btnEst.style.borderColor = 'var(--accent)';
+      btnEst.style.background  = 'rgba(59,130,246,.15)';
+      btnEst.style.color       = 'var(--accent)';
+      btnDoc.style.borderColor = 'var(--border)';
+      btnDoc.style.background  = 'transparent';
+      btnDoc.style.color       = 'var(--muted)';
+    } else {
+      btnDoc.style.borderColor = 'var(--accent)';
+      btnDoc.style.background  = 'rgba(59,130,246,.15)';
+      btnDoc.style.color       = 'var(--accent)';
+      btnEst.style.borderColor = 'var(--border)';
+      btnEst.style.background  = 'transparent';
+      btnEst.style.color       = 'var(--muted)';
+    }
+  }
+
+  if (mode === 'estudiantes') {
+    headRow.innerHTML = `
+      <th>Estudiante</th>
+      <th>Total sesiones</th>
+      <th>Minutos de práctica</th>
+      <th>Promedio puntuación</th>
+      <th>Última sesión</th>
+      <th></th>`;
+    try {
+      const res  = await fetch(`${API}/admin/sesiones/estudiantes`, { headers: authHeaders() });
+      const data = await res.json();
+      adminSesEstudiantes = Array.isArray(data) ? data : [];
+      renderSesionesAdminEstudiantes(adminSesEstudiantes);
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red)">Error cargando sesiones de estudiantes</td></tr>';
+    }
+  } else {
+    headRow.innerHTML = `
+      <th>Docente</th>
+      <th>Total comentarios</th>
+      <th>Estudiantes</th>
+      <th>Última retroalimentación</th>
+      <th></th>
+      <th></th>`;
+    try {
+      const res  = await fetch(`${API}/admin/sesiones/docentes`, { headers: authHeaders() });
+      const data = await res.json();
+      adminSesDocentes = Array.isArray(data) ? data : [];
+      renderSesionesAdminDocentes(adminSesDocentes);
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-table" style="color:var(--red)">Error cargando sesiones de docentes</td></tr>';
+    }
   }
 }
 
-function renderSesionesAdmin(data) {
+function renderSesionesAdminEstudiantes(data) {
   const tbody = document.getElementById('admin-ses-tbody');
+  if (!tbody) return;
   tbody.innerHTML = data.length
     ? data.map(s=>`<tr>
-        <td style="font-size:.82rem">${s.usuario_id||'—'}</td>
-        <td>${s.patient_name||'—'}</td>
-        <td style="font-size:.78rem;color:var(--muted)">${formatDate(s.inicio)}</td>
-        <td><span class="score-pill ${scoreCls(s.puntuacion)}">${s.puntuacion!=null?s.puntuacion+'/100':'—'}</span></td>
-        <td><span class="status-pill status-${s.estado||'activa'}">${s.estado||'activa'}</span></td>
-        <td><button class="btn-detail" onclick="verSesionAdmin('${s.sesion_id}')">Ver</button></td>
+        <td>
+          <div style="font-size:.9rem;font-weight:600;">${s.nombre || (s.usuario_id || '—').split('@')[0]}</div>
+          <div style="font-size:.78rem;color:var(--muted);">${s.usuario_id || '—'}</div>
+        </td>
+        <td>${s.total_sesiones || 0}</td>
+        <td>${s.minutos_totales != null ? s.minutos_totales + ' min' : '—'}</td>
+        <td>${s.puntuacion_promedio != null ? `<strong>${s.puntuacion_promedio}</strong>/100` : '—'}</td>
+        <td style="font-size:.78rem;color:var(--muted);">${s.ultima_sesion ? formatDate(s.ultima_sesion) : '—'}</td>
+        <td><button class="btn-detail" onclick="verSesionesEstudianteAdmin('${s.usuario_id}')">Ver detalle</button></td>
       </tr>`).join('')
     : '<tr><td colspan="6" class="empty-table">Sin sesiones registradas</td></tr>';
+}
+
+function renderSesionesAdminDocentes(data) {
+  const tbody = document.getElementById('admin-ses-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = data.length
+    ? data.map(d=>`<tr>
+        <td>
+          <div style="font-size:.9rem;font-weight:600;">${d.docente_nombre || (d.docente_email || '—').split('@')[0]}</div>
+          <div style="font-size:.78rem;color:var(--muted);">${d.docente_email || '—'}</div>
+        </td>
+        <td>${d.total_retro || 0}</td>
+        <td>${d.total_estudiantes || 0}</td>
+        <td style="font-size:.78rem;color:var(--muted);">${d.ultima_retro ? formatDate(d.ultima_retro) : '—'}</td>
+        <td><button class="btn-detail" onclick="verDocenteEstudiantesAdmin('${d.docente_email}')">Ver estudiantes</button></td>
+        <td></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="empty-table">Sin retroalimentaciones registradas</td></tr>';
 }
 
 function filtrarSesiones() {
   const q      = (document.getElementById('ses-search')?.value||'').toLowerCase();
   const estado = document.getElementById('ses-filter-estado')?.value||'';
-  let data     = adminData.sesiones||[];
-  if (q) data      = data.filter(s=>(s.usuario_id||'').includes(q)||(s.patient_name||'').toLowerCase().includes(q));
-  if (estado) data = data.filter(s=>s.estado===estado);
-  renderSesionesAdmin(data);
+
+  if (adminSesMode === 'estudiantes') {
+    let data = adminSesEstudiantes || [];
+    if (q) {
+      data = data.filter(s =>
+        (s.nombre || '').toLowerCase().includes(q) ||
+        (s.usuario_id || '').toLowerCase().includes(q)
+      );
+    }
+    if (estado === 'completada') {
+      data = data.filter(s => (s.total_sesiones || 0) > 0);
+    }
+    renderSesionesAdminEstudiantes(data);
+  } else {
+    let data = adminSesDocentes || [];
+    if (q) {
+      data = data.filter(d =>
+        (d.docente_nombre || '').toLowerCase().includes(q) ||
+        (d.docente_email || '').toLowerCase().includes(q)
+      );
+    }
+    renderSesionesAdminDocentes(data);
+  }
 }
 
-async function verSesionAdmin(sesionId) {
+async function verSesionesEstudianteAdmin(email) {
   openModal();
+  const mc = document.getElementById('modal-content');
+  if (!mc) return;
+  mc.innerHTML = '<div class="spinner" style="margin:40px auto;"></div>';
   try {
-    const res  = await fetch(`${API}/historial/sesion/${sesionId}`, { headers: authHeaders() });
+    const res  = await fetch(`${API}/admin/sesiones/estudiante/${encodeURIComponent(email)}`, { headers: authHeaders() });
     const data = await res.json();
-    renderFeedbackModal(data);
-  } catch(e) {
-    document.getElementById('modal-content').innerHTML = '<div style="color:var(--red);padding:20px;">Error cargando la sesión.</div>';
+    const nombre = (adminSesEstudiantes.find(s => s.usuario_id === email)?.nombre) || email.split('@')[0];
+    mc.innerHTML = `
+      <div class="modal-title">Sesiones de ${nombre}</div>
+      <div class="modal-subtitle" style="margin-bottom:12px;">Historial completo de práctica con pacientes simulados</div>
+      <div style="max-height:70vh;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+          <thead>
+            <tr style="background:rgba(255,255,255,.03);">
+              <th style="padding:8px 10px;text-align:left;">Paciente</th>
+              <th style="padding:8px 10px;text-align:left;">Fecha</th>
+              <th style="padding:8px 10px;text-align:left;">Duración</th>
+              <th style="padding:8px 10px;text-align:left;"># Sesión</th>
+              <th style="padding:8px 10px;text-align:left;">Puntuación</th>
+              <th style="padding:8px 10px;text-align:left;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.length ? data.map(s => `
+              <tr style="border-top:1px solid var(--border);">
+                <td style="padding:8px 10px;">${s.patient_name || '—'}</td>
+                <td style="padding:8px 10px;color:var(--muted);">${s.inicio ? formatDate(s.inicio) : '—'}</td>
+                <td style="padding:8px 10px;">${s.minutos != null ? s.minutos + ' min' : '—'}</td>
+                <td style="padding:8px 10px;">${s.numero_sesion || '—'}</td>
+                <td style="padding:8px 10px;">${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
+                <td style="padding:8px 10px;">
+                  <span class="status-pill status-${s.alta ? 'completada' : (s.estado || 'activa')}">
+                    ${s.alta ? 'Alta' : (s.estado || 'activa')}
+                  </span>
+                </td>
+              </tr>`).join('') :
+              `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Este estudiante aún no tiene sesiones registradas.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <button class="modal-close" onclick="closeModal()" style="margin-top:16px;">Cerrar</button>`;
+  } catch (e) {
+    mc.innerHTML = '<div style="padding:20px;color:var(--red);">Error cargando las sesiones del estudiante.</div>';
   }
+}
+
+async function verDocenteEstudiantesAdmin(docenteEmail) {
+  openModal();
+  const mc = document.getElementById('modal-content');
+  if (!mc) return;
+  mc.innerHTML = '<div class="spinner" style="margin:40px auto;"></div>';
+  try {
+    const res  = await fetch(`${API}/admin/sesiones/docente/${encodeURIComponent(docenteEmail)}`, { headers: authHeaders() });
+    const data = await res.json();
+    adminSesDocenteDetalle = Array.isArray(data) ? data : [];
+    const docenteNombre = (adminSesDocentes.find(d => d.docente_email === docenteEmail)?.docente_nombre) || docenteEmail.split('@')[0];
+    mc.innerHTML = `
+      <div class="modal-title">Retroalimentaciones de ${docenteNombre}</div>
+      <div class="modal-subtitle" style="margin-bottom:12px;">Estudiantes que han recibido comentarios de este docente</div>
+      <div style="max-height:70vh;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+          <thead>
+            <tr style="background:rgba(255,255,255,.03);">
+              <th style="padding:8px 10px;text-align:left;">Estudiante</th>
+              <th style="padding:8px 10px;text-align:left;">Correo</th>
+              <th style="padding:8px 10px;text-align:left;">Comentarios</th>
+              <th style="padding:8px 10px;text-align:left;">Última retro</th>
+              <th style="padding:8px 10px;text-align:left;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${adminSesDocenteDetalle.length ? adminSesDocenteDetalle.map((e, idx) => `
+              <tr style="border-top:1px solid var(--border);">
+                <td style="padding:8px 10px;">${e.estudiante_nombre || e.estudiante_email.split('@')[0]}</td>
+                <td style="padding:8px 10px;color:var(--muted);">${e.estudiante_email}</td>
+                <td style="padding:8px 10px;">${e.total_comentarios || 0}</td>
+                <td style="padding:8px 10px;color:var(--muted);">${e.ultima_fecha ? formatDate(e.ultima_fecha) : '—'}</td>
+                <td style="padding:8px 10px;">
+                  <button class="btn-detail" onclick="verComentariosDocenteEstudiante(${idx})">Ver comentarios</button>
+                </td>
+              </tr>`).join('') :
+              `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted);">Este docente aún no ha dejado retroalimentaciones.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <button class="modal-close" onclick="closeModal()" style="margin-top:16px;">Cerrar</button>`;
+  } catch (e) {
+    mc.innerHTML = '<div style="padding:20px;color:var(--red);">Error cargando la información del docente.</div>';
+  }
+}
+
+function verComentariosDocenteEstudiante(index) {
+  const mc = document.getElementById('modal-content');
+  if (!mc) return;
+  const est = adminSesDocenteDetalle[index];
+  if (!est) return;
+  mc.innerHTML = `
+    <div class="modal-title">Comentarios para ${est.estudiante_nombre || est.estudiante_email.split('@')[0]}</div>
+    <div class="modal-subtitle" style="margin-bottom:12px;">Detalle de retroalimentaciones por sesión</div>
+    <div style="max-height:70vh;overflow-y:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+        <thead>
+          <tr style="background:rgba(255,255,255,.03);">
+            <th style="padding:8px 10px;text-align:left;">Fecha</th>
+            <th style="padding:8px 10px;text-align:left;">Paciente</th>
+            <th style="padding:8px 10px;text-align:left;">Sesión</th>
+            <th style="padding:8px 10px;text-align:left;">Puntuación</th>
+            <th style="padding:8px 10px;text-align:left;">Comentario</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${est.comentarios && est.comentarios.length ? est.comentarios.map(c => `
+            <tr style="border-top:1px solid var(--border);">
+              <td style="padding:8px 10px;color:var(--muted);">${c.creado_en ? formatDate(c.creado_en) : '—'}</td>
+              <td style="padding:8px 10px;">${c.patient_name || '—'}</td>
+              <td style="padding:8px 10px;font-size:.78rem;color:var(--muted);">${c.sesion_id ? c.sesion_id.slice(0,8) + '…' : '—'}</td>
+              <td style="padding:8px 10px;">${c.puntuacion != null ? `<strong>${c.puntuacion}</strong>/100` : '—'}</td>
+              <td style="padding:8px 10px;">${c.comentario || ''}</td>
+            </tr>`).join('') :
+            `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted);">No hay comentarios registrados para este estudiante.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <button class="modal-close" onclick="closeModal()" style="margin-top:16px;">Cerrar</button>`;
 }
 
 // ---- CONTABILIDAD ----
