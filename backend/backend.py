@@ -1,5 +1,7 @@
 import os
 import uuid
+import time
+import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 
@@ -15,6 +17,9 @@ from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 load_dotenv("Conexion_Azure.env")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("psicoia-backend")
 
 app = FastAPI()
 
@@ -403,26 +408,34 @@ def list_patients(user=Depends(get_current_user)):
 # ---------------------------------------------------------------------------
 @app.post("/session/new")
 def new_session(req: NewSessionRequest, user=Depends(get_current_user)):
+    started = time.perf_counter()
     patient_id = req.patient_id or "mateo"
-    casos = get_casos_dict()
-    if patient_id not in casos:
-        raise HTTPException(status_code=400, detail=f"Perfil '{patient_id}' no encontrado.")
-    session_id = str(uuid.uuid4())
-    profile = casos[patient_id]
-    sessions[session_id] = {
-        "messages": [SystemMessage(content=profile["instruccion"])],
-        "patient_id": patient_id, "usuario_id": user["email"],
-        "inicio": datetime.utcnow().isoformat(),
-    }
-    c_sesiones.create_item({
-        "id": session_id, "sesion_id": session_id, "usuario_id": user["email"],
-        "patient_id": patient_id, "patient_name": profile["name"],
-        "inicio": datetime.utcnow().isoformat(), "estado": "activa", "puntuacion": None,
-    })
-    return {"session_id": session_id, "patient": {
-        "id": patient_id, "name": profile["name"], "age": profile["age"],
-        "descripcion": profile.get("descripcion", ""),
-    }}
+    try:
+        casos = get_casos_dict()
+        if patient_id not in casos:
+            raise HTTPException(status_code=400, detail=f"Perfil '{patient_id}' no encontrado.")
+        session_id = str(uuid.uuid4())
+        profile = casos[patient_id]
+        sessions[session_id] = {
+            "messages": [SystemMessage(content=profile["instruccion"])],
+            "patient_id": patient_id, "usuario_id": user["email"],
+            "inicio": datetime.utcnow().isoformat(),
+        }
+        c_sesiones.create_item({
+            "id": session_id, "sesion_id": session_id, "usuario_id": user["email"],
+            "patient_id": patient_id, "patient_name": profile["name"],
+            "inicio": datetime.utcnow().isoformat(), "estado": "activa", "puntuacion": None,
+        })
+        return {"session_id": session_id, "patient": {
+            "id": patient_id, "name": profile["name"], "age": profile["age"],
+            "descripcion": profile.get("descripcion", ""),
+        }}
+    finally:
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        logger.info(
+            "[TIMING] /session/new total_ms=%.1f user=%s patient_id=%s",
+            elapsed_ms, user["email"], patient_id,
+        )
 
 
 @app.post("/session/resume/{sesion_id}")
@@ -591,14 +604,28 @@ def marcar_alta(req: AltaRequest, user=Depends(get_current_user)):
 def chat(req: MessageRequest, user=Depends(get_current_user)):
     if req.session_id not in sessions:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
+
+    started_total = time.perf_counter()
     model = get_model()
     session = sessions[req.session_id]
     session["messages"].append(HumanMessage(content=req.message))
     try:
+        started_llm = time.perf_counter()
         response = model.invoke(session["messages"])
+        llm_ms = (time.perf_counter() - started_llm) * 1000
         session["messages"].append(AIMessage(content=response.content))
+        total_ms = (time.perf_counter() - started_total) * 1000
+        logger.info(
+            "[TIMING] /chat total_ms=%.1f llm_ms=%.1f user=%s session_id=%s",
+            total_ms, llm_ms, user["email"], req.session_id,
+        )
         return {"reply": response.content}
     except Exception as e:
+        total_ms = (time.perf_counter() - started_total) * 1000
+        logger.error(
+            "[TIMING] /chat error total_ms=%.1f user=%s session_id=%s error=%s",
+            total_ms, user["email"], req.session_id, str(e),
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
