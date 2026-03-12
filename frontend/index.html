@@ -70,17 +70,77 @@ main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-di
 /* SELECTION */
 .section-title { font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);margin-bottom:4px; }
 .section-sub { font-size:.83rem;color:var(--muted);line-height:1.6; }
-.patients-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px; }
-.patient-option { background:var(--card);border:2px solid var(--border);border-radius:20px;padding:32px 24px;cursor:pointer;transition:all .25s;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;position:relative;overflow:hidden; }
-.patient-option::before { content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(91,141,238,.06),transparent);opacity:0;transition:opacity .25s; }
-.patient-option:hover { border-color:var(--accent);transform:translateY(-5px);box-shadow:0 12px 32px rgba(91,141,238,.18); }
-.patient-option:hover::before { opacity:1; }
-.avatar-lg { width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#3b4f6e,#5b8dee);display:flex;align-items:center;justify-content:center;font-size:2.2rem;box-shadow:0 4px 16px rgba(91,141,238,.25); }
+.patients-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px; }
+.patient-option {
+  background:radial-gradient(circle at top left,rgba(91,141,238,.18),transparent 55%),
+             radial-gradient(circle at bottom right,rgba(244,114,182,.16),transparent 55%),
+             var(--card);
+  border:2px solid rgba(148,163,184,.65);
+  border-radius:22px;
+  padding:30px 24px;
+  cursor:pointer;
+  transition:transform .2s ease,box-shadow .25s ease,border-color .2s ease,background .25s ease;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.patient-option::before {
+  content:'';
+  position:absolute;
+  inset:-40%;
+  background:conic-gradient(from 140deg,
+    rgba(59,130,246,.35),
+    rgba(52,211,153,.3),
+    rgba(244,114,182,.35),
+    rgba(59,130,246,.35));
+  opacity:0;
+  filter:blur(26px);
+  transition:opacity .35s ease;
+  pointer-events:none;
+}
+.patient-option:hover {
+  border-color:var(--accent);
+  transform:translateY(-6px) scale(1.02);
+  box-shadow:0 18px 40px rgba(15,23,42,.55);
+}
+.patient-option:hover::before { opacity:.9; }
+.avatar-lg {
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 20%,#facc15,#fb7185 40%,#6366f1 85%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2.4rem;
+  box-shadow:0 8px 28px rgba(15,23,42,.65);
+}
 .patient-option h3 { font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700; }
 .patient-desc { font-size:.8rem;color:var(--muted);line-height:1.5;max-width:180px; }
-.age-tag { font-size:.8rem;color:var(--muted);background:rgba(255,255,255,.07);padding:4px 14px;border-radius:20px;border:1px solid var(--border); }
-.start-label { font-size:.82rem;color:var(--accent);font-weight:600;opacity:0;transition:opacity .2s;margin-top:4px;letter-spacing:.02em; }
-.patient-option:hover .start-label { opacity:1; }
+.age-tag {
+  font-size:.8rem;
+  color:#e2e8f0;
+  background:linear-gradient(90deg,rgba(59,130,246,.85),rgba(147,51,234,.85));
+  padding:4px 16px;
+  border-radius:999px;
+  border:none;
+  box-shadow:0 4px 12px rgba(15,23,42,.5);
+}
+.start-label {
+  font-size:.82rem;
+  color:#f97316;
+  font-weight:700;
+  opacity:0;
+  transition:opacity .2s,transform .2s;
+  margin-top:4px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.patient-option:hover .start-label { opacity:1;transform:translateY(-1px); }
 /* Filtros de categoría y dificultad */
 .filter-cat-btn { padding:9px 20px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .2s;letter-spacing:.01em; }
 .filter-cat-btn:hover { border-color:var(--accent);background:rgba(91,141,238,.08);color:var(--accent); }
