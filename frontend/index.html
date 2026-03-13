@@ -1380,6 +1380,19 @@ async function selectPatient(pid, name, age) {
     return;
   }
 
+  // Validar que exista el evento y el elemento
+  if (!event || !event.currentTarget) {
+    console.error('Error: evento no disponible en selectPatient');
+    appendMsg('sistema', '⚠ Error al seleccionar paciente. Intenta nuevamente.');
+    return;
+  }
+
+  // Evitar múltiples clics mientras se está procesando
+  if (isLoading) {
+    console.log('Ya hay una operación en curso, ignorando clic');
+    return;
+  }
+
   // Mostrar indicador de carga inmediatamente
   const patientCard = event.currentTarget;
   const originalContent = patientCard.innerHTML;
@@ -1458,6 +1471,9 @@ async function selectPatient(pid, name, age) {
     errorDiv.textContent = errorMessage;
     document.body.appendChild(errorDiv);
     setTimeout(() => errorDiv.remove(), 3000);
+  } finally {
+    // Asegurar que isLoading siempre se libere
+    isLoading = false;
   }
 }
 
@@ -2043,6 +2059,7 @@ function closeSessionModal() {
   sessionId = null;
   patientId = '';
   patientName = '';
+  isLoading = false; // Asegurar que isLoading se libere al cerrar sesión
   
   // Limpiar completamente el estado del chat
   document.getElementById('chat-box').innerHTML = `
