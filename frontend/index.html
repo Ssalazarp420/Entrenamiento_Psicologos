@@ -1835,6 +1835,7 @@ async function verSesionesEstudiante(email, nombre) {
       <thead><tr style="background:rgba(255,255,255,.03);">
         <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Paciente</th>
         <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Fecha</th>
+        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Duración</th>
         <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Puntuación</th>
         <th style="padding:10px 12px;"></th>
       </tr></thead>
@@ -1842,6 +1843,7 @@ async function verSesionesEstudiante(email, nombre) {
         ${ses.map(s => `<tr style="border-top:1px solid var(--border);">
           <td style="padding:10px 12px;font-size:.88rem;">${s.patient_name || '—'}</td>
           <td style="padding:10px 12px;font-size:.8rem;color:var(--muted);">${formatDate(s.inicio)}</td>
+          <td style="padding:10px 12px;font-size:.8rem;color:var(--muted);">${formatDuration(s.inicio, s.fin)}</td>
           <td style="padding:10px 12px;">${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
           <td style="padding:10px 12px;">
             <button class="btn-accent" style="padding:5px 12px;font-size:.75rem;"
