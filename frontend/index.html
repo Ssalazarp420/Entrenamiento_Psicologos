@@ -1271,6 +1271,8 @@ let selectedCategoria = null;
 let selectedDificultad = null;
 
 async function loadPatients() {
+  // Limpiar estado de chat previo para que isLoading no bloquee la nueva selección
+  resetChatState();
   selectedCategoria  = null;
   selectedDificultad = null;
   document.getElementById('filter-dif-wrap').style.display = 'none';
@@ -1359,7 +1361,7 @@ function renderPatientCards() {
   container.innerHTML = filtered.map(([pid, p]) => {
     const safeName = String(p.name || '').replace(/'/g, "\\'");
     return `
-    <div class="patient-option" onclick="selectPatient('${pid}','${safeName}',${p.age})">
+    <div class="patient-option" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
       <div class="avatar-lg">👤</div>
       <h3>${p.name}</h3>
       <div class="age-tag">${p.age} años</div>
@@ -1368,46 +1370,54 @@ function renderPatientCards() {
   }).join('');
 }
 
-async function selectPatient(pid, name, age) {
-  // Validar que exista token de autenticación
+// Limpia todo el estado de un chat activo. Llamar SIEMPRE antes de
+// iniciar una nueva sesión para que isLoading no quede bloqueado si
+// el estudiante abandona un chat a mitad de camino.
+function resetChatState() {
+  isLoading = false;
+  sessionId = null;
+  const typing = document.getElementById('typing-indicator');
+  if (typing) typing.remove();
+  const ui = document.getElementById('user-input');
+  const sb = document.getElementById('send-btn');
+  const eb = document.getElementById('end-btn');
+  if (ui) { ui.disabled = false; ui.value = ''; }
+  if (sb) sb.disabled = false;
+  if (eb) eb.disabled = false;
+}
+
+// cardEl se pasa directamente desde onclick para evitar perder
+// event.currentTarget después del primer await (el DOM lo nulifica).
+async function selectPatient(pid, name, age, cardEl) {
   if (!token) {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
-    errorDiv.textContent = 'Sesión expirada. Por favor inicia sesión nuevamente.';
-    document.body.appendChild(errorDiv);
-    setTimeout(() => errorDiv.remove(), 3000);
+    showToast('Sesión expirada. Por favor inicia sesión nuevamente.', true);
     logout();
     return;
   }
 
-  // Validar que exista el evento y el elemento
-  if (!event || !event.currentTarget) {
-    console.error('Error: evento no disponible en selectPatient');
-    appendMsg('sistema', '⚠ Error al seleccionar paciente. Intenta nuevamente.');
-    return;
-  }
+  // Si hay un chat activo o isLoading bloqueado por sesión anterior,
+  // lo limpiamos antes de continuar — así "Nueva sesión" siempre funciona.
+  resetChatState();
 
-  // Evitar múltiples clics mientras se está procesando
-  if (isLoading) {
-    console.log('Ya hay una operación en curso, ignorando clic');
-    return;
-  }
+  // Bloquear doble-clic ANTES del primer await
+  isLoading = true;
 
-  // Mostrar indicador de carga inmediatamente
-  const patientCard = event.currentTarget;
-  const originalContent = patientCard.innerHTML;
-  patientCard.style.opacity = '0.6';
-  patientCard.style.pointerEvents = 'none';
-  patientCard.innerHTML = `
-    <div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;"></div>
-    <div style="color:var(--muted);font-size:.8rem;">Iniciando sesión...</div>
-  `;
+  // Feedback visual en la tarjeta usando cardEl (capturado síncronamente)
+  const originalContent = cardEl ? cardEl.innerHTML : null;
+  if (cardEl) {
+    cardEl.style.opacity       = '0.6';
+    cardEl.style.pointerEvents = 'none';
+    cardEl.innerHTML = `
+      <div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);
+        border-top-color:var(--accent);border-radius:50%;
+        animation:spin .8s linear infinite;margin:20px auto;"></div>
+      <div style="color:var(--muted);font-size:.8rem;margin-top:6px;">Iniciando sesión...</div>`;
+  }
 
   patientId   = pid;
   patientName = name;
 
-  document.getElementById('card-name').textContent      = `${name}, ${age} años`;
-  document.getElementById('empty-label').textContent    = `Escribe tu primera intervención para iniciar la sesión con ${name}.`;
+  document.getElementById('card-name').textContent = `${name}, ${age} años`;
   document.getElementById('chat-box').innerHTML = `
     <div class="empty-state" id="empty-msg">
       <div class="icon">🛋️</div>
@@ -1415,64 +1425,44 @@ async function selectPatient(pid, name, age) {
     </div>`;
 
   try {
-    console.log('Iniciando solicitud de sesión:', { pid, name, age });
-    
-    const res  = await fetch(`${API}/session/new`, {
-      method: 'POST', 
+    const res = await fetch(`${API}/session/new`, {
+      method:  'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ patient_id: pid }),
-      signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
+      body:    JSON.stringify({ patient_id: pid }),
+      signal:  AbortSignal.timeout(15000),
     });
-    
-    console.log('Respuesta recibida:', res.status, res.statusText);
-    
-    if (!res.ok) {
-      throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
-    }
-    
+
+    if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+
     const data = await res.json();
-    console.log('Datos recibidos:', data);
-    
-    if (!data.session_id) {
-      throw new Error('El servidor no devolvió un ID de sesión válido');
-    }
-    
-    sessionId  = data.session_id;
-    
-    // Solo mostrar la pantalla del chat si todo fue exitoso
+    if (!data.session_id) throw new Error('El servidor no devolvió un ID de sesión válido');
+
+    sessionId = data.session_id;
+
     showScreen('screen-chat');
     setNavActive('screen-selection');
     document.getElementById('user-input').disabled = false;
     document.getElementById('send-btn').disabled   = false;
     document.getElementById('end-btn').disabled    = false;
     document.getElementById('user-input').focus();
-    
+
   } catch(e) {
-    console.error('Error al crear sesión:', e);
-    appendMsg('sistema', `⚠ No se pudo iniciar la sesión: ${e.message}`);
-    
-    // Restaurar la tarjeta del paciente a su estado original
-    patientCard.style.opacity = '1';
-    patientCard.style.pointerEvents = 'auto';
-    patientCard.innerHTML = originalContent;
-    
-    // Mostrar notificación más específica según el error
-    let errorMessage = 'Error al conectar con el servidor. Intenta de nuevo.';
-    if (e.name === 'TimeoutError') {
-      errorMessage = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
+    if (cardEl && originalContent !== null) {
+      cardEl.style.opacity       = '1';
+      cardEl.style.pointerEvents = 'auto';
+      cardEl.innerHTML           = originalContent;
+    }
+    let msg = 'Error al conectar con el servidor. Intenta de nuevo.';
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      msg = 'El servidor tardó demasiado. Intenta de nuevo.';
     } else if (e.message.includes('401')) {
-      errorMessage = 'Sesión expirada. Inicia sesión nuevamente.';
+      showToast('Sesión expirada. Inicia sesión nuevamente.', true);
       logout();
       return;
     }
-    
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
-    errorDiv.textContent = errorMessage;
-    document.body.appendChild(errorDiv);
-    setTimeout(() => errorDiv.remove(), 3000);
+    showToast(msg, true);
+
   } finally {
-    // Asegurar que isLoading siempre se libere
     isLoading = false;
   }
 }
@@ -1974,20 +1964,24 @@ async function sendMessage() {
   try {
     const res  = await fetch(`${API}/chat`, {
       method:'POST', headers: authHeaders(),
-      body: JSON.stringify({ session_id: sessionId, message: text })
+      body: JSON.stringify({ session_id: sessionId, message: text }),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await res.json();
     removeTyping();
     appendMsg('patient', data.reply);
   } catch(e) {
     removeTyping();
-    appendMsg('sistema', '⚠ Error al contactar el servidor.');
+    const msg = (e.name === 'TimeoutError' || e.name === 'AbortError')
+      ? '⚠ El paciente tardó demasiado en responder. Intenta enviar de nuevo.'
+      : '⚠ Error al contactar el servidor.';
+    appendMsg('sistema', msg);
+  } finally {
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('end-btn').disabled  = false;
+    input.focus();
   }
-
-  isLoading = false;
-  document.getElementById('send-btn').disabled = false;
-  document.getElementById('end-btn').disabled  = false;
-  input.focus();
 }
 
 async function endSession() {
