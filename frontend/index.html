@@ -530,7 +530,9 @@ tr:hover td { background:rgba(255,255,255,.02); }
     <div class="input-bar anim anim-3">
       <textarea id="user-input" placeholder="Escribe tu intervención como psicólogo..."></textarea>
       <button class="btn" id="send-btn" onclick="sendMessage()">Enviar</button>
-      <button class="btn" id="end-btn" onclick="endSession()">Finalizar sesión</button>
+      <button class="btn" id="end-btn" onclick="endSession()">Guardar y cerrar</button>
+      <button class="btn" id="analyze-btn" onclick="analyzeSession()" style="background:var(--accent2);color:#fff;display:none;">Ver análisis IA</button>
+      <button class="btn" id="alta-btn" onclick="proposeAlta()" style="background:var(--green);color:#1a2e1a;display:none;">✓ Proponer alta</button>
     </div>
   </div>
 
@@ -1130,6 +1132,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Advertencia al cerrar/recargar la pestaña si hay una sesión activa
+window.addEventListener('beforeunload', (e) => {
+  if (sessionId) {
+    e.preventDefault();
+    // Texto moderno (Chrome ignora el mensaje personalizado pero muestra el diálogo)
+    e.returnValue = 'Tienes una sesión activa. Si cierras ahora, el historial de esta conversación se perderá. ¿Deseas salir de todas formas?';
+    return e.returnValue;
+  }
+});
+
 // ── UTILS ─────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1271,8 +1283,6 @@ let selectedCategoria = null;
 let selectedDificultad = null;
 
 async function loadPatients() {
-  // Limpiar estado de chat previo para que isLoading no bloquee la nueva selección
-  resetChatState();
   selectedCategoria  = null;
   selectedDificultad = null;
   document.getElementById('filter-dif-wrap').style.display = 'none';
@@ -1361,7 +1371,7 @@ function renderPatientCards() {
   container.innerHTML = filtered.map(([pid, p]) => {
     const safeName = String(p.name || '').replace(/'/g, "\\'");
     return `
-    <div class="patient-option" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
+    <div class="patient-option" onclick="selectPatient('${pid}','${safeName}',${p.age})">
       <div class="avatar-lg">👤</div>
       <h3>${p.name}</h3>
       <div class="age-tag">${p.age} años</div>
@@ -1370,54 +1380,46 @@ function renderPatientCards() {
   }).join('');
 }
 
-// Limpia todo el estado de un chat activo. Llamar SIEMPRE antes de
-// iniciar una nueva sesión para que isLoading no quede bloqueado si
-// el estudiante abandona un chat a mitad de camino.
-function resetChatState() {
-  isLoading = false;
-  sessionId = null;
-  const typing = document.getElementById('typing-indicator');
-  if (typing) typing.remove();
-  const ui = document.getElementById('user-input');
-  const sb = document.getElementById('send-btn');
-  const eb = document.getElementById('end-btn');
-  if (ui) { ui.disabled = false; ui.value = ''; }
-  if (sb) sb.disabled = false;
-  if (eb) eb.disabled = false;
-}
-
-// cardEl se pasa directamente desde onclick para evitar perder
-// event.currentTarget después del primer await (el DOM lo nulifica).
-async function selectPatient(pid, name, age, cardEl) {
+async function selectPatient(pid, name, age) {
+  // Validar que exista token de autenticación
   if (!token) {
-    showToast('Sesión expirada. Por favor inicia sesión nuevamente.', true);
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
+    errorDiv.textContent = 'Sesión expirada. Por favor inicia sesión nuevamente.';
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 3000);
     logout();
     return;
   }
 
-  // Si hay un chat activo o isLoading bloqueado por sesión anterior,
-  // lo limpiamos antes de continuar — así "Nueva sesión" siempre funciona.
-  resetChatState();
-
-  // Bloquear doble-clic ANTES del primer await
-  isLoading = true;
-
-  // Feedback visual en la tarjeta usando cardEl (capturado síncronamente)
-  const originalContent = cardEl ? cardEl.innerHTML : null;
-  if (cardEl) {
-    cardEl.style.opacity       = '0.6';
-    cardEl.style.pointerEvents = 'none';
-    cardEl.innerHTML = `
-      <div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);
-        border-top-color:var(--accent);border-radius:50%;
-        animation:spin .8s linear infinite;margin:20px auto;"></div>
-      <div style="color:var(--muted);font-size:.8rem;margin-top:6px;">Iniciando sesión...</div>`;
+  // Validar que exista el evento y el elemento
+  if (!event || !event.currentTarget) {
+    console.error('Error: evento no disponible en selectPatient');
+    appendMsg('sistema', '⚠ Error al seleccionar paciente. Intenta nuevamente.');
+    return;
   }
+
+  // Evitar múltiples clics mientras se está procesando
+  if (isLoading) {
+    console.log('Ya hay una operación en curso, ignorando clic');
+    return;
+  }
+
+  // Mostrar indicador de carga inmediatamente
+  const patientCard = event.currentTarget;
+  const originalContent = patientCard.innerHTML;
+  patientCard.style.opacity = '0.6';
+  patientCard.style.pointerEvents = 'none';
+  patientCard.innerHTML = `
+    <div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;"></div>
+    <div style="color:var(--muted);font-size:.8rem;">Iniciando sesión...</div>
+  `;
 
   patientId   = pid;
   patientName = name;
 
-  document.getElementById('card-name').textContent = `${name}, ${age} años`;
+  document.getElementById('card-name').textContent      = `${name}, ${age} años`;
+  document.getElementById('empty-label').textContent    = `Escribe tu primera intervención para iniciar la sesión con ${name}.`;
   document.getElementById('chat-box').innerHTML = `
     <div class="empty-state" id="empty-msg">
       <div class="icon">🛋️</div>
@@ -1425,44 +1427,64 @@ async function selectPatient(pid, name, age, cardEl) {
     </div>`;
 
   try {
-    const res = await fetch(`${API}/session/new`, {
-      method:  'POST',
+    console.log('Iniciando solicitud de sesión:', { pid, name, age });
+    
+    const res  = await fetch(`${API}/session/new`, {
+      method: 'POST', 
       headers: authHeaders(),
-      body:    JSON.stringify({ patient_id: pid }),
-      signal:  AbortSignal.timeout(15000),
+      body: JSON.stringify({ patient_id: pid }),
+      signal: AbortSignal.timeout(10000) // Timeout de 10 segundos
     });
-
-    if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
+    
+    console.log('Respuesta recibida:', res.status, res.statusText);
+    
+    if (!res.ok) {
+      throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
+    }
+    
     const data = await res.json();
-    if (!data.session_id) throw new Error('El servidor no devolvió un ID de sesión válido');
-
-    sessionId = data.session_id;
-
+    console.log('Datos recibidos:', data);
+    
+    if (!data.session_id) {
+      throw new Error('El servidor no devolvió un ID de sesión válido');
+    }
+    
+    sessionId  = data.session_id;
+    
+    // Solo mostrar la pantalla del chat si todo fue exitoso
     showScreen('screen-chat');
     setNavActive('screen-selection');
     document.getElementById('user-input').disabled = false;
     document.getElementById('send-btn').disabled   = false;
     document.getElementById('end-btn').disabled    = false;
     document.getElementById('user-input').focus();
-
+    
   } catch(e) {
-    if (cardEl && originalContent !== null) {
-      cardEl.style.opacity       = '1';
-      cardEl.style.pointerEvents = 'auto';
-      cardEl.innerHTML           = originalContent;
-    }
-    let msg = 'Error al conectar con el servidor. Intenta de nuevo.';
-    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
-      msg = 'El servidor tardó demasiado. Intenta de nuevo.';
+    console.error('Error al crear sesión:', e);
+    appendMsg('sistema', `⚠ No se pudo iniciar la sesión: ${e.message}`);
+    
+    // Restaurar la tarjeta del paciente a su estado original
+    patientCard.style.opacity = '1';
+    patientCard.style.pointerEvents = 'auto';
+    patientCard.innerHTML = originalContent;
+    
+    // Mostrar notificación más específica según el error
+    let errorMessage = 'Error al conectar con el servidor. Intenta de nuevo.';
+    if (e.name === 'TimeoutError') {
+      errorMessage = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
     } else if (e.message.includes('401')) {
-      showToast('Sesión expirada. Inicia sesión nuevamente.', true);
+      errorMessage = 'Sesión expirada. Inicia sesión nuevamente.';
       logout();
       return;
     }
-    showToast(msg, true);
-
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(248,113,113,.9);color:white;padding:12px 20px;border-radius:8px;z-index:1000;animation:fadeDown .3s ease;';
+    errorDiv.textContent = errorMessage;
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 3000);
   } finally {
+    // Asegurar que isLoading siempre se libere
     isLoading = false;
   }
 }
@@ -1524,13 +1546,15 @@ async function loadHistorial() {
         <td style="font-size:.8rem;color:var(--muted)">${formatDuration(s.inicio, s.fin)}</td>
         <td>${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
         <td><span class="status-pill status-${s.estado || 'activa'}">${s.estado || '—'}</span></td>
-        <td style="display:flex;gap:6px;align-items:center;">
-          <button class="btn-accent" style="padding:5px 10px;font-size:.75rem;"
+        <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          ${!s.alta ? `<button class="btn-accent" style="padding:5px 10px;font-size:.75rem;"
             onclick="reanudarSesion('${s.sesion_id}','${(s.patient_name||'').replace(/'/g,"\\'")}')">
-            ↩ Continuar
-          </button>
-          <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
-            onclick="loadDetalle('${s.sesion_id}')">Ver</button>
+            ↩ Continuar</button>` : ''}
+          ${(!s.alta && s.puntuacion == null) ? `<button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;border-color:var(--accent2);color:var(--accent2);"
+            onclick="verAnalisisSesion('${s.sesion_id}')">🔬 Ver análisis</button>` : ''}
+          ${(s.puntuacion != null) ? `<button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
+            onclick="loadDetalle('${s.sesion_id}')">📋 Reporte</button>` : ''}
+          ${s.alta ? `<span style="font-size:.72rem;color:var(--green);padding:3px 10px;background:rgba(52,211,153,.12);border-radius:8px;border:1px solid rgba(52,211,153,.3);">✓ Alta</span>` : ''}
           <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
             onclick="eliminarSesion('${s.sesion_id}', this)">🗑</button>
         </td>
@@ -1643,6 +1667,10 @@ async function reanudarSesion(sesionId, patientNameFromList) {
     document.getElementById('user-input').disabled = false;
     document.getElementById('send-btn').disabled   = false;
     document.getElementById('end-btn').disabled    = false;
+    // Mostrar "Ver análisis IA" porque la sesión ya tiene transcripción guardada
+    const analyzeBtn = document.getElementById('analyze-btn');
+    if (analyzeBtn) analyzeBtn.style.display = '';
+    _checkAltaCount = 0;
     document.getElementById('user-input').focus();
   } catch (e) {
     showToast('No se pudo reanudar la sesión', true);
@@ -1970,6 +1998,8 @@ async function sendMessage() {
     const data = await res.json();
     removeTyping();
     appendMsg('patient', data.reply);
+    // Verificar en segundo plano si la IA sugiere proponer el alta
+    maybeCheckAlta();
   } catch(e) {
     removeTyping();
     const msg = (e.name === 'TimeoutError' || e.name === 'AbortError')
@@ -1984,107 +2014,224 @@ async function sendMessage() {
   }
 }
 
+// ─────────────────────────────────────────────────────────
+// FLUJO DE SESIÓN
+//
+// "Guardar y cerrar" (end-btn)
+//   → /session/save  — guarda transcripción, libera memoria, vuelve a selección
+//
+// "Ver análisis IA" (analyze-btn) — aparece al reanudar una sesión guardada
+//   → /session/end   — genera feedback + análisis clínico y muestra el reporte
+//
+// "Proponer alta" (alta-btn) — aparece cuando la IA lo sugiere (check-alta)
+//   → abre el formulario de alta → /session/alta
+// ─────────────────────────────────────────────────────────
+
+// Llamado periódicamente mientras el chat está activo para preguntar a la IA
+// si ya es momento de sugerir el alta. Se activa cada 3 mensajes del psicólogo.
+let _checkAltaCount = 0;
+
+async function maybeCheckAlta() {
+  if (!sessionId) return;
+  _checkAltaCount++;
+  if (_checkAltaCount % 3 !== 0) return; // revisar cada 3 mensajes
+  try {
+    const res  = await fetch(`${API}/session/check-alta`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ session_id: sessionId }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const altaBtn = document.getElementById('alta-btn');
+    if (data.sugerir_alta && altaBtn) {
+      altaBtn.style.display = '';
+      // Muestra un aviso sutil la primera vez que aparece el botón
+      if (altaBtn.dataset.shown !== '1') {
+        altaBtn.dataset.shown = '1';
+        appendMsg('sistema', `🎯 Sugerencia del supervisor: ${data.mensaje}`);
+      }
+    }
+  } catch(_) { /* silencioso — no interrumpe el chat */ }
+}
+
+// "Guardar y cerrar" — guarda sin análisis IA, libera, vuelve a selección
 async function endSession() {
   if (!sessionId || isLoading) return;
-  if (!confirm('¿Terminar la sesión y ver el análisis?')) return;
+  if (!confirm('¿Guardar la sesión y cerrar el chat?\n\nPodrás retomarla desde "Mi historial".')) return;
 
-  document.getElementById('send-btn').disabled   = true;
-  document.getElementById('end-btn').disabled    = true;
-  document.getElementById('user-input').disabled = true;
+  const endBtn     = document.getElementById('end-btn');
+  const sendBtn    = document.getElementById('send-btn');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const altaBtnEl  = document.getElementById('alta-btn');
+  const input      = document.getElementById('user-input');
+
+  isLoading = true;
+  if (endBtn)     { endBtn.disabled = true; endBtn.textContent = 'Guardando…'; }
+  if (sendBtn)    sendBtn.disabled = true;
+  if (analyzeBtn) analyzeBtn.disabled = true;
+  if (altaBtnEl)  altaBtnEl.disabled = true;
+  if (input)      input.disabled = true;
+
+  try {
+    const res  = await fetch(`${API}/session/save`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ session_id: sessionId }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    const data = await res.json();
+    showToast(`Sesión #${data.numero_sesion} guardada ✓`);
+    _afterSessionClosed();
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, true);
+    isLoading = false;
+    if (endBtn)     { endBtn.disabled = false; endBtn.textContent = 'Guardar y cerrar'; }
+    if (sendBtn)    sendBtn.disabled = false;
+    if (analyzeBtn) analyzeBtn.disabled = false;
+    if (altaBtnEl)  altaBtnEl.disabled = false;
+    if (input)      input.disabled = false;
+  }
+}
+
+// "Ver análisis IA" — genera el reporte completo con IA sobre la sesión guardada
+async function analyzeSession() {
+  if (!sessionId || isLoading) return;
+  if (!confirm('¿Generar el análisis clínico de esta sesión?\n\nEsto tomará unos segundos.')) return;
 
   const overlay = document.getElementById('modal-overlay');
   const mc      = document.getElementById('modal-content');
   overlay.classList.add('active');
   mc.innerHTML = `
     <div class="modal-title">Analizando sesión…</div>
-    <div class="modal-subtitle">Generando retroalimentación y análisis clínico</div>
+    <div class="modal-subtitle">La IA supervisora está generando tu reporte clínico</div>
     <div class="spinner"></div>`;
 
   try {
     const res  = await fetch(`${API}/session/end`, {
-      method:'POST', headers: authHeaders(),
-      body: JSON.stringify({ session_id: sessionId })
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ session_id: sessionId }),
+      signal: AbortSignal.timeout(120000),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
     const data = await res.json();
-    const score = data.puntuacion;
-    const deg   = score ? Math.round(score * 3.6) : 0;
-    const specMatch = data.analisis_objetivo.match(/especializaci[oó]n[^\n:]*[:]\s*\*{0,2}([^\n*]+)\*{0,2}/i);
-    const specialty = specMatch ? specMatch[1].trim() : null;
-
-    mc.innerHTML = `
-      <div class="modal-title">Reporte de sesión</div>
-      <div class="modal-subtitle">
-        Sesión #${data.numero_sesion || 1} con ${data.patient_name} · Análisis generado por IA supervisora
-      </div>
-      ${score !== null ? `
-      <div class="score-ring" style="background:conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);">
-        <span class="score-value">${score}</span>
-      </div>` : ''}
-      ${specialty ? `<div style="text-align:center;margin-bottom:20px;"><div class="specialty-badge">🎓 ${specialty}</div></div>` : ''}
-      <div class="section-label">Perspectiva de ${data.patient_name}</div>
-      <div class="feedback-block">${data.feedback_paciente}</div>
-      <div class="section-label">Análisis clínico objetivo</div>
-      <div class="feedback-block">${data.analisis_objetivo}</div>
-      <div class="section-label">Alta terapéutica (cierre del proceso)</div>
-      <div class="feedback-block">
-        <p style="white-space:pre-line;font-size:.82rem;color:var(--muted);margin-bottom:12px;">
-          ${data.sugerencia_alta || ''}
-        </p>
-        <label style="display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px;">
-          Reflexiona brevemente respondiendo a las preguntas anteriores (opcional):
-        </label>
-        <textarea id="alta-reflexion" style="width:100%;min-height:90px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:10px;font-size:.8rem;resize:vertical;"></textarea>
-      </div>
-      <div style="display:flex;justify-content:space-between;gap:10px;margin-top:12px;">
-        <button class="btn-danger" style="width:50%;padding:10px 14px;font-size:.8rem;"
-          onclick="darAltaSesion()">
-          Dar de alta a este paciente
-        </button>
-        <button class="modal-close" style="width:50%;" onclick="closeSessionModal()">Cerrar y nueva sesión</button>
-      </div>`;
+    _renderSessionReport(data, mc);
   } catch(e) {
     mc.innerHTML = `
-      <div class="modal-title">Error</div>
-      <div class="modal-subtitle">No se pudo generar el análisis.</div>
+      <div class="modal-title">Error al analizar</div>
+      <div class="modal-subtitle">${e.message}</div>
       <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
   }
 }
 
+// Renderiza el reporte de sesión dentro del modal (compartido entre
+// analyzeSession y el flujo de alta)
+function _renderSessionReport(data, mc) {
+  const score = data.puntuacion;
+  const deg   = score ? Math.round(score * 3.6) : 0;
+  const specMatch = (data.analisis_objetivo || '').match(/especializaci[oó]n[^:]*[:]\s*\*{0,2}([^*]+)\*{0,2}/i);
+  const specialty = specMatch ? specMatch[1].trim() : null;
+
+  mc.innerHTML = `
+    <div class="modal-title">Reporte · Sesión #${data.numero_sesion || 1}</div>
+    <div class="modal-subtitle">Con ${data.patient_name} · Análisis generado por IA supervisora</div>
+    ${score !== null && score !== undefined ? `
+    <div class="score-ring" style="background:conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);">
+      <span class="score-value">${score}</span>
+    </div>` : ''}
+    ${specialty ? `<div style="text-align:center;margin-bottom:20px;"><div class="specialty-badge">🎓 ${specialty}</div></div>` : ''}
+    <div class="section-label">Perspectiva de ${data.patient_name}</div>
+    <div class="feedback-block">${data.feedback_paciente || '—'}</div>
+    <div class="section-label">Análisis clínico objetivo</div>
+    <div class="feedback-block">${data.analisis_objetivo || '—'}</div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>
+    </div>`;
+}
+
 function closeSessionModal() {
   closeModal();
-  sessionId = null;
-  patientId = '';
+  _afterSessionClosed();
+}
+
+// Limpia estado y vuelve a la pantalla de selección
+function _afterSessionClosed() {
+  const savedSession = sessionId; // por si acaso
+  resetChatState();
+  patientId   = '';
   patientName = '';
-  isLoading = false; // Asegurar que isLoading se libere al cerrar sesión
-  
-  // Limpiar completamente el estado del chat
+  _checkAltaCount = 0;
+
+  // Restaurar botones del chat
+  const endBtn     = document.getElementById('end-btn');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const altaBtnEl  = document.getElementById('alta-btn');
+  const input      = document.getElementById('user-input');
+  if (endBtn)     { endBtn.disabled = false; endBtn.textContent = 'Guardar y cerrar'; }
+  if (analyzeBtn) { analyzeBtn.style.display = 'none'; analyzeBtn.disabled = false; }
+  if (altaBtnEl)  { altaBtnEl.style.display = 'none'; altaBtnEl.disabled = false; delete altaBtnEl.dataset.shown; }
+  if (input)      { input.disabled = false; input.value = ''; }
+
   document.getElementById('chat-box').innerHTML = `
     <div class="empty-state" id="empty-msg">
       <div class="icon">🛋️</div>
       <span>Selecciona un paciente para comenzar una nueva sesión.</span>
     </div>`;
-  document.getElementById('card-name').textContent = 'Paciente seleccionado';
-  document.getElementById('empty-label').textContent = 'Escribe tu primera intervención para iniciar la sesión.';
-  
-  document.getElementById('user-input').disabled = false;
-  document.getElementById('send-btn').disabled   = false;
-  document.getElementById('end-btn').disabled    = false;
-  document.getElementById('user-input').value = '';
-  
+  document.getElementById('card-name').textContent = '—';
+
   showScreen('screen-selection');
   loadPatients();
   setNavActive('screen-selection');
 }
 
+// ── Alta terapéutica ──────────────────────────────────────
+
+// Abre el formulario de alta (ya sea desde el botón "Proponer alta"
+// del chat o desde el historial)
+function proposeAlta() {
+  if (!sessionId) return;
+  const overlay = document.getElementById('modal-overlay');
+  const mc      = document.getElementById('modal-content');
+  overlay.classList.add('active');
+  mc.innerHTML = `
+    <div class="modal-title">Alta terapéutica</div>
+    <div class="modal-subtitle">
+      Responde las siguientes preguntas para fundamentar el alta del paciente.
+      El supervisor IA evaluará tu criterio clínico.
+    </div>
+    <div class="section-label">Preguntas de cierre</div>
+    <div style="font-size:.82rem;color:var(--muted);line-height:1.75;margin-bottom:14px;white-space:pre-line;">• ¿Qué pasaría si hoy surgiera el mismo problema que trajo al paciente?
+• ¿Sientes que el paciente tiene recursos para manejar futuras crisis solo?
+• ¿La terapia se ha vuelto repetitiva o aún hay material clínico importante?
+• ¿Cómo imaginas la vida del paciente a seis meses sin venir a consulta?</div>
+    <label style="display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px;">
+      Tu reflexión (responde con tus propias palabras):
+    </label>
+    <textarea id="alta-reflexion" style="width:100%;min-height:110px;border-radius:10px;
+      border:1px solid var(--border);background:var(--surface);color:var(--text);
+      padding:10px;font-size:.85rem;resize:vertical;"
+      placeholder="Escribe aquí tu análisis sobre el alta…"></textarea>
+    <div style="display:flex;justify-content:space-between;gap:10px;margin-top:16px;">
+      <button class="btn-ghost" style="padding:10px 18px;"
+        onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" style="width:auto;padding:10px 22px;"
+        onclick="darAltaSesion()">Enviar y generar informe de alta</button>
+    </div>`;
+}
+
 async function darAltaSesion() {
-  if (!sessionId) {
-    closeSessionModal();
-    return;
-  }
   const reflexion = (document.getElementById('alta-reflexion')?.value || '').trim();
-  if (!confirm('Esta acción dará de alta al paciente para esta sesión.\nLuego no podrás reanudar esta conversación.\n\n¿Confirmas el alta?')) {
+  if (!reflexion) {
+    showToast('Escribe tu reflexión antes de enviar.', true);
     return;
   }
+  if (!sessionId) { closeSessionModal(); return; }
 
   const overlay = document.getElementById('modal-overlay');
   const mc      = document.getElementById('modal-content');
@@ -2096,36 +2243,77 @@ async function darAltaSesion() {
 
   try {
     const res = await fetch(`${API}/session/alta`, {
-      method: 'POST',
-      headers: authHeaders(),
+      method: 'POST', headers: authHeaders(),
       body: JSON.stringify({ sesion_id: sessionId, reflexion }),
+      signal: AbortSignal.timeout(120000),
     });
     const data = await res.json();
     if (!res.ok) {
-      const msg = data.detail || `Error ${res.status}`;
       mc.innerHTML = `
         <div class="modal-title">Error al dar de alta</div>
-        <div class="modal-subtitle">${msg}</div>
+        <div class="modal-subtitle">${data.detail || 'Error desconocido'}</div>
         <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
       return;
     }
-
     mc.innerHTML = `
-      <div class="modal-title">Alta terapéutica registrada</div>
-      <div class="modal-subtitle">El paciente ha sido dado de alta para esta sesión.</div>
-      <div class="section-label">Informe de alta del supervisor</div>
+      <div class="modal-title">✅ Alta terapéutica registrada</div>
+      <div class="modal-subtitle">El proceso con este paciente ha sido cerrado formalmente.</div>
+      <div class="section-label">Informe del supervisor IA</div>
       <div class="feedback-block">${data.alta_reporte}</div>
-      <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
-  } catch (e) {
+      <button class="modal-close" style="margin-top:12px;" onclick="closeSessionModal()">Cerrar</button>`;
+  } catch(e) {
     mc.innerHTML = `
       <div class="modal-title">Error</div>
-      <div class="modal-subtitle">No se pudo completar el alta. Intenta de nuevo más tarde.</div>
+      <div class="modal-subtitle">No se pudo completar el alta: ${e.message}</div>
       <button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
   }
 }
 
-
 // ── HISTORIAL — ver detalle (modal) ──────────────────────
+
+// Genera el análisis IA de una sesión guardada (sin análisis aún)
+// disparado desde el botón "🔬 Ver análisis" en el historial
+async function verAnalisisSesion(sesionId) {
+  if (!confirm('¿Generar el análisis clínico de esta sesión?\n\nEsto tomará unos segundos.')) return;
+  const overlay = document.getElementById('modal-overlay');
+  const mc      = document.getElementById('modal-content');
+  overlay.classList.add('active');
+  mc.innerHTML = `
+    <div class="modal-title">Analizando sesión…</div>
+    <div class="modal-subtitle">La IA supervisora está generando tu reporte clínico</div>
+    <div class="spinner"></div>`;
+  try {
+    const res = await fetch(`${API}/session/end`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ session_id: sesionId }),
+      signal: AbortSignal.timeout(120000),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    const data = await res.json();
+    const score = data.puntuacion;
+    const deg   = score ? Math.round(score * 3.6) : 0;
+    const specMatch = (data.analisis_objetivo || '').match(/especializaci[oó]n[^:]*[:]\s*\*{0,2}([^*]+)\*{0,2}/i);
+    const specialty = specMatch ? specMatch[1].trim() : null;
+    mc.innerHTML = `
+      <div class="modal-title">Reporte · Sesión #${data.numero_sesion || 1}</div>
+      <div class="modal-subtitle">Con ${data.patient_name} · Análisis generado por IA supervisora</div>
+      ${score != null ? `<div class="score-ring" style="background:conic-gradient(var(--accent) ${deg}deg, var(--border) ${deg}deg);"><span class="score-value">${score}</span></div>` : ''}
+      ${specialty ? `<div style="text-align:center;margin-bottom:20px;"><div class="specialty-badge">🎓 ${specialty}</div></div>` : ''}
+      <div class="section-label">Perspectiva de ${data.patient_name}</div>
+      <div class="feedback-block">${data.feedback_paciente || '—'}</div>
+      <div class="section-label">Análisis clínico objetivo</div>
+      <div class="feedback-block">${data.analisis_objetivo || '—'}</div>
+      <button class="modal-close" style="margin-top:12px;" onclick="closeModal();loadHistorial();">Cerrar</button>`;
+  } catch(e) {
+    mc.innerHTML = `
+      <div class="modal-title">Error al analizar</div>
+      <div class="modal-subtitle">${e.message}</div>
+      <button class="modal-close" onclick="closeModal()">Cerrar</button>`;
+  }
+}
 
 async function loadDetalle(sesionId) {
   const overlay = document.getElementById('modal-overlay');
