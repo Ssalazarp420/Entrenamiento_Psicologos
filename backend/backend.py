@@ -149,6 +149,9 @@ class AltaRequest(BaseModel):
     sesion_id: str
     reflexion: Optional[str] = None
 
+class SessionSaveRequest(BaseModel):
+    session_id: str
+
 class CheckAltaRequest(BaseModel):
     session_id: str
 
@@ -342,6 +345,20 @@ def get_analisis_objetivo():
     except Exception:
         pass
     return ANALISIS_OBJETIVO_SEED
+
+CHECK_ALTA_SEED = """Eres un supervisor clínico experto. Evalúa si el proceso terapéutico
+con este paciente simulado está listo para plantear un ALTA terapéutica.
+
+Responde SOLO con un JSON con exactamente estos dos campos (sin texto adicional):
+{"sugerir_alta": true|false, "mensaje": "Texto corto máx 60 palabras explicando tu evaluación."}
+
+Criterios orientativos por dificultad:
+- Leve: alta viable desde la sesión 3.
+- Moderada: alta viable desde la sesión 6.
+- Severa: alta viable desde la sesión 10.
+Además del número, el contenido debe mostrar avances reales: reducción de síntomas,
+recursos adquiridos, mayor autonomía. Si hay menos de 4 intervenciones del psicólogo,
+responde siempre false."""
 
 sessions: dict = {}
 
@@ -633,12 +650,8 @@ def chat(req: MessageRequest, user=Depends(get_current_user)):
 
 
 @app.post("/session/save")
-def save_session(req: SessionResponse, user=Depends(get_current_user)):
-    """
-    Guarda el progreso de la sesión activa (transcripción parcial) sin generar
-    análisis IA y sin marcarla como completada. Permite al estudiante cerrar
-    el chat y retomarlo más tarde como una nueva sesión numerada.
-    """
+def save_session(req: SessionSaveRequest, user=Depends(get_current_user)):
+    """Guarda la sesión activa sin análisis IA. El estudiante puede retomarla después."""
     if req.session_id not in sessions:
         raise HTTPException(status_code=404, detail="Sesión no encontrada en memoria")
     session = sessions[req.session_id]
@@ -652,36 +665,21 @@ def save_session(req: SessionResponse, user=Depends(get_current_user)):
         f"{'Psicólogo' if isinstance(m, HumanMessage) else profile['name']}: {m.content}"
         for m in session["messages"] if isinstance(m, (HumanMessage, AIMessage))
     ])
-
-    num_mensajes_psi = sum(1 for m in session["messages"] if isinstance(m, HumanMessage))
-
-    # Cuenta sesiones completadas previas para el número de sesión
     prev_count = contar_sesiones_usuario_paciente(user["email"], patient_id)
     numero_sesion = prev_count + 1
-
     now = datetime.utcnow().isoformat()
 
-    # Guarda o actualiza en c_sesiones como "completada" (sin análisis IA)
     c_sesiones.upsert_item({
-        "id": req.session_id,
-        "sesion_id": req.session_id,
-        "usuario_id": user["email"],
-        "patient_id": patient_id,
-        "patient_name": profile["name"],
-        "inicio": session.get("inicio"),
-        "fin": now,
-        "estado": "completada",
-        "puntuacion": None,           # sin análisis IA aún
-        "numero_sesion": numero_sesion,
-        "alta": False,
+        "id": req.session_id, "sesion_id": req.session_id,
+        "usuario_id": user["email"], "patient_id": patient_id,
+        "patient_name": profile["name"], "inicio": session.get("inicio"),
+        "fin": now, "estado": "completada", "puntuacion": None,
+        "numero_sesion": numero_sesion, "alta": False,
     })
-
-    # Guarda transcripción parcial en c_detalle (sin feedback ni análisis)
-    # Borra la anterior si existía para no duplicar
+    # Guarda o actualiza transcripción parcial
     det_items = list(c_detalle.query_items(
         f"SELECT * FROM c WHERE c.sesion_id = '{req.session_id}'",
-        enable_cross_partition_query=True,
-    ))
+        enable_cross_partition_query=True))
     if det_items:
         det = det_items[0]
         det["transcripcion"] = historial_texto
@@ -689,74 +687,51 @@ def save_session(req: SessionResponse, user=Depends(get_current_user)):
         c_detalle.upsert_item(det)
     else:
         c_detalle.create_item({
-            "id": str(uuid.uuid4()),
-            "sesion_id": req.session_id,
-            "usuario_id": user["email"],
-            "transcripcion": historial_texto,
-            "feedback_paciente": None,
-            "analisis_objetivo": None,
-            "guardado_en": now,
+            "id": str(uuid.uuid4()), "sesion_id": req.session_id,
+            "usuario_id": user["email"], "transcripcion": historial_texto,
+            "feedback_paciente": None, "analisis_objetivo": None, "guardado_en": now,
         })
-
-    # Elimina de memoria para liberar recursos
     del sessions[req.session_id]
-
-    return {
-        "mensaje": "Sesión guardada correctamente.",
-        "sesion_id": req.session_id,
-        "numero_sesion": numero_sesion,
-        "num_mensajes": num_mensajes_psi,
-    }
+    return {"mensaje": "Sesión guardada.", "sesion_id": req.session_id, "numero_sesion": numero_sesion}
 
 
 @app.post("/session/end")
 def end_session(req: SessionResponse, user=Depends(get_current_user)):
-    """
-    Finaliza la sesión con análisis IA completo (feedback del paciente + análisis
-    clínico objetivo). Llamar solo cuando el estudiante quiere ver el reporte.
-    Si la sesión ya fue guardada (no está en memoria), reconstruye desde CosmosDB.
-    """
-    # Si no está en memoria, intentar reconstruir desde el detalle guardado
+    """Genera análisis IA completo. Si la sesión ya fue guardada, la reconstruye desde CosmosDB."""
+    # Reconstruir desde CosmosDB si no está en memoria
     if req.session_id not in sessions:
         ses_items = list(c_sesiones.query_items(
             f"SELECT * FROM c WHERE c.sesion_id = '{req.session_id}'",
-            enable_cross_partition_query=True,
-        ))
+            enable_cross_partition_query=True))
         if not ses_items:
             raise HTTPException(status_code=404, detail="Sesión no encontrada")
         ses = ses_items[0]
         if ses.get("usuario_id") != user["email"]:
-            raise HTTPException(status_code=403, detail="No tienes acceso a esta sesión")
-
+            raise HTTPException(status_code=403, detail="Sin acceso")
         patient_id = ses.get("patient_id")
         casos = get_casos_dict()
         if patient_id not in casos:
-            raise HTTPException(status_code=400, detail="Perfil de paciente no encontrado")
+            raise HTTPException(status_code=400, detail="Perfil no encontrado")
         profile = casos[patient_id]
-
         det_items = list(c_detalle.query_items(
             f"SELECT * FROM c WHERE c.sesion_id = '{req.session_id}'",
-            enable_cross_partition_query=True,
-        ))
+            enable_cross_partition_query=True))
         if not det_items:
-            raise HTTPException(status_code=404, detail="No hay transcripción guardada para esta sesión")
+            raise HTTPException(status_code=404, detail="Sin transcripción guardada para analizar")
         historial_texto = det_items[0].get("transcripcion") or ""
-        # Reconstruye en memoria para análisis
         mensajes_lm = [SystemMessage(content=profile["instruccion"])]
         for linea in historial_texto.splitlines():
             linea = linea.strip()
             if not linea: continue
             if linea.startswith("Psicólogo:"):
-                contenido = linea.split(":", 1)[1].strip()
-                if contenido: mensajes_lm.append(HumanMessage(content=contenido))
+                c = linea.split(":", 1)[1].strip()
+                if c: mensajes_lm.append(HumanMessage(content=c))
             elif linea.startswith(f"{profile['name']}:"):
-                contenido = linea.split(":", 1)[1].strip()
-                if contenido: mensajes_lm.append(AIMessage(content=contenido))
+                c = linea.split(":", 1)[1].strip()
+                if c: mensajes_lm.append(AIMessage(content=c))
         sessions[req.session_id] = {
-            "messages": mensajes_lm,
-            "patient_id": patient_id,
-            "usuario_id": user["email"],
-            "inicio": ses.get("inicio"),
+            "messages": mensajes_lm, "patient_id": patient_id,
+            "usuario_id": user["email"], "inicio": ses.get("inicio"),
         }
 
     session = sessions[req.session_id]
@@ -780,38 +755,24 @@ def end_session(req: SessionResponse, user=Depends(get_current_user)):
             HumanMessage(content=f"Paciente simulado: {profile['name']}, {profile['age']} años — {profile.get('descripcion', '')}\n\nSesión completa:\n{historial_texto}")
         ]).content
         puntuacion = extraer_puntuacion(analisis)
-
         prev_count = contar_sesiones_usuario_paciente(user["email"], patient_id)
-        numero_sesion = max(prev_count, session.get("numero_sesion", prev_count + 1))
-
+        numero_sesion = prev_count + 1
         now = datetime.utcnow().isoformat()
-        c_sesiones.upsert_item({
-            "id": req.session_id,
-            "sesion_id": req.session_id,
-            "usuario_id": user["email"],
-            "patient_id": patient_id,
-            "patient_name": profile["name"],
-            "inicio": session.get("inicio"),
-            "fin": now,
-            "estado": "completada",
-            "puntuacion": puntuacion,
-            "numero_sesion": numero_sesion,
-            "alta": False,
-        })
 
-        # Actualiza o crea el detalle con el análisis completo
+        c_sesiones.upsert_item({
+            "id": req.session_id, "sesion_id": req.session_id,
+            "usuario_id": user["email"], "patient_id": patient_id,
+            "patient_name": profile["name"], "inicio": session.get("inicio"),
+            "fin": now, "estado": "completada", "puntuacion": puntuacion,
+            "numero_sesion": numero_sesion, "alta": False,
+        })
         det_items = list(c_detalle.query_items(
             f"SELECT * FROM c WHERE c.sesion_id = '{req.session_id}'",
-            enable_cross_partition_query=True,
-        ))
+            enable_cross_partition_query=True))
         if det_items:
             det = det_items[0]
-            det.update({
-                "transcripcion": historial_texto,
-                "feedback_paciente": feedback_paciente,
-                "analisis_objetivo": analisis,
-                "guardado_en": now,
-            })
+            det.update({"transcripcion": historial_texto, "feedback_paciente": feedback_paciente,
+                        "analisis_objetivo": analisis, "guardado_en": now})
             c_detalle.upsert_item(det)
         else:
             c_detalle.create_item({
@@ -820,98 +781,58 @@ def end_session(req: SessionResponse, user=Depends(get_current_user)):
                 "feedback_paciente": feedback_paciente, "analisis_objetivo": analisis,
                 "guardado_en": now,
             })
-
         if req.session_id in sessions:
             del sessions[req.session_id]
-
         sugerencia_alta = construir_sugerencia_alta(profile, numero_sesion)
         return {
-            "patient_id": patient_id,
-            "patient_name": profile["name"],
-            "feedback_paciente": feedback_paciente,
-            "analisis_objetivo": analisis,
-            "puntuacion": puntuacion,
-            "numero_sesion": numero_sesion,
+            "patient_id": patient_id, "patient_name": profile["name"],
+            "feedback_paciente": feedback_paciente, "analisis_objetivo": analisis,
+            "puntuacion": puntuacion, "numero_sesion": numero_sesion,
             "sugerencia_alta": sugerencia_alta,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-CHECK_ALTA_SEED = """Eres un supervisor clínico experto. Tu tarea es evaluar brevemente si el proceso
-terapéutico con este paciente simulado está en condiciones de plantearse un ALTA terapéutica,
-basándote en la transcripción de la sesión más reciente y el número de sesiones realizadas.
-
-Responde SOLO con un objeto JSON con exactamente estos dos campos:
-{
-  "sugerir_alta": true | false,
-  "mensaje": "Texto corto (máx 60 palabras) explicando tu evaluación al estudiante."
-}
-
-Criterios orientativos:
-- Dificultad Leve: alta viable desde la sesión 3.
-- Dificultad Moderada: alta viable desde la sesión 6.
-- Dificultad Severa: alta viable desde la sesión 10.
-- Además del número de sesiones, el contenido debe mostrar avances reales:
-  reducción de síntomas, recursos adquiridos, mayor autonomía del paciente.
-- Si no hay suficientes mensajes (menos de 4 intercambios del psicólogo), responde siempre false.
-No incluyas ningún texto fuera del JSON."""
-
-
 @app.post("/session/check-alta")
 def check_alta(req: CheckAltaRequest, user=Depends(get_current_user)):
-    """
-    Evalúa con IA si el proceso está listo para proponer alta terapéutica.
-    Devuelve {sugerir_alta: bool, mensaje: str}.
-    Solo se llama desde el frontend, no bloquea el chat.
-    """
+    """Evalúa con IA (respuesta JSON rápida) si el proceso está listo para alta."""
     import json as _json
     if req.session_id not in sessions:
         return {"sugerir_alta": False, "mensaje": ""}
-
     session = sessions[req.session_id]
     patient_id = session["patient_id"]
     casos = get_casos_dict()
     if patient_id not in casos:
         return {"sugerir_alta": False, "mensaje": ""}
     profile = casos[patient_id]
-
-    # Contar intercambios reales del psicólogo
     num_psi = sum(1 for m in session["messages"] if isinstance(m, HumanMessage))
     if num_psi < 4:
         return {"sugerir_alta": False, "mensaje": ""}
-
     historial_texto = "\n".join([
         f"{'Psicólogo' if isinstance(m, HumanMessage) else profile['name']}: {m.content}"
         for m in session["messages"] if isinstance(m, (HumanMessage, AIMessage))
     ])
-
     num_sesiones = contar_sesiones_usuario_paciente(user["email"], patient_id) + 1
-
     try:
         model = get_model()
-        respuesta = model.invoke([
+        resp = model.invoke([
             SystemMessage(content=CHECK_ALTA_SEED),
             HumanMessage(content=(
                 f"Paciente: {profile['name']}, {profile['age']} años. "
                 f"Dificultad: {profile.get('dificultad','Leve')}. "
-                f"Número de sesiones realizadas (incluyendo esta): {num_sesiones}.\n\n"
-                f"Transcripción de la sesión actual:\n{historial_texto}"
+                f"Sesiones realizadas (incl. esta): {num_sesiones}.\n\n"
+                f"Transcripción:\n{historial_texto}"
             ))
         ]).content.strip()
-
-        # Limpia posibles bloques markdown del JSON
-        if respuesta.startswith("```"):
-            respuesta = respuesta.split("```")[1]
-            if respuesta.startswith("json"):
-                respuesta = respuesta[4:]
-        data = _json.loads(respuesta)
-        return {
-            "sugerir_alta": bool(data.get("sugerir_alta", False)),
-            "mensaje": str(data.get("mensaje", "")),
-        }
+        if resp.startswith("```"):
+            resp = resp.split("```")[1]
+            if resp.startswith("json"): resp = resp[4:]
+        data = _json.loads(resp)
+        return {"sugerir_alta": bool(data.get("sugerir_alta", False)),
+                "mensaje": str(data.get("mensaje", ""))}
     except Exception as e:
-        logger.warning(f"check-alta parsing error: {e}")
+        logger.warning(f"check-alta error: {e}")
         return {"sugerir_alta": False, "mensaje": ""}
 
 # ---------------------------------------------------------------------------
