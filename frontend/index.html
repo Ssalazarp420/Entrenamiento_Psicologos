@@ -474,13 +474,33 @@ body.student-mode #screen-selection { background:var(--light-bg); border-radius:
 
 /* Left: phone mockup */
 .hero-left { display:flex;flex-direction:column;align-items:center;gap:16px;z-index:1; }
-.phone-mockup { width:200px;background:#fff;border:3px solid #1a1a2e;border-radius:32px;padding:16px 14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 48px rgba(0,0,0,.14);position:relative; }
-.phone-notch { width:60px;height:10px;background:#1a1a2e;border-radius:5px;margin:0 auto 10px; }
-.phone-brain { width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--ice));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px; }
-.phone-chat-bubble { background:#f0f4ff;border:1px solid #dde6ff;border-radius:12px;padding:12px 14px;font-size:.78rem;color:#334155;line-height:1.6;font-style:italic; }
-.phone-chat-bubble strong { font-style:normal;color:var(--teal-deep);font-size:.75rem;display:block;margin-bottom:4px; }
-.phone-img-area { width:100%;height:80px;border:1.5px dashed #cbd5e1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#94a3b8;text-align:center;overflow:hidden; }
-.phone-img-area img { width:100%;height:100%;object-fit:cover;border-radius:8px; }
+/* phone mockup internals */
+.phone-mockup { width:200px;background:#f5f5f5;border:3px solid #1a1a2e;border-radius:32px;padding:14px 12px 18px;display:flex;flex-direction:column;gap:0;box-shadow:0 16px 48px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.3);position:relative;overflow:hidden; }
+.phone-notch { width:60px;height:10px;background:#1a1a2e;border-radius:5px;margin:0 auto 10px;flex-shrink:0; }
+.phone-brain { width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--ice));display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 8px;flex-shrink:0; }
+
+/* chat title bar inside phone */
+.phone-bar { display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--teal);border-radius:10px;margin-bottom:8px;flex-shrink:0; }
+.phone-bar-avatar { width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff; }
+.phone-bar-info { flex:1; }
+.phone-bar-name { font-size:.62rem;font-weight:700;color:#fff;line-height:1.2; }
+.phone-bar-status { font-size:.52rem;color:rgba(255,255,255,.75); }
+
+/* chat area */
+.phone-chat-area { display:flex;flex-direction:column;gap:6px;overflow:hidden;flex:1;padding:2px 0; }
+
+/* bubbles */
+.pcb { max-width:80%;padding:7px 10px;border-radius:14px;font-size:.68rem;line-height:1.5;color:#1a1a2e;word-break:break-word;position:relative; }
+.pcb-left  { background:#fff;border-bottom-left-radius:3px;align-self:flex-start;box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.pcb-right { background:var(--teal);color:#fff;border-bottom-right-radius:3px;align-self:flex-end;box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.pcb-time  { font-size:.5rem;opacity:.6;display:block;margin-top:3px;text-align:right; }
+
+/* typing indicator */
+.phone-typing { display:flex;align-items:center;gap:3px;padding:8px 10px;background:#fff;border-radius:14px;border-bottom-left-radius:3px;align-self:flex-start;box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.phone-typing span { width:5px;height:5px;border-radius:50%;background:#94a3b8;animation:typing-dot 1.2s ease-in-out infinite; }
+.phone-typing span:nth-child(2) { animation-delay:.2s; }
+.phone-typing span:nth-child(3) { animation-delay:.4s; }
+@keyframes typing-dot { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }
 
 /* Center: greeting + hero image + buttons */
 .hero-center { display:flex;flex-direction:column;align-items:center;gap:20px;z-index:1;text-align:center; }
@@ -609,22 +629,26 @@ body.student-mode .patient-desc { color:#64748b; }
       <div class="hero-bg-overlay" id="hero-bg-overlay"
            style="background-image:url('<!-- BG_IMAGE_URL — pon aquí la URL de tu Azure Blob -->');"></div>
 
-      <!-- IZQUIERDA: mockup de móvil con tip psicológico -->
+      <!-- IZQUIERDA: mockup de móvil con tip aleatorio -->
       <div class="hero-left">
         <div class="phone-mockup">
           <div class="phone-notch"></div>
           <div class="phone-brain">🧠</div>
 
-          <!-- Imagen dentro del móvil (opcional) — deja src vacío para mostrar placeholder -->
-          <div class="phone-img-area" id="phone-img-area">
-            <!-- Reemplaza src con tu URL de Azure Blob: -->
-            <!-- <img src="TU_URL_BLOB/mobile-inner.png" alt="Imagen interior móvil"> -->
-            <span style="padding:8px">📱 Imagen interior<br>del móvil</span>
+          <!-- Barra de la app -->
+          <div class="phone-bar">
+            <div class="phone-bar-avatar">Ψ</div>
+            <div class="phone-bar-info">
+              <div class="phone-bar-name">Psi-IA</div>
+              <div class="phone-bar-status">💡 Tip del día</div>
+            </div>
           </div>
 
-          <div class="phone-chat-bubble">
-            <strong>💡 Tips clínicos</strong>
-            <span id="phone-tip-text">Cuando un paciente cruza los brazos, puede estar buscando protección emocional. Obsérvalo sin interpretarlo de inmediato.</span>
+          <!-- Una sola burbuja con el tip aleatorio -->
+          <div class="phone-chat-area">
+            <div class="pcb pcb-left" id="phone-tip-bubble">
+              Cargando consejo…
+            </div>
           </div>
         </div>
       </div>
@@ -1512,6 +1536,29 @@ let allPatients       = {};   // cache: { pid: {...} }
 let selectedCategoria = null;
 let selectedDificultad = null;
 
+// ── Tips aleatorios (móvil del dashboard) ────────────────────────
+const CLINICAL_TIPS = [
+  'Escucha lo que el paciente ‘no dice’. Los silencios y pausas también son información clínica.',
+  'Valida primero, interviene después. El paciente necesita sentirse comprendido antes de recibir orientación.',
+  'Evita dar consejos prematuros. Explora más con preguntas abiertas antes de proponer una hipótesis.',
+  'El lenguaje no verbal del paciente cuenta tanto como sus palabras. No lo ignores.',
+  'Mantener una postura neutral y abierta transmite seguridad y acogida al paciente.',
+  'Un buen reflejo empatítico puede cambiar el rumbo de una sesión en segundos.',
+  'Recuerda diferenciar entre empatía y simpatía. La empatía conecta; la simpatía puede distanciar.',
+  'Las preguntas circulares ayudan al paciente a ver sus problemáticas desde distintos ángulos.',
+  'Nombra las emociones que observas: «Parece que eso te causa mucha tristeza…».',
+  'No tengas prisa por llenar los silencios. A veces el paciente los necesita para procesar.',
+  'Una buena alian za terapéutica es el predictor más sólido de éxito en terapia.',
+  'Cuida tu propio estado emocional: el autocuidado del terapeuta impacta directamente al paciente.',
+];
+
+function refreshPhoneTip() {
+  const el = document.getElementById('phone-tip-bubble');
+  if (!el) return;
+  const tip = CLINICAL_TIPS[Math.floor(Math.random() * CLINICAL_TIPS.length)];
+  el.textContent = tip;
+}
+
 async function loadPatients() {
   selectedCategoria  = null;
   selectedDificultad = null;
@@ -1529,6 +1576,9 @@ async function loadPatients() {
   }
 
   loadRecentSessions(); // carga el panel lateral en paralelo
+  if (document.body.classList.contains('student-mode')) {
+    refreshPhoneTip();
+  }
 
   try {
     // Carga pacientes y categorías en paralelo
