@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/**'   # solo se dispara si cambias algo en /frontend
+      - 'frontend/**'
 
 jobs:
   deploy:
@@ -23,12 +23,14 @@ jobs:
           app_location: 'frontend'
           output_location: ''
 
+      - name: Instalar Azure CLI
+        run: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
       - name: Upload static assets to Blob Storage
         run: |
           az storage blob upload-batch \
             --account-name psicologiaiassets \
+            --account-key ${{ secrets.AZURE_STORAGE_KEY }} \
             --destination assets \
             --source ./frontend/public/assets \
             --overwrite true
-        env:
-          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}     
