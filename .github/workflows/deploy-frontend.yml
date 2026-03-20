@@ -22,3 +22,13 @@ jobs:
           action: 'upload'
           app_location: 'frontend'
           output_location: ''
+
+      - name: Upload static assets to Blob Storage
+        run: |
+          az storage blob upload-batch \
+            --account-name psicologiaiassets \
+            --destination assets \
+            --source ./frontend/public/assets \
+            --overwrite true
+        env:
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}     
