@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
+  /* ── Dark theme (admin / docente / chat) ─────────── */
   --bg:        #0e1117;
   --surface:   #161b27;
   --card:      #1e2535;
@@ -20,27 +21,58 @@
   --muted:     #64748b;
   --patient-bubble: #1e2a3a;
   --psi-bubble:     #1a2e1a;
+
+  /* ── Student / Light palette ─────────────────────── */
+  --teal:       #6CC1CE;
+  --teal-mid:   #3FB1C1;
+  --teal-deep:  #109FB2;
+  --ice:        #A3CEF1;
+  --mauve:      #967AA1;
+  --sage:       #C2C1A5;
+  --light-bg:   #FBFBFB;
+  --light-text: #1a1a2e;
+  --light-muted:#64748b;
+  --card-purple:#EED8F8;
+  --card-green: #D2F9D6;
+  --card-gray:  #E0E0E0;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; }
 
-/* HEADER */
-header { width:100%;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50; }
-.logo { font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--accent);letter-spacing:-.5px; }
+/* HEADER — dark default */
+header { width:100%;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50;transition:background .3s,border-color .3s; }
+.logo { font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--accent);letter-spacing:-.5px;display:flex;align-items:center;gap:10px; }
 .logo span { color:var(--accent2);font-style:italic; }
-.header-right { display:flex;align-items:center;gap:16px; }
-.user-pill { display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px 5px 8px;font-size:.8rem; }
-.avatar-sm { width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff; }
+.logo-icon { width:38px;height:38px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);font-size:1.3rem; }
+.header-right { display:flex;align-items:center;gap:12px; }
+.user-pill { display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px 5px 8px;font-size:.8rem;transition:background .3s,border-color .3s; }
+.avatar-sm { width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff; }
 .role-badge { font-size:.65rem;padding:2px 8px;border-radius:10px;font-weight:500; }
 .role-estudiante { background:rgba(91,141,238,.15);color:var(--accent); }
 .role-docente    { background:rgba(52,211,153,.15);color:var(--green); }
 .role-admin      { background:rgba(247,129,129,.15);color:var(--red); }
-.nav-tabs { display:flex;gap:4px; }
-.nav-tab { padding:6px 14px;border-radius:8px;font-size:.8rem;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .2s; }
+.nav-tabs { display:flex;gap:6px; }
+.nav-tab { padding:7px 18px;border-radius:999px;font-size:.82rem;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:500;transition:all .2s; }
 .nav-tab:hover { color:var(--text);background:var(--card); }
 .nav-tab.active { color:var(--accent);background:rgba(91,141,238,.1); }
-.btn-logout { padding:6px 14px;border-radius:8px;font-size:.78rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .2s; }
+.btn-logout { padding:7px 16px;border-radius:999px;font-size:.78rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .2s; }
 .btn-logout:hover { border-color:var(--red);color:var(--red); }
+
+/* HEADER — student mode (light teal) */
+body.student-mode header { background:var(--teal);border-bottom-color:var(--teal-mid); }
+body.student-mode .logo { color:#fff; }
+body.student-mode .logo span { color:#fff;font-style:normal; }
+body.student-mode .logo-icon { background:rgba(255,255,255,.2); }
+body.student-mode #header-guest { color:rgba(255,255,255,.8); }
+body.student-mode .nav-tab { color:rgba(255,255,255,.8);background:transparent;border:1.5px solid rgba(255,255,255,.6);border-radius:999px;padding:6px 18px; }
+body.student-mode .nav-tab:hover,
+body.student-mode .nav-tab.active { background:#fff;color:#1a1a2e;border-color:#fff; }
+body.student-mode .user-pill { background:#fff;border-color:transparent;color:#1a1a2e;box-shadow:0 2px 8px rgba(0,0,0,.12); }
+body.student-mode .avatar-sm { background:linear-gradient(135deg,var(--teal-mid),var(--teal-deep)); }
+body.student-mode #user-name-label { color:#1a1a2e;font-weight:600; }
+body.student-mode .role-badge { background:rgba(108,193,206,.2);color:#0e7490; }
+body.student-mode .btn-logout { border-color:rgba(255,255,255,.7);color:rgba(255,255,255,.9);background:transparent; }
+body.student-mode .btn-logout:hover { background:rgba(255,255,255,.15);border-color:#fff;color:#fff; }
 
 /* MAIN */
 main { width:100%;max-width:1100px;padding:32px 20px;flex:1;display:flex;flex-direction:column;gap:20px; }
@@ -424,7 +456,82 @@ tr:hover td { background:rgba(255,255,255,.02); }
   .suscripcion-grid{grid-template-columns:1fr;} .contabilidad-kpis{grid-template-columns:repeat(2,1fr);}
 }
 
-/* ── Panel sesiones recientes (pantalla de selección) ── */
+/* ── Pantalla selección estudiante (light mode) ── */
+.student-home { display:none; flex-direction:column; gap:0; }
+body.student-mode .student-home { display:flex; }
+
+/* Body bg light */
+body.student-mode main { background:transparent; }
+body.student-mode #screen-selection { background:var(--light-bg); border-radius:0; }
+
+/* Hero layout 3 columns */
+.student-hero { display:grid; grid-template-columns:280px 1fr 300px; gap:24px; align-items:center; min-height:calc(100vh - 70px); padding:32px 32px; background:var(--light-bg); position:relative; overflow:hidden; }
+@media(max-width:1000px){ .student-hero { grid-template-columns:1fr 300px; } }
+@media(max-width:720px)  { .student-hero { grid-template-columns:1fr; } }
+
+/* Background decorative image */
+.hero-bg-overlay { position:absolute;inset:0;background-image:var(--hero-bg-img,none);background-size:cover;background-position:center;opacity:.08;pointer-events:none;z-index:0; }
+
+/* Left: phone mockup */
+.hero-left { display:flex;flex-direction:column;align-items:center;gap:16px;z-index:1; }
+.phone-mockup { width:200px;background:#fff;border:3px solid #1a1a2e;border-radius:32px;padding:16px 14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 48px rgba(0,0,0,.14);position:relative; }
+.phone-notch { width:60px;height:10px;background:#1a1a2e;border-radius:5px;margin:0 auto 10px; }
+.phone-brain { width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--ice));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px; }
+.phone-chat-bubble { background:#f0f4ff;border:1px solid #dde6ff;border-radius:12px;padding:12px 14px;font-size:.78rem;color:#334155;line-height:1.6;font-style:italic; }
+.phone-chat-bubble strong { font-style:normal;color:var(--teal-deep);font-size:.75rem;display:block;margin-bottom:4px; }
+.phone-img-area { width:100%;height:80px;border:1.5px dashed #cbd5e1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#94a3b8;text-align:center;overflow:hidden; }
+.phone-img-area img { width:100%;height:100%;object-fit:cover;border-radius:8px; }
+
+/* Center: greeting + hero image + buttons */
+.hero-center { display:flex;flex-direction:column;align-items:center;gap:20px;z-index:1;text-align:center; }
+.hero-greeting { font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--light-text);line-height:1.3; }
+.hero-subtitle { font-size:1.1rem;color:var(--light-muted);margin-top:-6px; }
+.hero-image-area { width:280px;height:260px;border-radius:20px;overflow:hidden;display:flex;align-items:center;justify-content:center; }
+.hero-image-area img { width:100%;height:100%;object-fit:cover; }
+.hero-image-placeholder { width:100%;height:100%;border:2px dashed #cbd5e1;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#94a3b8;font-size:.78rem;text-align:center; }
+.hero-image-placeholder span { font-size:2.4rem; }
+.btn-nuevo-caso { display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;border-radius:999px;padding:13px 32px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(108,193,206,.45);transition:all .22s; }
+.btn-nuevo-caso:hover { background:var(--teal-mid);transform:translateY(-2px);box-shadow:0 8px 28px rgba(63,177,193,.45); }
+.btn-retro-link { background:transparent;border:none;color:var(--teal-deep);font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;opacity:.8;transition:opacity .2s; }
+.btn-retro-link:hover { opacity:1; }
+
+/* Right: recent sessions */
+.hero-right { display:flex;flex-direction:column;gap:10px;z-index:1; }
+.recent-panel-title { font-family:'Playfair Display',serif;font-size:1rem;color:var(--mauve);font-weight:600;margin-bottom:4px;text-align:left; }
+.recent-card-new { border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .22s;color:var(--light-text);border:1.5px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.06); }
+.recent-card-new:hover { transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:var(--teal); }
+.recent-card-new.color-0 { background:var(--card-purple); }
+.recent-card-new.color-1 { background:var(--card-green); }
+.recent-card-new.color-2 { background:var(--card-gray); }
+.rcn-avatar { width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--teal-mid),var(--teal-deep));display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0; }
+.rcn-header { display:flex;align-items:center;gap:8px;margin-bottom:5px; }
+.rcn-name { font-weight:700;font-size:.88rem; }
+.rcn-date { font-size:.74rem;color:#475569;margin-bottom:7px; }
+.rcn-tags { display:flex;gap:5px;flex-wrap:wrap; }
+.rcn-tag { font-size:.68rem;padding:3px 9px;border-radius:999px;font-weight:500;background:rgba(255,255,255,.6);color:#334155;border:1px solid rgba(0,0,0,.07); }
+.rcn-tag-cat  { background:rgba(108,193,206,.18);color:#0e7490; }
+.rcn-tag-leve { background:rgba(5,150,105,.15);color:#059669; }
+.rcn-tag-mod  { background:rgba(217,119,6,.15);color:#b45309; }
+.rcn-tag-sev  { background:rgba(220,38,38,.13);color:#b91c1c; }
+.rcn-empty { text-align:center;padding:28px 12px;color:#94a3b8;font-size:.82rem; }
+
+/* ── Selection flow panel (inside student screen, below hero) ── */
+.selection-flow { padding:0 32px 40px;background:var(--light-bg); }
+.selection-flow-title { font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--light-text);margin-bottom:4px; }
+.selection-flow-sub { font-size:.83rem;color:var(--light-muted);margin-bottom:20px; }
+
+/* Override dark card styles for light selection filter buttons */
+body.student-mode .filter-cat-btn { background:rgba(108,193,206,.1);border-color:rgba(108,193,206,.4);color:#0e7490; }
+body.student-mode .filter-cat-btn:hover { background:var(--teal);color:#fff;border-color:var(--teal); }
+body.student-mode .filter-cat-btn.active { background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 4px 14px rgba(108,193,206,.4); }
+body.student-mode .filter-dif-btn { background:#fff;border-color:#e2e8f0;color:#334155; }
+body.student-mode .filter-dif-btn:hover { border-color:var(--teal); }
+body.student-mode .patient-option { background:#fff;border-color:#e2e8f0;color:var(--light-text); }
+body.student-mode .patient-option:hover { border-color:var(--teal);box-shadow:0 12px 32px rgba(108,193,206,.2); }
+body.student-mode .patient-option h3 { color:var(--light-text); }
+body.student-mode .patient-desc { color:#64748b; }
+
+/* Back-compat: old recent panel (stays hidden in student mode) */
 .selection-layout { display:grid; grid-template-columns:1fr 280px; gap:20px; align-items:start; }
 @media(max-width:860px){ .selection-layout { grid-template-columns:1fr; } }
 .recent-panel { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 16px; position:sticky; top:80px; }
@@ -444,11 +551,21 @@ tr:hover td { background:rgba(255,255,255,.02); }
 .rc-tag-sesion { background:rgba(255,255,255,.07); color:var(--muted); }
 .recent-empty { text-align:center; padding:24px 0; color:var(--muted); font-size:.82rem; }
 </style>
+<!-- bg override for student mode -->
+<style>
+  body.student-mode main { max-width:100%;padding:0; }
+  body.student-mode #screen-selection { gap:0; }
+  body { transition:background .3s; }
+  body.student-mode { background:var(--light-bg); }
+</style>
 </head>
 <body>
 
 <header>
-  <div class="logo">Sim<span>Psi</span></div>
+  <div class="logo">
+    <div class="logo-icon">Ψ</div>
+    <span id="logo-text">Sim<span>Psi</span></span>
+  </div>
   <div class="header-right" id="header-auth" style="display:none;">
     <nav class="nav-tabs" id="nav-tabs"></nav>
     <div class="user-pill">
@@ -483,67 +600,118 @@ tr:hover td { background:rgba(255,255,255,.02); }
     </div>
   </div>
 
-  <!-- SELECCIÓN DE PACIENTE — flujo categoría → dificultad → pacientes -->
+  <!-- SELECCIÓN DE PACIENTE (ESTUDIANTE) — hero + flujo integrado -->
   <div class="screen" id="screen-selection">
 
-    <div class="page-header anim anim-1">
-      <div>
-        <div class="section-title">Nueva sesión</div>
-        <div class="section-sub">Selecciona el tipo de caso y la dificultad para ver los pacientes disponibles.</div>
-      </div>
-      <button class="btn-ghost" style="width:auto;padding:9px 18px;" onclick="openRetroModal()">
-        💬 Retroalimentaciones del docente
-      </button>
-    </div>
+    <!-- ══ HERO (solo visible en student-mode) ══ -->
+    <div class="student-hero" id="student-hero-section">
+      <!-- Fondo decorativo (imagen superpuesta semitransparente) -->
+      <div class="hero-bg-overlay" id="hero-bg-overlay"
+           style="background-image:url('<!-- BG_IMAGE_URL — pon aquí la URL de tu Azure Blob -->');"></div>
 
-    <div class="selection-layout">
-      <!-- Columna izquierda: filtros + pacientes -->
-      <div>
-        <!-- Paso 1: Tipo de caso -->
-        <div class="anim anim-2" style="margin-bottom:10px;">
-          <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Tipo de caso</div>
-          <div id="filter-categorias" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      <!-- IZQUIERDA: mockup de móvil con tip psicológico -->
+      <div class="hero-left">
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-brain">🧠</div>
+
+          <!-- Imagen dentro del móvil (opcional) — deja src vacío para mostrar placeholder -->
+          <div class="phone-img-area" id="phone-img-area">
+            <!-- Reemplaza src con tu URL de Azure Blob: -->
+            <!-- <img src="TU_URL_BLOB/mobile-inner.png" alt="Imagen interior móvil"> -->
+            <span style="padding:8px">📱 Imagen interior<br>del móvil</span>
+          </div>
+
+          <div class="phone-chat-bubble">
+            <strong>💡 Tips clínicos</strong>
+            <span id="phone-tip-text">Cuando un paciente cruza los brazos, puede estar buscando protección emocional. Obsérvalo sin interpretarlo de inmediato.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTRO: saludo + imagen hero + botones -->
+      <div class="hero-center">
+        <div>
+          <div class="hero-greeting" id="hero-greeting">Hola 👋</div>
+          <div class="hero-subtitle">¿Qué quieres trabajar hoy?</div>
         </div>
 
-        <!-- Paso 2: Dificultad -->
-        <div class="anim anim-3" id="filter-dif-wrap" style="margin-bottom:22px;display:none;">
-          <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Dificultad</div>
-          <div style="display:flex;gap:8px;">
-            <button class="filter-dif-btn" data-dif="Leve"     onclick="selectDificultad('Leve')">🟢 Leve</button>
-            <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡 Moderada</button>
-            <button class="filter-dif-btn" data-dif="Severa"   onclick="selectDificultad('Severa')">🔴 Severa</button>
+        <!-- Imagen hero central -->
+        <div class="hero-image-area">
+          <!-- Reemplaza src con tu URL de Azure Blob: -->
+          <!-- <img id="hero-main-img" src="TU_URL_BLOB/hero-psychologist.png" alt="Psicóloga en sesión"> -->
+          <div class="hero-image-placeholder">
+            <span>🧑‍⚕️</span>
+            Imagen hero central<br>
+            <small style="font-size:.7rem;opacity:.7;">(pon aquí la URL de tu Azure Blob)</small>
           </div>
         </div>
 
-        <!-- Paso 3: Pacientes -->
-        <div id="patients-container" class="patients-grid anim anim-4"></div>
-      </div>
-
-      <!-- Columna derecha: últimas sesiones -->
-      <div class="recent-panel anim anim-2">
-        <div class="recent-title">↩ Retomar sesión</div>
-        <div id="recent-sessions-list">
-          <div class="recent-empty">Cargando…</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <button class="btn-nuevo-caso" onclick="scrollToSelectionFlow()">
+            💬 Nuevo caso
+          </button>
+          <button class="btn-retro-link" onclick="openRetroModal()">
+            Retroalimentaciones del docente
+          </button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- MODAL RETROALIMENTACIONES DOCENTE -->
-  <div class="modal-overlay" id="modal-retro">
-    <div class="modal-box" style="width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;">
-      <div class="modal-header">
+      <!-- DERECHA: últimas sesiones para retomar -->
+      <div class="hero-right">
+        <div class="recent-panel-title">Retomar Sesión</div>
+        <div id="recent-sessions-hero"><div class="rcn-empty">Cargando…</div></div>
+      </div>
+    </div>
+
+    <!-- ══ FLUJO DE SELECCIÓN: Categoría → Dificultad → Pacientes ══ -->
+    <!-- En student-mode se muestra al hacer clic en «Nuevo caso»; en dark-mode siempre visible -->
+    <div class="selection-flow" id="selection-flow-panel" style="display:none;">
+      <div class="page-header" style="margin-bottom:16px;">
         <div>
-          <div class="modal-title">💬 Retroalimentaciones del docente</div>
-          <div class="modal-subtitle">Comentarios que tus docentes han dejado sobre tus sesiones.</div>
+          <div class="selection-flow-title">Nueva sesión</div>
+          <div class="selection-flow-sub">Selecciona el tipo de caso y la dificultad.</div>
         </div>
-        <button class="modal-close-x" onclick="closeRetroModal()">✕</button>
+        <button class="btn-retro-link" onclick="closeSelectionFlow()" style="font-size:.82rem;">✕ Cerrar</button>
       </div>
-      <div id="retro-list" style="overflow-y:auto;flex:1;padding:4px 0;">
-        <div class="spinner" style="margin:32px auto;"></div>
+
+      <!-- Paso 1: Tipo de caso -->
+      <div style="margin-bottom:10px;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Tipo de caso</div>
+        <div id="filter-categorias" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- Paso 2: Dificultad -->
+      <div id="filter-dif-wrap" style="margin-bottom:22px;display:none;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Dificultad</div>
+        <div style="display:flex;gap:8px;">
+          <button class="filter-dif-btn" data-dif="Leve"     onclick="selectDificultad('Leve')">🟢 Leve</button>
+          <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡 Moderada</button>
+          <button class="filter-dif-btn" data-dif="Severa"   onclick="selectDificultad('Severa')">🔴 Severa</button>
+        </div>
+      </div>
+
+      <!-- Paso 3: Pacientes -->
+      <div id="patients-container" class="patients-grid"></div>
+    </div>
+
+    <!-- MODAL RETROALIMENTACIONES DOCENTE -->
+    <div class="modal-overlay" id="modal-retro">
+      <div class="modal-box" style="width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">💬 Retroalimentaciones del docente</div>
+            <div class="modal-subtitle">Comentarios que tus docentes han dejado sobre tus sesiones.</div>
+          </div>
+          <button class="modal-close-x" onclick="closeRetroModal()">✕</button>
+        </div>
+        <div id="retro-list" style="overflow-y:auto;flex:1;padding:4px 0;">
+          <div class="spinner" style="margin:32px auto;"></div>
+        </div>
       </div>
     </div>
-  </div>
+
+  </div><!-- /screen-selection -->
 
   <!-- CHAT -->
   <div class="screen" id="screen-chat">
@@ -1254,26 +1422,41 @@ function setupHeader() {
   document.getElementById('header-guest').style.display = 'none';
   document.getElementById('header-auth').style.display  = 'flex';
 
-  document.getElementById('user-initial').textContent  = currentUser.nombre.charAt(0).toUpperCase();
+  document.getElementById('user-initial').textContent   = currentUser.nombre.charAt(0).toUpperCase();
   document.getElementById('user-name-label').textContent = currentUser.nombre;
   const rb = document.getElementById('role-badge');
   rb.textContent = currentUser.rol;
   rb.className   = `role-badge role-${currentUser.rol}`;
+
+  // Student mode: teal header + light body
+  if (currentUser.rol === 'estudiante') {
+    document.body.classList.add('student-mode');
+    // Update logo to Psi-IA branding
+    const logoText = document.getElementById('logo-text');
+    if (logoText) logoText.innerHTML = 'Psi-<span>IA</span>';
+    // Set hero greeting
+    const greet = document.getElementById('hero-greeting');
+    if (greet) greet.textContent = `Hola ${currentUser.nombre} \uD83D\uDC4B`;
+  } else {
+    document.body.classList.remove('student-mode');
+    const logoText = document.getElementById('logo-text');
+    if (logoText) logoText.innerHTML = 'Sim<span>Psi</span>';
+  }
 
   const tabs = document.getElementById('nav-tabs');
   tabs.innerHTML = '';
 
   const allTabs = {
     estudiante: [
-      { id:'screen-selection', label:'Nueva sesión', action:() => { showScreen('screen-selection'); loadPatients(); } },
-      { id:'screen-historial', label:'Mi historial',  action:() => { showScreen('screen-historial'); loadHistorial(); } },
+      { id:'screen-selection', label:'Nueva sesi\u00f3n', action:() => { showScreen('screen-selection'); loadPatients(); } },
+      { id:'screen-historial', label:'Mi historial',   action:() => { showScreen('screen-historial'); loadHistorial(); } },
     ],
     docente: [
       { id:'screen-docente', label:'Sesiones estudiantes', action:() => { showScreen('screen-docente'); loadDocente(); } },
     ],
     admin: [
       { id:'screen-admin',   label:'Panel Admin', action:() => { showScreen('screen-admin'); loadAdmin(); } },
-      { id:'screen-docente', label:'Sesiones', action:() => { showScreen('screen-docente'); loadDocente(); } },
+      { id:'screen-docente', label:'Sesiones',    action:() => { showScreen('screen-docente'); loadDocente(); } },
     ],
   };
 
@@ -1299,11 +1482,27 @@ function routeByRole() {
 function logout() {
   token = null; currentUser = null; sessionId = null;
   clearSession();
+  document.body.classList.remove('student-mode');
+  const logoText = document.getElementById('logo-text');
+  if (logoText) logoText.innerHTML = 'Sim<span>Psi</span>';
   document.getElementById('header-auth').style.display  = 'none';
   document.getElementById('header-guest').style.display = 'block';
   document.getElementById('login-email').value    = '';
   document.getElementById('login-password').value = '';
   showScreen('screen-login');
+}
+
+// ── Student selection flow helpers ────────────────────────
+function scrollToSelectionFlow() {
+  const panel = document.getElementById('selection-flow-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeSelectionFlow() {
+  const panel = document.getElementById('selection-flow-panel');
+  if (panel) panel.style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1318,6 +1517,17 @@ async function loadPatients() {
   selectedDificultad = null;
   document.getElementById('filter-dif-wrap').style.display = 'none';
   document.getElementById('patients-container').innerHTML  = '';
+
+  // In student mode, hide the flow panel until user clicks "Nuevo caso"
+  const flowPanel = document.getElementById('selection-flow-panel');
+  if (flowPanel) {
+    if (document.body.classList.contains('student-mode')) {
+      flowPanel.style.display = 'none';
+    } else {
+      flowPanel.style.display = 'block';
+    }
+  }
+
   loadRecentSessions(); // carga el panel lateral en paralelo
 
   try {
@@ -1456,10 +1666,12 @@ async function selectPatient(pid, name, age, cardEl) {
   } finally { isLoading = false; }
 }
 
-// ── Retroalimentaciones del docente (vista estudiante) ────
+// \u2500\u2500 Retroalimentaciones del docente (vista estudiante) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function openRetroModal() {
-  document.getElementById('modal-retro').style.display = 'flex';
+  const overlay = document.getElementById('modal-retro');
+  if (overlay) overlay.style.display = 'flex';
   const list = document.getElementById('retro-list');
+  if (!list) return;
   list.innerHTML = '<div class="spinner" style="margin:32px auto;"></div>';
   try {
     const res   = await fetch(`${API}/estudiante/retroalimentaciones`, { headers: authHeaders() });
@@ -1480,14 +1692,19 @@ async function openRetroModal() {
 }
 
 function closeRetroModal() {
-  document.getElementById('modal-retro').style.display = 'none';
+  const overlay = document.getElementById('modal-retro');
+  if (overlay) overlay.style.display = 'none';
 }
 
-
-// ── Panel de sesiones recientes (pantalla de selección) ──────────────────
+// \u2500\u2500 Panel de sesiones recientes \u2014 dual mode (student light / dark) \u2500\u2500\u2500\u2500
 async function loadRecentSessions() {
-  const container = document.getElementById('recent-sessions-list');
+  // Student mode renders into hero-right panel; other roles use old dark panel
+  const heroContainer = document.getElementById('recent-sessions-hero');
+  const oldContainer  = document.getElementById('recent-sessions-list');
+  const isStudent = document.body.classList.contains('student-mode');
+  const container = isStudent ? heroContainer : oldContainer;
   if (!container) return;
+
   try {
     const [resSes, resPat] = await Promise.all([
       fetch(`${API}/historial/mis-sesiones`, { headers: authHeaders() }),
@@ -1497,41 +1714,70 @@ async function loadRecentSessions() {
     const rawPat   = await resPat.json();
     const pats = Array.isArray(rawPat) ? Object.fromEntries(rawPat.map(p=>[p.caso_id||p.id,p])) : rawPat;
 
-    // Solo las que NO tienen alta y son reanudables, máximo 4, más recientes primero
     const recent = (Array.isArray(sesiones) ? sesiones : [])
       .filter(s => !s.alta)
       .slice(0, 4);
 
     if (!recent.length) {
-      container.innerHTML = '<div class="recent-empty">Aún no tienes sesiones guardadas.</div>';
+      container.innerHTML = isStudent
+        ? '<div class="rcn-empty">Aún no tienes sesiones<br>guardadas aquí.</div>'
+        : '<div class="recent-empty">Aún no tienes sesiones guardadas.</div>';
       return;
     }
 
-    container.innerHTML = recent.map(s => {
-      const p    = pats[s.patient_id] || {};
-      const cat  = p.categoria  || '—';
-      const dif  = (p.dificultad || '').toLowerCase();
-      const nSes = s.numero_sesion ? `Sesión #${s.numero_sesion}` : '';
-      const difCls = dif === 'leve' ? 'rc-tag-leve' : dif === 'moderada' ? 'rc-tag-moderada' : dif === 'severa' ? 'rc-tag-severa' : '';
-      const safeName = (s.patient_name||'').replace(/'/g, "\'");
-      return `
-        <div class="recent-card" onclick="reanudarSesion('${s.sesion_id}','${safeName}')">
-          <div class="recent-card-name">
-            <span style="font-size:1.1rem;">👤</span>
-            ${s.patient_name || '—'}
-          </div>
-          <div class="recent-card-meta">${formatDate(s.inicio)}</div>
-          <div class="recent-card-tags">
-            <span class="rc-tag rc-tag-cat">${cat}</span>
-            ${dif ? `<span class="rc-tag ${difCls}">${p.dificultad||dif}</span>` : ''}
-            ${nSes ? `<span class="rc-tag rc-tag-sesion">${nSes}</span>` : ''}
-            ${s.puntuacion==null ? '<span class="rc-tag" style="background:rgba(251,191,36,.1);color:#d97706;">Sin analizar</span>' : `<span class="rc-tag" style="background:rgba(52,211,153,.1);color:var(--green);">${s.puntuacion}/100</span>`}
-          </div>
-        </div>`;
-    }).join('');
+    if (isStudent) {
+      // ── New colorful light cards ────────────────────────────────────────
+      const colorClasses = ['color-0','color-1','color-2'];
+      container.innerHTML = recent.map((s, idx) => {
+        const p       = pats[s.patient_id] || {};
+        const cat     = p.categoria  || '—';
+        const dif     = (p.dificultad || '').toLowerCase();
+        const difCls  = dif==='leve' ? 'rcn-tag-leve' : dif==='moderada' ? 'rcn-tag-mod' : dif==='severa' ? 'rcn-tag-sev' : '';
+        const colorCls  = colorClasses[idx % colorClasses.length];
+        const initial   = (s.patient_name || '?').charAt(0).toUpperCase();
+        const safeName  = (s.patient_name||'').replace(/'/g, "\\'");
+        return `
+          <div class="recent-card-new ${colorCls}" onclick="reanudarSesion('${s.sesion_id}','${safeName}')">
+            <div class="rcn-header">
+              <div class="rcn-avatar">${initial}</div>
+              <span class="rcn-name">${s.patient_name || '—'}</span>
+            </div>
+            <div class="rcn-date">${formatDate(s.inicio)}</div>
+            <div class="rcn-tags">
+              <span class="rcn-tag rcn-tag-cat">${cat}</span>
+              ${dif ? `<span class="rcn-tag ${difCls}">${p.dificultad||dif}</span>` : ''}
+              ${s.puntuacion==null
+                ? '<span class="rcn-tag" style="background:rgba(251,191,36,.15);color:#b45309;">Sin analizar</span>'
+                : `<span class="rcn-tag" style="background:rgba(5,150,105,.15);color:#059669;">${s.puntuacion}/100</span>`}
+            </div>
+          </div>`;
+      }).join('');
+    } else {
+      // ── Original dark cards (unchanged for admin/docente) ───────────────
+      container.innerHTML = recent.map(s => {
+        const p    = pats[s.patient_id] || {};
+        const cat  = p.categoria  || '—';
+        const dif  = (p.dificultad || '').toLowerCase();
+        const nSes = s.numero_sesion ? `Sesión #${s.numero_sesion}` : '';
+        const difCls = dif==='leve' ? 'rc-tag-leve' : dif==='moderada' ? 'rc-tag-moderada' : dif==='severa' ? 'rc-tag-severa' : '';
+        const safeName = (s.patient_name||'').replace(/'/g, "\\'");
+        return `
+          <div class="recent-card" onclick="reanudarSesion('${s.sesion_id}','${safeName}')">
+            <div class="recent-card-name"><span style="font-size:1.1rem;">👤</span>${s.patient_name || '—'}</div>
+            <div class="recent-card-meta">${formatDate(s.inicio)}</div>
+            <div class="recent-card-tags">
+              <span class="rc-tag rc-tag-cat">${cat}</span>
+              ${dif ? `<span class="rc-tag ${difCls}">${p.dificultad||dif}</span>` : ''}
+              ${nSes ? `<span class="rc-tag rc-tag-sesion">${nSes}</span>` : ''}
+              ${s.puntuacion==null ? '<span class="rc-tag" style="background:rgba(251,191,36,.1);color:#d97706;">Sin analizar</span>' : `<span class="rc-tag" style="background:rgba(52,211,153,.1);color:var(--green);">${s.puntuacion}/100</span>`}
+            </div>
+          </div>`;
+      }).join('');
+    }
   } catch(e) {
-    const container2 = document.getElementById('recent-sessions-list');
-    if (container2) container2.innerHTML = '<div class="recent-empty">No se pudieron cargar.</div>';
+    if (container) container.innerHTML = isStudent
+      ? '<div class="rcn-empty">No se pudieron cargar las sesiones.</div>'
+      : '<div class="recent-empty">No se pudieron cargar.</div>';
   }
 }
 
