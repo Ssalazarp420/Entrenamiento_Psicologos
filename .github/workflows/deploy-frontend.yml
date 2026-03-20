@@ -14,15 +14,6 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Desplegar en Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: 'upload'
-          app_location: 'frontend'
-          output_location: ''
-
       - name: Instalar Azure CLI
         run: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
@@ -34,3 +25,13 @@ jobs:
             --destination assets \
             --source ./frontend/public/assets \
             --overwrite true
+
+      - name: Desplegar en Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: 'frontend'
+          output_location: ''
+
