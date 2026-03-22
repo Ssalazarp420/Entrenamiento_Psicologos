@@ -451,7 +451,9 @@
 
         const recent = (Array.isArray(sesiones) ? sesiones : [])
           .filter(s => !s.alta)
-          .slice(0, 4);
+          /* === LIMITE DE CHATS VISIBLES === 
+             Cambia el 3 por 2 o 4 para ver mas o menos sesiones en el panel lateral */
+          .slice(0, 3);
 
         if (!recent.length) {
           container.innerHTML = isStudent
