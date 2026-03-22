@@ -2347,6 +2347,9 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      /* MOVER IMAGEN: translate(horizontal, vertical) */
+      /* Positivo → derecha / abajo | Negativo → izquierda / arriba */
+      transform: translate(-20%, 0%);
     }
 
     .hero-image-area img {
@@ -2378,11 +2381,11 @@
       position: absolute;
       /*Coordenadas*/
       top: 7%;
-      right: 12%;
+      right: 2%;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(108, 193, 206, 0.85);
+      background: rgba(108, 193, 206, 1);
       /* Semi-transparent to overlay bubbles */
       color: #fff;
       border: none;
@@ -2405,14 +2408,15 @@
     }
 
     .btn-retro-link {
+      /*Boton retroalimentacion del docente*/
       position: absolute;
       /*Coordenadas*/
-      top: 22%;
+      top: 23%;
       right: -40%;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(108, 193, 206, 0.85);
+      background: rgba(108, 193, 206, 1);
       /* Same style as Nuevo Caso */
       color: #fff;
       border: none;
