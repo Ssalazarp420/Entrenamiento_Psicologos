@@ -75,6 +75,7 @@
       font-style: italic;
     }
 
+    /* LOGO: simbolo_psi_1.png */
     .logo-icon-img {
       width: 38px;
       height: 38px;
@@ -2095,7 +2096,7 @@
       border-radius: 0;
     }
 
-    /* Hero layout 3 columns */
+    /* HERO: Fondo_principal_1.png */
     .student-hero {
       display: grid;
       grid-template-columns: 260px 1fr 300px;
@@ -2166,11 +2167,12 @@
       flex-shrink: 0;
     }
 
+    /* CEREBRO: cerebro_azul_1.png */
     .phone-brain {
       width: 42px;
       height: 42px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--teal), var(--ice));
+      background: url('https://psicologiaiassets.blob.core.windows.net/assets/cerebro_azul_1.png') no-repeat center/contain;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2334,20 +2336,23 @@
       margin-top: -6px;
     }
 
+    /* DASHBOARD IMAGE: Mujer_sentada_chat_1.png */
     .hero-image-area {
-      width: 280px;
-      height: 260px;
+      width: 420px;
+      height: 340px;
       border-radius: 20px;
-      overflow: hidden;
+      overflow: visible;
+      /* changed from hidden to allow button edges to breathe */
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
 
     .hero-image-area img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
     }
 
     .hero-image-placeholder {
@@ -2370,10 +2375,15 @@
     }
 
     .btn-nuevo-caso {
+      position: absolute;
+      /*Coordenadas*/
+      top: 7%;
+      right: 12%;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--teal);
+      background: rgba(108, 193, 206, 0.85);
+      /* Semi-transparent to overlay bubbles */
       color: #fff;
       border: none;
       border-radius: 999px;
@@ -2384,28 +2394,44 @@
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(108, 193, 206, .45);
       transition: all .22s;
+      z-index: 5;
     }
 
     .btn-nuevo-caso:hover {
       background: var(--teal-mid);
-      transform: translateY(-2px);
+      transform: translateY(-2px) scale(1.05);
+      /* slightly bigger on hover */
       box-shadow: 0 8px 28px rgba(63, 177, 193, .45);
     }
 
     .btn-retro-link {
-      background: transparent;
+      position: absolute;
+      /*Coordenadas*/
+      top: 22%;
+      right: -40%;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(108, 193, 206, 0.85);
+      /* Same style as Nuevo Caso */
+      color: #fff;
       border: none;
-      color: var(--teal-deep);
-      font-size: .82rem;
-      cursor: pointer;
+      border-radius: 999px;
+      padding: 13px 32px;
       font-family: 'DM Sans', sans-serif;
-      text-decoration: underline;
-      opacity: .8;
-      transition: opacity .2s;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
+      transition: all .22s;
+      z-index: 5;
+      text-decoration: none;
     }
 
     .btn-retro-link:hover {
-      opacity: 1;
+      background: var(--teal-mid);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 28px rgba(45, 126, 137, .45);
     }
 
     /* Right: recent sessions */
@@ -2718,6 +2744,7 @@
       color: var(--muted);
       font-size: .82rem;
     }
+
     body.student-mode main {
       max-width: 100%;
       padding: 0;
