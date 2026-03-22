@@ -1,32 +1,37 @@
     :root {
-      /* ── Dark theme (admin / docente / chat) ─────────── */
-      --bg: #0e1117;
-      --surface: #161b27;
-      --card: #1e2535;
-      --border: #2a3245;
-      --accent: #5b8dee;
-      --accent2: #a78bfa;
-      --green: #34d399;
-      --red: #f87171;
-      --yellow: #fbbf24;
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --patient-bubble: #1e2a3a;
-      --psi-bubble: #1a2e1a;
-
-      /* ── Student / Light palette ─────────────────────── */
+      /* ── Global Light/Teal Theme (Base) ─────────── */
       --teal: #6CC1CE;
       --teal-mid: #3FB1C1;
       --teal-deep: #109FB2;
       --ice: #A3CEF1;
       --mauve: #967AA1;
       --sage: #C2C1A5;
+      
+      --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_1.png');
       --light-bg: #FBFBFB;
       --light-text: #1a1a2e;
       --light-muted: #64748b;
+      
+      /* Mapping bases to Teal palette */
+      --bg: var(--light-bg);
+      --surface: var(--teal);
+      --card: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --accent: var(--teal);
+      --accent2: var(--teal-deep);
+      --text: var(--light-text);
+      --muted: var(--light-muted);
+      
+      --green: #059669;
+      --red: #dc2626;
+      --yellow: #d97706;
+      
       --card-purple: #EED8F8;
       --card-green: #D2F9D6;
       --card-gray: #E0E0E0;
+      
+      --patient-bubble: #f1f5f9;
+      --psi-bubble: #e0f2fe;
     }
 
     * {
@@ -36,34 +41,46 @@
     }
 
     body {
-      background: var(--bg);
+      background: var(--bg-img) no-repeat center center fixed;
+      background-size: cover;
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.4); /* Subtle overlay for global readability */
+      pointer-events: none;
+      z-index: -1;
     }
 
-    /* HEADER — dark default */
+    /* HEADER — Global Teal Design */
     header {
       width: 100%;
       padding: 14px 40px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      border-bottom: 2px solid var(--teal-mid);
+      background: var(--teal);
       position: sticky;
       top: 0;
       z-index: 50;
-      transition: background .3s, border-color .3s;
+      transition: all .3s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .logo {
       font-family: 'Playfair Display', serif;
       font-size: 1.4rem;
-      color: var(--accent);
+      color: #ffffff;
       letter-spacing: -.5px;
       display: flex;
       align-items: center;
@@ -71,8 +88,8 @@
     }
 
     .logo span {
-      color: var(--accent2);
-      font-style: italic;
+      color: #ffffff;
+      
     }
 
     /* LOGO: simbolo_psi_1.png */
@@ -92,19 +109,21 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: var(--card);
-      border: 1px solid var(--border);
+      background: #ffffff;
+      border: 1px solid transparent;
       border-radius: 20px;
       padding: 5px 14px 5px 8px;
       font-size: .8rem;
-      transition: background .3s, border-color .3s;
+      color: var(--light-text);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transition: all .3s;
     }
 
     .avatar-sm {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background: linear-gradient(135deg, var(--teal-mid), var(--teal-deep));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -120,64 +139,50 @@
       font-weight: 500;
     }
 
-    .role-estudiante {
-      background: rgba(91, 141, 238, .15);
-      color: var(--accent);
-    }
+    .role-estudiante { background: rgba(108, 193, 206, .2); color: #0e7490; }
 
-    .role-docente {
-      background: rgba(52, 211, 153, .15);
-      color: var(--green);
-    }
+    .role-docente { background: rgba(5, 150, 105, .1); color: #059669; }
 
-    .role-admin {
-      background: rgba(247, 129, 129, .15);
-      color: var(--red);
-    }
+    .role-admin { background: rgba(220, 38, 38, .1); color: #b91c1c; }
 
     .nav-tabs {
       display: flex;
       gap: 6px;
     }
 
-    .nav-tab {
+        .nav-tab {
       padding: 7px 18px;
       border-radius: 999px;
       font-size: .82rem;
       cursor: pointer;
-      border: none;
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
       background: transparent;
-      color: var(--muted);
+      color: rgba(255, 255, 255, 0.9);
       font-family: 'DM Sans', sans-serif;
       font-weight: 500;
       transition: all .2s;
     }
-
-    .nav-tab:hover {
-      color: var(--text);
-      background: var(--card);
+    .nav-tab:hover, .nav-tab.active {
+      color: #1a1a2e;
+      background: #ffffff;
+      border-color: #ffffff;
     }
 
-    .nav-tab.active {
-      color: var(--accent);
-      background: rgba(91, 141, 238, .1);
-    }
-
-    .btn-logout {
+        .btn-logout {
       padding: 7px 16px;
       border-radius: 999px;
       font-size: .78rem;
       cursor: pointer;
-      border: 1px solid var(--border);
+      border: 1.5px solid rgba(255, 255, 255, 0.7);
       background: transparent;
-      color: var(--muted);
+      color: rgba(255, 255, 255, 0.9);
       font-family: 'DM Sans', sans-serif;
       transition: all .2s;
     }
-
     .btn-logout:hover {
-      border-color: var(--red);
-      color: var(--red);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffffff;
+      color: #ffffff;
     }
 
     /* HEADER — student mode (light teal) */
@@ -308,12 +313,7 @@
       margin: 40px auto 0;
     }
 
-    .login-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px 36px;
-    }
+    .login-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; padding: 40px 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 
     .login-logo {
       text-align: center;
@@ -325,15 +325,10 @@
 
     .login-logo span {
       color: var(--accent2);
-      font-style: italic;
+      
     }
 
-    .login-sub {
-      text-align: center;
-      font-size: .82rem;
-      color: var(--muted);
-      margin-bottom: 32px;
-    }
+    .login-sub { text-align: center; font-size: .82rem; color: #475569; margin-bottom: 32px; }
 
     .field {
       display: flex;
@@ -775,7 +770,7 @@
 
     em {
       color: var(--muted);
-      font-style: italic;
+      
       font-size: .85em;
     }
 

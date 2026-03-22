@@ -137,19 +137,16 @@
       rb.textContent = currentUser.rol;
       rb.className = `role-badge role-${currentUser.rol}`;
 
-      // Student mode: teal header + light body
+      // Universal branding
+      const logoText = document.getElementById('logo-text');
+      if (logoText) logoText.innerHTML = 'Psi-<span>IA</span>';
+
       if (currentUser.rol === 'estudiante') {
         document.body.classList.add('student-mode');
-        // Update logo to Psi-IA branding
-        const logoText = document.getElementById('logo-text');
-        if (logoText) logoText.innerHTML = 'Psi-<span>IA</span>';
-        // Set hero greeting
         const greet = document.getElementById('hero-greeting');
         if (greet) greet.textContent = `Hola ${currentUser.nombre} \uD83D\uDC4B`;
       } else {
         document.body.classList.remove('student-mode');
-        const logoText = document.getElementById('logo-text');
-        if (logoText) logoText.innerHTML = 'Sim<span>Psi</span>';
       }
 
       const tabs = document.getElementById('nav-tabs');
@@ -157,7 +154,7 @@
 
       const allTabs = {
         estudiante: [
-          { id: 'screen-selection', label: 'Nueva sesi\u00f3n', action: () => { showScreen('screen-selection'); loadPatients(); } },
+          { id: 'screen-selection', label: 'Nueva sesión', action: () => { resetStudentDashboard(); loadPatients(); } },
           { id: 'screen-historial', label: 'Mi historial', action: () => { showScreen('screen-historial'); loadHistorial(); } },
         ],
         docente: [
@@ -202,16 +199,26 @@
     }
 
     // ── Student selection flow helpers ────────────────────────
+    function resetStudentDashboard() {
+      showScreen('screen-selection');
+      setNavActive('screen-selection'); // Ensure tab is active
+      const panel = document.getElementById('selection-flow-panel');
+      const hero = document.getElementById('student-hero-section');
+      if (panel) panel.style.display = 'none';
+      if (hero) hero.style.display = 'grid'; // Force explicit grid layout to ensure it reappears
+    }
+
     function scrollToSelectionFlow() {
       const panel = document.getElementById('selection-flow-panel');
+      const hero = document.getElementById('student-hero-section');
+      if (hero) hero.style.display = 'none'; 
       if (!panel) return;
       panel.style.display = 'block';
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function closeSelectionFlow() {
-      const panel = document.getElementById('selection-flow-panel');
-      if (panel) panel.style.display = 'none';
+      resetStudentDashboard();
     }
 
     // ═══════════════════════════════════════════════════════════
