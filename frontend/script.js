@@ -227,6 +227,22 @@
     let allPatients = {};   // cache: { pid: {...} }
     let selectedCategoria = null;
     let selectedDificultad = null;
+    let currentBookPatients = [];
+    let currentBookPage = 0;
+
+    const categoryEmojis = {
+      'ansiedad': '😟', 'depresión': '😞', 'depresion': '😞', 'duelo': '🕯️',
+      'estrés': '💼', 'estres': '💼', 'general': '🧠', 'autoestima': '🌱',
+      'pareja': '💔', 'infantil': '🧸', 'adicciones': '🍷', 'trauma': '💔'
+    };
+
+    function getCategoryEmoji(cat) {
+      const c = (cat || '').trim().toLowerCase();
+      for (let [k, emoji] of Object.entries(categoryEmojis)) {
+        if (c.includes(k)) return emoji;
+      }
+      return '🧠'; // Default
+    }
 
     // ── Tips aleatorios (móvil del dashboard) ────────────────────────
     const CLINICAL_TIPS = [
@@ -255,7 +271,10 @@
       selectedCategoria = null;
       selectedDificultad = null;
       document.getElementById('filter-dif-wrap').style.display = 'none';
-      document.getElementById('patients-container').innerHTML = '';
+      const bc = document.getElementById('book-container');
+      const bes = document.getElementById('book-empty-state');
+      if (bc) bc.style.display = 'none';
+      if (bes) bes.style.display = 'none';
 
       // In student mode, hide the flow panel until user clicks "Nuevo caso"
       const flowPanel = document.getElementById('selection-flow-panel');
@@ -291,11 +310,14 @@
 
         // Renderiza botones de categoría
         const wrap = document.getElementById('filter-categorias');
-        wrap.innerHTML = (Array.isArray(cats) ? cats : []).map(cat => `
+        wrap.innerHTML = (Array.isArray(cats) ? cats : []).map(cat => {
+          const emoji = getCategoryEmoji(cat);
+          return `
       <button class="filter-cat-btn" data-cat="${cat}"
         onclick="selectCategoria('${cat.replace(/'/g, "\\'")}')">
-        ${cat}
-      </button>`).join('');
+        ${emoji} ${cat}
+      </button>`;
+        }).join('');
       } catch (e) {
         document.getElementById('filter-categorias').innerHTML =
           '<span style="color:var(--red);font-size:.85rem;">⚠ Error cargando categorías</span>';
@@ -313,7 +335,10 @@
       // Muestra selector de dificultad, resetea botones
       document.getElementById('filter-dif-wrap').style.display = 'block';
       document.querySelectorAll('.filter-dif-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('patients-container').innerHTML = '';
+      const bc = document.getElementById('book-container');
+      const bes = document.getElementById('book-empty-state');
+      if (bc) bc.style.display = 'none';
+      if (bes) bes.style.display = 'none';
     }
 
     function selectDificultad(dif) {
@@ -326,42 +351,106 @@
     }
 
     function renderPatientCards() {
-      const container = document.getElementById('patients-container');
       const catNorm = (selectedCategoria || '').trim().toLowerCase();
       const difNorm = (selectedDificultad || '').trim().toLowerCase();
-      const filtered = Object.entries(allPatients).filter(([, p]) => {
+      
+      currentBookPatients = Object.entries(allPatients).filter(([, p]) => {
         const pCat = (p.categoria || '').trim().toLowerCase();
         const pDif = (p.dificultad || '').trim().toLowerCase();
-        // Si la categoría seleccionada es "general", ignoramos la categoría del caso
-        // y mostramos todos los pacientes que coincidan con la dificultad elegida.
-        if (catNorm === 'general') {
-          return pDif === difNorm;
-        }
-        // En cualquier otra categoría, filtramos por categoría y dificultad.
+        if (catNorm === 'general') return pDif === difNorm;
         return pCat === catNorm && pDif === difNorm;
       });
 
-      if (!filtered.length) {
-        container.innerHTML = `
-      <div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);
-        background:var(--card);border:1px dashed var(--border);border-radius:16px;">
-        <div style="font-size:2rem;margin-bottom:8px">🔍</div>
-        <div>No hay pacientes para <strong>${selectedCategoria}</strong> — <strong>${selectedDificultad}</strong></div>
-        <div style="font-size:.8rem;margin-top:6px">El administrador puede agregar casos desde el panel.</div>
-      </div>`;
+      currentBookPage = 0;
+      renderBookView();
+    }
+
+    function renderBookView() {
+      const bc = document.getElementById('book-container');
+      const bes = document.getElementById('book-empty-state');
+      if (!bc || !bes) return;
+
+      if (!currentBookPatients.length) {
+        bc.style.display = 'none';
+        bes.innerHTML = `
+          <div style="font-size:2rem;margin-bottom:8px">🔍</div>
+          <div>No hay casos para <strong>${selectedCategoria}</strong> — <strong>${selectedDificultad}</strong></div>
+          <div style="font-size:.8rem;margin-top:6px">El administrador puede agregar casos desde el panel.</div>`;
+        bes.style.display = 'block';
         return;
       }
+      
+      bes.style.display = 'none';
+      bc.style.display = 'flex';
+      
+      const ITEMS_PER_PAGE = 6;
+      const totalPages = Math.ceil(currentBookPatients.length / ITEMS_PER_PAGE);
+      const startIdx = currentBookPage * ITEMS_PER_PAGE;
+      const paginated = currentBookPatients.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+      
+      // Separar para hoja izquierda (3) y derecha (3)
+      const leftItems = paginated.slice(0, 3);
+      const rightItems = paginated.slice(3, 6);
+      
+      const catEmoji = getCategoryEmoji(selectedCategoria);
+      const difNorm = (selectedDificultad || 'leve').toLowerCase();
+      const catColorClass = 'patient-case-' + difNorm; // Leve=verde, Mod=amarillo, Sev=rojo (Manejado via CSS)
 
-      container.innerHTML = filtered.map(([pid, p]) => {
+      const generateCardHTML = ([pid, p]) => {
         const safeName = String(p.name || '').replace(/'/g, "\\'");
+        
+        // Obtener la letra inicial del nombre para el avatar
+        const initial = safeName ? safeName.charAt(0).toUpperCase() : '?';
+        
+        /* 
+         * TIP PARA EL FUTURO:
+         * Si en algún momento quieres usar una imagen/icono real en lugar de 
+         * la letra inicial (como en Gmail), puedes reemplazar la variable 'iconContent' así:
+         * const iconContent = `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+         */
+        const iconContent = initial;
+
         return `
-    <div class="patient-option" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
-      <div class="avatar-lg">👤</div>
-      <h3>${p.name}</h3>
-      <div class="age-tag">${p.age} años</div>
-      <div class="start-label">Iniciar sesión →</div>
-    </div>`;
-      }).join('');
+          <div class="book-patient-card ${catColorClass}" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
+            <div class="bp-icon">${iconContent}</div>
+            <div class="bp-info">
+              <h3>${p.name}</h3>
+              <span class="bp-age">${p.age} años</span>
+            </div>
+            <div class="bp-start">→</div>
+          </div>`;
+      };
+      
+      document.getElementById('book-page-left').innerHTML = leftItems.map(generateCardHTML).join('');
+      
+      const rightPageHTML = rightItems.map(generateCardHTML).join('');
+      const navNode = document.getElementById('book-nav');
+      // Preservar la navegacion en la parte inferior derecha
+      document.getElementById('book-page-right').innerHTML = rightPageHTML;
+      if (navNode) document.getElementById('book-page-right').appendChild(navNode);
+      
+      const prevBtn = document.getElementById('btn-book-prev');
+      const nextBtn = document.getElementById('btn-book-next');
+      const indicator = document.getElementById('book-page-indicator');
+      
+      if (totalPages > 1) {
+        navNode.style.display = 'flex';
+        prevBtn.style.visibility = currentBookPage > 0 ? 'visible' : 'hidden';
+        nextBtn.style.visibility = currentBookPage < totalPages - 1 ? 'visible' : 'hidden';
+        indicator.textContent = `${currentBookPage + 1} / ${totalPages}`;
+      } else {
+        navNode.style.display = 'none';
+      }
+    }
+    
+    function changeBookPage(dir) {
+      currentBookPage += dir;
+      // Añadir animación ligera de libro
+      const bc = document.getElementById('book-container');
+      bc.classList.remove('book-flip');
+      void bc.offsetWidth; // trigger reflow
+      bc.classList.add('book-flip');
+      renderBookView();
     }
 
     // cardEl se pasa directamente desde onclick — event.currentTarget se pierde tras el primer await

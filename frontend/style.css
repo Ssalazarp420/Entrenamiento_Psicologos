@@ -2087,7 +2087,7 @@
     }
 
     body.student-mode #screen-selection {
-      background: var(--light-bg);
+      background: transparent;
       border-radius: 0;
     }
 
@@ -2099,7 +2099,7 @@
       align-items: center;
       min-height: calc(100vh - 70px);
       padding: 32px 32px;
-      background: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_1.png') center/cover no-repeat;
+      background: transparent;
       position: relative;
       overflow: hidden;
     }
@@ -2779,5 +2779,214 @@
     }
 
     body.student-mode {
-      background: var(--light-bg);
+      background: transparent;
+    }
+
+    /* BOOK LAYOUT */
+    .book-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin: 20px auto;
+      max-width: 900px;
+      /* Background simulating an open book spreading */
+      background: #fafafa;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 0 15px rgba(0,0,0,0.02);
+      border: 1px solid #e2e8f0;
+      padding: 30px;
+      padding-top: 40px;
+      gap: 50px; /* Space between pages */
+      min-height: 480px;
+      transition: transform 0.4s ease, opacity 0.3s;
+    }
+
+    .book-container.book-flip {
+      animation: pageTurn 0.5s ease;
+    }
+
+    @keyframes pageTurn {
+      0% { transform: scale(0.98); opacity: 0.8; }
+      50% { transform: scale(1.02); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Simulate the center crease/spine */
+    .book-spine {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 40px;
+      margin-left: -20px;
+      background: linear-gradient(to right, 
+        rgba(255,255,255,0) 0%, 
+        rgba(0,0,0,0.05) 45%, 
+        rgba(0,0,0,0.1) 50%, 
+        rgba(0,0,0,0.05) 55%, 
+        rgba(255,255,255,0) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Rings binding */
+    .book-rings {
+      position: absolute;
+      top: 40px;
+      bottom: 40px;
+      left: 50%;
+      width: 30px;
+      margin-left: -15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      z-index: 11;
+      pointer-events: none;
+    }
+
+    .book-rings .ring {
+      height: 12px;
+      width: 30px;
+      background: linear-gradient(to right, #ccc, #f0f0f0, #ccc);
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.8);
+      border: 1px solid #aaa;
+    }
+
+    .book-page {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 5;
+      position: relative;
+    }
+
+    /* Horizontal lines for notebook feel */
+    .book-page::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: repeating-linear-gradient(transparent, transparent 39px, rgba(0,0,0,0.03) 40px);
+      background-size: 100% 40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Patient Card inside the book */
+    .book-patient-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      min-height: 90px;
+    }
+
+    .book-patient-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      border-color: var(--teal);
+    }
+
+    /* Difficulty specific styling */
+    .patient-case-leve {
+      background: linear-gradient(to right, rgba(167, 243, 208, 0.4), #ffffff);
+      border-color: #a7f3d0;
+    }
+    
+    .patient-case-moderada {
+      background: linear-gradient(to right, rgba(253, 230, 138, 0.4), #ffffff);
+      border-color: #fde68a;
+    }
+    
+    .patient-case-severa {
+      background: linear-gradient(to right, rgba(233, 213, 255, 0.4), #ffffff);
+      border-color: #e9d5ff;
+    }
+
+    .bp-icon {
+      font-size: 2.2rem;
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+      min-width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+    }
+
+    .bp-info {
+      flex: 1;
+    }
+
+    .bp-info h3 {
+      font-size: 1.1rem;
+      color: var(--text);
+      margin: 0 0 4px 0;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .bp-age {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: rgba(0,0,0,0.04);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .bp-start {
+      font-weight: 700;
+      color: var(--teal);
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all 0.2s;
+    }
+
+    .book-patient-card:hover .bp-start {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Pagination controls */
+    .book-nav {
+      position: absolute;
+      bottom: -60px;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-book-nav {
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--teal);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .btn-book-nav:hover {
+      background: var(--teal);
+      color: #fff;
+      border-color: var(--teal);
+    }
+
+    .book-page-indicator {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
     }
