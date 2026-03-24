@@ -467,6 +467,30 @@
       gap: 22px;
     }
 
+    .patients-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1200px) {
+      .patients-grid-6 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .patients-grid-6 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .patients-grid-6 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     .patient-option {
       background: radial-gradient(circle at top left, rgba(91, 141, 238, .18), transparent 55%),
         radial-gradient(circle at bottom right, rgba(244, 114, 182, .16), transparent 55%),
@@ -2621,10 +2645,32 @@
       font-size: .82rem;
     }
 
-    /* ── Selection flow panel (inside student screen, below hero) ── */
+    /* ═══════════════════════════════════════════════════════════
+       PANEL DE SELECCIÓN DE CASO (contenedor principal)
+       ─────────────────────────────────────────────────────────
+       background: rgba(R, G, B, ALPHA)
+         → ALPHA controla la transparencia del fondo blanco:
+           0.0 = completamente transparente
+           0.5 = semitransparente (deja ver el fondo de la app)
+           1.0 = totalmente opaco
+       Para un fondo de color, p.ej. azul tenue:
+         background: rgba(224, 242, 254, 0.85);
+       Para quitar el fondo completamente:
+         background: transparent;
+    ═══════════════════════════════════════════════════════════ */
     .selection-flow {
-      padding: 0 32px 40px;
-      background: var(--light-bg);
+      padding: 28px 32px 48px;
+      /* COLOR Y TRANSPARENCIA DEL PANEL */
+      background: rgba(251, 251, 251, 0.30);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      /* BORDES DEL PANEL — radio de esquinas */
+      border-radius: 24px;
+      /* BORDE — cámbialo o ponlo en "none" para quitarlo */
+      border: 1px solid rgba(226, 232, 240, 0.7);
+      /* SOMBRA — ajusta el último valor (0.08) para más/menos sombra */
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.30);
+      margin: 0 32px 40px;
     }
 
     .selection-flow-title {
@@ -2935,87 +2981,126 @@
       z-index: -1;
     }
 
-    /* Patient Card inside the book */
+    /* ═══════════════════════════════════════════════════════════
+       TARJETAS DE PACIENTE — Diseño vertical
+       ─────────────────────────────────────────────────────────
+       Para cambiar el color de fondo base de la tarjeta,
+       edita el valor en "background" de .book-patient-card.
+       Usa rgba() para controlar transparencia:
+         rgba(255, 255, 255, 0.9)  → blanco casi opaco
+         rgba(255, 255, 255, 0.6)  → blanco semitransparente
+    ═══════════════════════════════════════════════════════════ */
     .book-patient-card {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 14px;
-      padding: 16px;
-      border-radius: 16px;
-      background: #fff;
+      gap: 10px;
+      padding: 20px 14px 16px;
+      border-radius: 18px;
+
+      /* COLOR DE FONDO BASE — cámbialo aquí */
+      background: rgba(255, 255, 255, 0.92);
+
       border: 1px solid #e2e8f0;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.22s ease;
       position: relative;
       overflow: hidden;
-      min-height: 90px;
+      text-align: center;
+      min-height: 140px;
     }
 
     .book-patient-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.09);
       border-color: var(--teal);
     }
 
-    /* Difficulty specific styling */
+    /* ── Dificultad: Leve ──────────────────────────────────────
+       Cambia el color inicial del degradado (primer valor rgba)
+       para modificar el tinte de fondo de tarjetas "Leve".
+       El segundo color (#ffffff) es donde el degradado termina.
+    ──────────────────────────────────────────────────────────── */
     .patient-case-leve {
-      background: linear-gradient(to right, rgba(167, 243, 208, 0.4), #ffffff);
+      background: rgba(167, 243, 208, 0.55);
       border-color: #a7f3d0;
     }
 
+    /* ── Dificultad: Moderada ─────────────────────────────────
+       Cambia rgba(253, 230, 138, ...) para un tono distinto.
+       El número después de la coma (0.0–1.0) controla la
+       intensidad del color: 0.2 = sutil, 0.7 = saturado.
+    ──────────────────────────────────────────────────────────── */
     .patient-case-moderada {
-      background: linear-gradient(to right, rgba(253, 230, 138, 0.4), #ffffff);
+      background: rgba(253, 230, 138, 0.55);
       border-color: #fde68a;
     }
 
+    /* ── Dificultad: Severa ───────────────────────────────────
+       Cambia rgba(233, 213, 255, ...) para un tono distinto.
+       Para hacerlo más rosado usa rgba(255, 200, 200, 0.5).
+    ──────────────────────────────────────────────────────────── */
     .patient-case-severa {
-      background: linear-gradient(to right, rgba(233, 213, 255, 0.4), #ffffff);
+      background: rgba(233, 213, 255, 0.55) 0%;
       border-color: #e9d5ff;
     }
 
+    /* Avatar circular encima del nombre */
     .bp-icon {
-      font-size: 2.2rem;
-      background: rgba(255, 255, 255, 0.6);
+      font-size: 1.8rem;
+      /* COLOR DEL CÍRCULO AVATAR — usa cualquier color CSS */
+      background: rgba(255, 255, 255, 0.75);
       border-radius: 50%;
-      min-width: 60px;
-      height: 60px;
+      width: 54px;
+      height: 54px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      flex-shrink: 0;
     }
 
+    /* Bloque de texto (nombre + edad) centrado */
     .bp-info {
-      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
     }
 
     .bp-info h3 {
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       color: var(--text);
-      margin: 0 0 4px 0;
-      font-weight: 600;
+      margin: 0;
+      font-weight: 700;
       font-family: 'DM Sans', sans-serif;
+      line-height: 1.2;
     }
 
     .bp-age {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--muted);
-      background: rgba(0, 0, 0, 0.04);
-      padding: 2px 8px;
-      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 2px 10px;
+      border-radius: 999px;
     }
 
+    /* Flecha CTA visible al hover */
     .bp-start {
+      font-size: 0.78rem;
       font-weight: 700;
-      color: var(--teal);
+      color: var(--teal-deep);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       opacity: 0;
-      transform: translateX(-10px);
+      transform: translateY(4px);
       transition: all 0.2s;
     }
 
     .book-patient-card:hover .bp-start {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateY(0);
     }
 
     /* Pagination controls */

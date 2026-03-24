@@ -124,60 +124,51 @@
           <button class="btn-retro-link" onclick="closeSelectionFlow()" style="font-size:.82rem;">✕ Cerrar</button>
         </div>
 
-        <!-- Paso 1: Tipo de caso -->
-        <div style="margin-bottom:10px;">
-          <div
-            style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">
+        <!-- Paso 1: Tipo de caso (Libro) -->
+        <div id="step-categorias-wrap" style="margin-bottom:10px;">
+          <div style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">
             Tipo de caso</div>
-          <div id="filter-categorias" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-        </div>
-
-        <!-- Paso 2: Dificultad -->
-        <div id="filter-dif-wrap" style="margin-bottom:22px;display:none;">
-          <div
-            style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">
-            Dificultad</div>
-          <div style="display:flex;gap:8px;">
-            <button class="filter-dif-btn" data-dif="Leve" onclick="selectDificultad('Leve')">🟢 Leve</button>
-            <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡
-              Moderada</button>
-            <button class="filter-dif-btn" data-dif="Severa" onclick="selectDificultad('Severa')">🔴 Severa</button>
-          </div>
-        </div>
-
-        <!-- Paso 3: Pacientes como un Libro -->
-        <div class="book-container anim" id="book-container" style="display:none;">
-          <div class="book-spine"></div>
-
-          <div class="book-page book-page-left" id="book-page-left">
-            <!-- Left page patient cards -->
-          </div>
-
-          <div class="book-rings">
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-          </div>
-
-          <div class="book-page book-page-right" id="book-page-right">
-            <!-- Right page patient cards -->
-
-            <div class="book-nav" id="book-nav">
-              <button class="btn-book-nav" id="btn-book-prev" onclick="changeBookPage(-1)">◀ Atrás</button>
-              <span class="book-page-indicator" id="book-page-indicator">1 / 1</span>
-              <button class="btn-book-nav" id="btn-book-next" onclick="changeBookPage(1)">Siguiente ▶</button>
+          
+          <div class="book-container anim" id="categories-book" style="display:none;">
+            <div class="book-spine"></div>
+            <div class="book-page book-page-left" id="categories-page-left"></div>
+            <div class="book-rings">
+              <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+              <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+            </div>
+            <div class="book-page book-page-right" id="categories-page-right">
+              <div class="book-nav" id="categories-book-nav">
+                <button class="btn-book-nav" id="btn-cat-prev" onclick="changeCatPage(-1)">◀ Atrás</button>
+                <span class="book-page-indicator" id="cat-page-indicator">1 / 1</span>
+                <button class="btn-book-nav" id="btn-cat-next" onclick="changeCatPage(1)">Siguiente ▶</button>
+              </div>
             </div>
           </div>
+          <div id="categories-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
+            No hay categorías disponibles.
+          </div>
         </div>
 
-        <!-- Estado vacío para el libro -->
-        <div id="book-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
-          No hay pacientes que coincidan con los filtros seleccionados.
+        <!-- Paso 2 y 3: Dificultad y Tabla de Pacientes -->
+        <div id="step-pacientes-wrap" style="display:none;" class="anim">
+          <button class="btn-ghost" style="margin-bottom: 16px; font-size: 0.85rem;" onclick="volverALibroCategorias()">← Volver a Tipos de caso</button>
+          
+          <div id="filter-dif-wrap" style="margin-bottom:22px;">
+            <div style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">
+              Dificultad</div>
+            <div style="display:flex;gap:8px;">
+              <button class="filter-dif-btn" data-dif="Leve" onclick="selectDificultad('Leve')">🟢 Leve</button>
+              <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡 Moderada</button>
+              <button class="filter-dif-btn" data-dif="Severa" onclick="selectDificultad('Severa')">🔴 Severa</button>
+            </div>
+          </div>
+
+          <div id="patients-grid-container" class="patients-grid-6">
+            <!-- Patient cards will be rendered here -->
+          </div>
+          <div id="patients-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
+            No hay pacientes que coincidan con la dificultad seleccionada.
+          </div>
         </div>
       </div>
 
