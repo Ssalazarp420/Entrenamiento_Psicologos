@@ -7,7 +7,19 @@
       --mauve: #967AA1;
       --sage: #C2C1A5;
 
-      --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_6_2x.webp');
+      /* Para usar una imagen local en la carpeta assets, usa la siguiente línea en lugar de la actual: */
+      /* --bg-img: url('public/assets/Fondo_principal_7_2x.webp'); */
+      /* Para usar una imagen en azure blob, usa la siguiente línea en lugar de la actual: */
+      /* --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_7_2x.webp'); */
+
+      --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_7_2x.webp');
+
+      /* Controles de la imagen de fondo (Cifra normal = 100% o 1) */
+      --bg-satura: 100%;
+      --bg-contraste: 100%;
+      --bg-brillo: 100%;
+      --bg-opacidad: 70%;
+
       --light-bg: #FBFBFB;
       --light-text: #1a1a2e;
       --light-muted: #64748b;
@@ -41,8 +53,6 @@
     }
 
     body {
-      background: var(--bg-img) no-repeat center center fixed;
-      background-size: cover;
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
@@ -61,6 +71,19 @@
       pointer-events: none;
       z-index: -1;
     }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: var(--bg-img) no-repeat center center;
+      background-size: cover;
+      filter: saturate(var(--bg-satura)) contrast(var(--bg-contraste)) brightness(var(--bg-brillo));
+      opacity: var(--bg-opacidad);
+      pointer-events: none;
+      z-index: -2;
+    }
+
 
     /* HEADER — Global Teal Design */
     header {
@@ -2123,7 +2146,7 @@
       align-items: center;
       min-height: calc(100vh - 70px);
       padding: 32px 32px;
-      background: transparent;
+      background-color: transparent;
       position: relative;
       overflow: hidden;
     }
@@ -2168,7 +2191,7 @@
 
       /* === FONDO DEL MOVIL: Color y transparencia (RGBA) === */
       /* Fondo blanco semitransparente */
-      background: rgba(245, 245, 245, 0.85);
+      background: rgba(245, 245, 245, 0.96);
       /* Para hacerlo semitransparente, usa rgba(245, 245, 245, 0.7) */
 
       border: 3px solid #1a1a2e;
