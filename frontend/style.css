@@ -7,7 +7,7 @@
       --mauve: #967AA1;
       --sage: #C2C1A5;
 
-      --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_1.png');
+      --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_6_2x.webp');
       --light-bg: #FBFBFB;
       --light-text: #1a1a2e;
       --light-muted: #64748b;
@@ -2163,8 +2163,8 @@
 
     /* MOVIL: Estructura externa del telefono */
     .phone-mockup {
-      min-height: 400px;
-      width: 200px;
+      min-height: 430px;
+      width: 230px;
 
       /* === FONDO DEL MOVIL: Color y transparencia (RGBA) === */
       /* Fondo blanco semitransparente */
