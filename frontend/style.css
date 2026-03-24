@@ -6,12 +6,12 @@
       --ice: #A3CEF1;
       --mauve: #967AA1;
       --sage: #C2C1A5;
-      
+
       --bg-img: url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_principal_1.png');
       --light-bg: #FBFBFB;
       --light-text: #1a1a2e;
       --light-muted: #64748b;
-      
+
       /* Mapping bases to Teal palette */
       --bg: var(--light-bg);
       --surface: var(--teal);
@@ -21,15 +21,15 @@
       --accent2: var(--teal-deep);
       --text: var(--light-text);
       --muted: var(--light-muted);
-      
+
       --green: #059669;
       --red: #dc2626;
       --yellow: #d97706;
-      
+
       --card-purple: #EED8F8;
       --card-green: #D2F9D6;
       --card-gray: #E0E0E0;
-      
+
       --patient-bubble: #f1f5f9;
       --psi-bubble: #e0f2fe;
     }
@@ -51,12 +51,13 @@
       align-items: center;
       position: relative;
     }
-    
+
     body::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(255, 255, 255, 0.4); /* Subtle overlay for global readability */
+      background: rgba(255, 255, 255, 0.4);
+      /* Subtle overlay for global readability */
       pointer-events: none;
       z-index: -1;
     }
@@ -89,7 +90,7 @@
 
     .logo span {
       color: #ffffff;
-      
+
     }
 
     /* LOGO: simbolo_psi_1.png */
@@ -139,18 +140,27 @@
       font-weight: 500;
     }
 
-    .role-estudiante { background: rgba(108, 193, 206, .2); color: #0e7490; }
+    .role-estudiante {
+      background: rgba(108, 193, 206, .2);
+      color: #0e7490;
+    }
 
-    .role-docente { background: rgba(5, 150, 105, .1); color: #059669; }
+    .role-docente {
+      background: rgba(5, 150, 105, .1);
+      color: #059669;
+    }
 
-    .role-admin { background: rgba(220, 38, 38, .1); color: #b91c1c; }
+    .role-admin {
+      background: rgba(220, 38, 38, .1);
+      color: #b91c1c;
+    }
 
     .nav-tabs {
       display: flex;
       gap: 6px;
     }
 
-        .nav-tab {
+    .nav-tab {
       padding: 7px 18px;
       border-radius: 999px;
       font-size: .82rem;
@@ -162,13 +172,15 @@
       font-weight: 500;
       transition: all .2s;
     }
-    .nav-tab:hover, .nav-tab.active {
+
+    .nav-tab:hover,
+    .nav-tab.active {
       color: #1a1a2e;
       background: #ffffff;
       border-color: #ffffff;
     }
 
-        .btn-logout {
+    .btn-logout {
       padding: 7px 16px;
       border-radius: 999px;
       font-size: .78rem;
@@ -179,6 +191,7 @@
       font-family: 'DM Sans', sans-serif;
       transition: all .2s;
     }
+
     .btn-logout:hover {
       background: rgba(255, 255, 255, 0.15);
       border-color: #ffffff;
@@ -313,7 +326,13 @@
       margin: 40px auto 0;
     }
 
-    .login-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; padding: 40px 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .login-card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 20px;
+      padding: 40px 36px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
 
     .login-logo {
       text-align: center;
@@ -325,10 +344,15 @@
 
     .login-logo span {
       color: var(--accent2);
-      
+
     }
 
-    .login-sub { text-align: center; font-size: .82rem; color: #475569; margin-bottom: 32px; }
+    .login-sub {
+      text-align: center;
+      font-size: .82rem;
+      color: #475569;
+      margin-bottom: 32px;
+    }
 
     .field {
       display: flex;
@@ -770,7 +794,7 @@
 
     em {
       color: var(--muted);
-      
+
       font-size: .85em;
     }
 
@@ -2354,8 +2378,8 @@
 
     /* DASHBOARD IMAGE: Mujer_sentada_chat_no_bubble.png */
     .hero-image-area {
-      width: 420px;
-      height: 340px;
+      width: 520px;
+      height: 440px;
       border-radius: 20px;
       overflow: visible;
       /* changed from hidden to allow button edges to breathe */
@@ -2792,11 +2816,12 @@
       /* Background simulating an open book spreading */
       background: #fafafa;
       border-radius: 8px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 0 15px rgba(0,0,0,0.02);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 0 15px rgba(0, 0, 0, 0.02);
       border: 1px solid #e2e8f0;
       padding: 30px;
       padding-top: 40px;
-      gap: 50px; /* Space between pages */
+      gap: 50px;
+      /* Space between pages */
       min-height: 480px;
       transition: transform 0.4s ease, opacity 0.3s;
     }
@@ -2806,9 +2831,20 @@
     }
 
     @keyframes pageTurn {
-      0% { transform: scale(0.98); opacity: 0.8; }
-      50% { transform: scale(1.02); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+      0% {
+        transform: scale(0.98);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.02);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
     /* Simulate the center crease/spine */
@@ -2819,12 +2855,12 @@
       left: 50%;
       width: 40px;
       margin-left: -20px;
-      background: linear-gradient(to right, 
-        rgba(255,255,255,0) 0%, 
-        rgba(0,0,0,0.05) 45%, 
-        rgba(0,0,0,0.1) 50%, 
-        rgba(0,0,0,0.05) 55%, 
-        rgba(255,255,255,0) 100%);
+      background: linear-gradient(to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(0, 0, 0, 0.05) 45%,
+          rgba(0, 0, 0, 0.1) 50%,
+          rgba(0, 0, 0, 0.05) 55%,
+          rgba(255, 255, 255, 0) 100%);
       pointer-events: none;
       z-index: 10;
     }
@@ -2849,7 +2885,7 @@
       width: 30px;
       background: linear-gradient(to right, #ccc, #f0f0f0, #ccc);
       border-radius: 6px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.8);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.8);
       border: 1px solid #aaa;
     }
 
@@ -2866,8 +2902,11 @@
     .book-page::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: repeating-linear-gradient(transparent, transparent 39px, rgba(0,0,0,0.03) 40px);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: repeating-linear-gradient(transparent, transparent 39px, rgba(0, 0, 0, 0.03) 40px);
       background-size: 100% 40px;
       pointer-events: none;
       z-index: -1;
@@ -2891,7 +2930,7 @@
 
     .book-patient-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       border-color: var(--teal);
     }
 
@@ -2900,12 +2939,12 @@
       background: linear-gradient(to right, rgba(167, 243, 208, 0.4), #ffffff);
       border-color: #a7f3d0;
     }
-    
+
     .patient-case-moderada {
       background: linear-gradient(to right, rgba(253, 230, 138, 0.4), #ffffff);
       border-color: #fde68a;
     }
-    
+
     .patient-case-severa {
       background: linear-gradient(to right, rgba(233, 213, 255, 0.4), #ffffff);
       border-color: #e9d5ff;
@@ -2913,14 +2952,14 @@
 
     .bp-icon {
       font-size: 2.2rem;
-      background: rgba(255,255,255,0.6);
+      background: rgba(255, 255, 255, 0.6);
       border-radius: 50%;
       min-width: 60px;
       height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
     }
 
     .bp-info {
@@ -2938,7 +2977,7 @@
     .bp-age {
       font-size: 0.8rem;
       color: var(--muted);
-      background: rgba(0,0,0,0.04);
+      background: rgba(0, 0, 0, 0.04);
       padding: 2px 8px;
       border-radius: 12px;
     }
@@ -2976,7 +3015,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
     .btn-book-nav:hover {
