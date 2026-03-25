@@ -201,20 +201,25 @@ function logout() {
 // ── Student selection flow helpers ────────────────────────
 function resetStudentDashboard() {
   showScreen('screen-selection');
-  setNavActive('screen-selection'); // Ensure tab is active
-  const panel = document.getElementById('selection-flow-panel');
+  setNavActive('screen-selection');
   const hero = document.getElementById('student-hero-section');
-  if (panel) panel.style.display = 'none';
-  if (hero) hero.style.display = 'grid'; // Force explicit grid layout to ensure it reappears
+  if (hero) hero.style.display = 'grid';
+  // Ocultar todos los contenedores del flujo
+  ['sf-header-categorias', 'step-categorias-wrap', 'sf-header-pacientes', 'step-pacientes-wrap']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
 function scrollToSelectionFlow() {
-  const panel = document.getElementById('selection-flow-panel');
   const hero = document.getElementById('student-hero-section');
   if (hero) hero.style.display = 'none';
-  if (!panel) return;
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Mostrar Vista A: encabezado + libro de categorías
+  const h = document.getElementById('sf-header-categorias');
+  const b = document.getElementById('step-categorias-wrap');
+  if (h) h.style.display = 'flex';
+  if (b) { b.style.display = 'block'; b.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  // Asegurar que Vista B esté oculta
+  ['sf-header-pacientes', 'step-pacientes-wrap']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
 function closeSelectionFlow() {
@@ -273,8 +278,9 @@ async function loadPatients() {
   selectedDificultad = null;
   document.getElementById('step-pacientes-wrap').style.display = 'none';
 
-  const cw = document.getElementById('step-categorias-wrap');
-  if (cw) cw.style.display = 'block';
+  //const cw = document.getElementById('step-categorias-wrap');
+  //if (cw) cw.style.display = 'block';
+
 
   // In student mode, hide the flow panel until user clicks "Nuevo caso"
   const flowPanel = document.getElementById('selection-flow-panel');
@@ -387,13 +393,16 @@ function changeCatPage(dir) {
 function selectCategoria(cat) {
   selectedCategoria = cat;
   selectedDificultad = null;
-
-  document.getElementById('step-categorias-wrap').style.display = 'none';
-  document.getElementById('step-pacientes-wrap').style.display = 'block';
-
+  // Ocultar Vista A
+  ['sf-header-categorias', 'step-categorias-wrap']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  // Mostrar Vista B
+  const h = document.getElementById('sf-header-pacientes');
+  const p = document.getElementById('step-pacientes-wrap');
+  if (h) h.style.display = 'flex';
+  if (p) { p.style.display = 'block'; p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   // Resetea botones de dificultad
   document.querySelectorAll('.filter-dif-btn').forEach(b => b.classList.remove('active'));
-
   const grid = document.getElementById('patients-grid-container');
   const bes = document.getElementById('patients-empty-state');
   if (grid) grid.innerHTML = '';
@@ -413,8 +422,14 @@ function selectDificultad(dif) {
 }
 
 function volverALibroCategorias() {
-  document.getElementById('step-pacientes-wrap').style.display = 'none';
-  document.getElementById('step-categorias-wrap').style.display = 'block';
+  // Ocultar Vista B
+  ['sf-header-pacientes', 'step-pacientes-wrap']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  // Mostrar Vista A
+  const h = document.getElementById('sf-header-categorias');
+  const b = document.getElementById('step-categorias-wrap');
+  if (h) h.style.display = 'flex';
+  if (b) b.style.display = 'block';
 }
 
 function renderPatientCards() {
@@ -1232,7 +1247,7 @@ function _closeAndReset() {
   const ti = document.getElementById('typing-indicator'); if (ti) ti.remove();
   document.getElementById('chat-box').innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Selecciona un paciente para comenzar una nueva sesión.</span></div>`;
   document.getElementById('card-name').textContent = '—';
-  showScreen('screen-selection'); loadPatients(); setNavActive('screen-selection');
+  resetStudentDashboard(); loadPatients();
 }
 
 // "Proponer alta" — abre formulario de alta

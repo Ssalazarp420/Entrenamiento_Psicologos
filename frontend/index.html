@@ -114,75 +114,76 @@
       </div>
 
       <!-- ══ FLUJO DE SELECCIÓN: Categoría → Dificultad → Pacientes ══ -->
-      <!-- Este div NO tiene estilos visuales — solo controla el show/hide de vista -->
-      <div id="selection-flow-panel" style="display:none; flex-direction:column; gap:16px; padding: 0 400px 40px;">
 
-        <!-- ── Contenedor 1: Encabezado "Nueva sesión" ── -->
-        <div class="sf-header-box">
-          <div class="sf-header-text">
-            <div class="selection-flow-title">Nueva sesión</div>
-            <div class="selection-flow-sub">Selecciona el tipo de caso y la dificultad.</div>
-          </div>
-          <button class="btn-retro-link" onclick="closeSelectionFlow()" style="font-size:.82rem;">✕ Cerrar</button>
+      <!-- ── Vista A · Contenedor 1: Encabezado "Nueva sesión" ── -->
+      <div id="sf-header-categorias" class="sf-header-box" style="display:none;">
+        <div class="sf-header-text">
+          <div class="selection-flow-title">Nueva sesión</div>
+          <div class="selection-flow-sub">Selecciona el tipo de caso.</div>
         </div>
+      </div>
 
-        <!-- ── Contenedor 2: Libro de categorías ── -->
-        <div id="step-categorias-wrap" style="margin-bottom:10px;">
-          <div class="sf-book-box">
-            <div class="sf-book-label">Tipo de caso</div>
+      <!-- ── Vista A · Contenedor 2: Libro de categorías ── -->
+      <div id="step-categorias-wrap" class="sf-book-box" style="display:none;">
+        <div class="sf-book-label">Tipo de caso</div>
 
-            <div class="book-container anim" id="categories-book" style="display:none;">
-              <div class="book-spine"></div>
-              <div class="book-page book-page-left" id="categories-page-left"></div>
-              <div class="book-rings">
-                <div class="ring"></div>
-                <div class="ring"></div>
-                <div class="ring"></div>
-                <div class="ring"></div>
-                <div class="ring"></div>
-                <div class="ring"></div>
-                <div class="ring"></div>
-                <div class="ring"></div>
-              </div>
-              <div class="book-page book-page-right" id="categories-page-right">
-                <div class="book-nav" id="categories-book-nav">
-                  <button class="btn-book-nav" id="btn-cat-prev" onclick="changeCatPage(-1)">◀ Atrás</button>
-                  <span class="book-page-indicator" id="cat-page-indicator">1 / 1</span>
-                  <button class="btn-book-nav" id="btn-cat-next" onclick="changeCatPage(1)">Siguiente ▶</button>
-                </div>
-              </div>
-            </div>
-            <div id="categories-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
-              No hay categorías disponibles.
+        <div class="book-container anim" id="categories-book" style="display:none;">
+          <div class="book-spine"></div>
+          <div class="book-page book-page-left" id="categories-page-left"></div>
+          <div class="book-rings">
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+          </div>
+          <div class="book-page book-page-right" id="categories-page-right">
+            <div class="book-nav" id="categories-book-nav">
+              <button class="btn-book-nav" id="btn-cat-prev" onclick="changeCatPage(-1)">◀ Atrás</button>
+              <span class="book-page-indicator" id="cat-page-indicator">1 / 1</span>
+              <button class="btn-book-nav" id="btn-cat-next" onclick="changeCatPage(1)">Siguiente ▶</button>
             </div>
           </div>
         </div>
+        <div id="categories-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
+          No hay categorías disponibles.
+        </div>
+      </div>
 
-        <!-- Paso 2 y 3: Dificultad y Tabla de Pacientes -->
-        <div id="step-pacientes-wrap" style="display:none;" class="anim">
-          <button class="btn-ghost" style="margin-bottom: 16px; font-size: 0.85rem;"
-            onclick="volverALibroCategorias()">← Volver a Tipos de caso</button>
+      <!-- ── Vista B · Contenedor 3: Encabezado "Selecciona dificultad" ── -->
+      <div id="sf-header-pacientes" class="sf-header-box" style="display:none;">
+        <div class="sf-header-text">
+          <div class="selection-flow-title">Nueva sesión</div>
+          <div class="selection-flow-sub">Selecciona la dificultad y el paciente.</div>
+        </div>
+      </div>
 
-          <div id="filter-dif-wrap" style="margin-bottom:22px;">
-            <div
-              style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">
-              Dificultad</div>
-            <div style="display:flex;gap:8px;">
-              <button class="filter-dif-btn" data-dif="Leve" onclick="selectDificultad('Leve')">🟢 Leve</button>
-              <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡
-                Moderada</button>
-              <button class="filter-dif-btn" data-dif="Severa" onclick="selectDificultad('Severa')">🔴 Severa</button>
-            </div>
-          </div>
+      <!-- ── Vista B · Contenedor 4: Dificultad y tarjetas de pacientes ── -->
+      <div id="step-pacientes-wrap" class="sf-book-box" style="display:none;">
+        <button class="btn-ghost" style="margin-bottom:16px; font-size:0.85rem;" onclick="volverALibroCategorias()">←
+          Volver a Tipos de caso</button>
 
-          <div id="patients-grid-container" class="patients-grid-6">
-            <!-- Patient cards will be rendered here -->
-          </div>
-          <div id="patients-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
-            No hay pacientes que coincidan con la dificultad seleccionada.
+        <div id="filter-dif-wrap" style="margin-bottom:22px;">
+          <div
+            style="font-size:.75rem;font-weight:700;color:var(--light-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">
+            Dificultad</div>
+          <div style="display:flex;gap:8px;">
+            <button class="filter-dif-btn" data-dif="Leve" onclick="selectDificultad('Leve')">🟢 Leve</button>
+            <button class="filter-dif-btn" data-dif="Moderada" onclick="selectDificultad('Moderada')">🟡
+              Moderada</button>
+            <button class="filter-dif-btn" data-dif="Severa" onclick="selectDificultad('Severa')">🔴 Severa</button>
           </div>
         </div>
 
+        <div id="patients-grid-container" class="patients-grid-6">
+          <!-- Patient cards will be rendered here -->
+        </div>
+        <div id="patients-empty-state" style="display:none; text-align:center; padding:40px; color:var(--muted);">
+          No hay pacientes que coincidan con la dificultad seleccionada.
+        </div>
       </div>
 
       <!-- MODAL RETROALIMENTACIONES DOCENTE -->
@@ -242,7 +243,7 @@
             Eliminar seleccionadas
           </button>
           <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;"
-            onclick="showScreen('screen-selection');loadPatients();setNavActive('screen-selection');">
+            onclick="resetStudentDashboard();loadPatients();">
             Nueva sesión
           </button>
         </div>
