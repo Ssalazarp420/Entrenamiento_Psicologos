@@ -34,6 +34,29 @@ function restoreSession() {
   }
 }
 
+// ── Avatares de pacientes disponibles ─────────────────────
+const PATIENT_AVATARS = [
+  'Adulto_40_50_1.webp',
+  'Adulto_40_50_2.webp',
+  'Adulto_40_50_3.webp',
+  'Joven_20_25_1.webp',
+  'Joven_20_25_2.webp',
+  'Joven_20_25_3.webp',
+  'mujer_20_25_anos_1.webp',
+  'mujer_20_25_anos_2.webp',
+  'mujer_20_25_anos_3.webp',
+  'mujer_40_50_anos_1.webp',
+  'mujer_40_50_anos_2.webp',
+  'mujer_40_50_anos_3.webp',
+  'Nina_10_15_1.webp',
+  'Nina_10_15_2.webp',
+  'Nina_10_15_3.webp',
+  'Nino_10_15_1.webp',
+  'Nino_10_15_2.webp',
+  'Nino_10_15_3.webp',
+];
+const AVATAR_BASE = '/icons/';
+
 // Al cargar la página, intenta restaurar sesión previa
 document.addEventListener('DOMContentLoaded', () => {
   if (restoreSession()) {
@@ -468,7 +491,11 @@ function renderPatientCards() {
 
     return `
           <div class="book-patient-card ${catColorClass}" style="margin:0; width:100%;" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
-            <div class="bp-icon">${initial}</div>
+            <div class="bp-icon" style="padding:0; overflow:hidden;">
+              ${p.avatar
+        ? `<img src="${AVATAR_BASE}${p.avatar}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none'" />`
+        : initial}
+            </div>
             <div class="bp-info">
               <h3>${p.name}</h3>
               <span class="bp-age">${p.age} años</span>
@@ -1823,6 +1850,51 @@ function seleccionarCategoria(idx, cat) {
     : '<div class="ov-empty">Sin casos en esta categoría.<br><small>Crea uno con "+ Nuevo caso"</small></div>';
 }
 
+function renderAvatarGrid(selectedFile = '') {
+  const grid = document.getElementById('ce-avatar-grid');
+  if (!grid) return;
+
+  grid.innerHTML = PATIENT_AVATARS.map(file => {
+    const isSelected = file === selectedFile;
+    return `
+      <div onclick="selectAvatar('${file}')" title="${file.replace('.webp', '')}" style="
+        cursor:pointer;
+        border-radius:10px;
+        padding:4px;
+        border:2.5px solid ${isSelected ? 'var(--teal)' : 'transparent'};
+        background:${isSelected ? 'rgba(108,193,206,.15)' : 'transparent'};
+        transition:all .18s;
+        display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <img src="${AVATAR_BASE}${file}" alt="${file}"
+          style="width:52px; height:52px; border-radius:50%; object-fit:cover;
+                 border:1px solid var(--border);"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div style="display:none; width:52px; height:52px; border-radius:50%;
+                    background:var(--surface); border:1px solid var(--border);
+                    align-items:center; justify-content:center; font-size:1.4rem;">👤</div>
+        <span style="font-size:.6rem; color:var(--muted); text-align:center; line-height:1.2; word-break:break-word; max-width:60px;">
+          ${file.replace('.webp', '').replace(/_/g, ' ')}
+        </span>
+      </div>`;
+  }).join('');
+}
+
+function selectAvatar(file) {
+  document.getElementById('ce-avatar').value = file;
+  // Actualizar preview
+  const img = document.getElementById('ce-avatar-img');
+  const placeholder = document.getElementById('ce-avatar-placeholder');
+  const label = document.getElementById('ce-avatar-label');
+  if (img && placeholder) {
+    img.src = AVATAR_BASE + file;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  }
+  if (label) label.textContent = file.replace('.webp', '').replace(/_/g, ' ');
+  // Re-render grid para actualizar borde seleccionado
+  renderAvatarGrid(file);
+}
+
 function abrirNuevoCaso() {
   selectedCasoId = null;
   document.getElementById('editor-caso-title').textContent = 'Nuevo caso';
@@ -1835,6 +1907,12 @@ function abrirNuevoCaso() {
   document.getElementById('btn-eliminar-caso').style.display = 'none';
   document.getElementById('caso-editor').style.display = 'flex';
   document.getElementById('caso-editor').style.flexDirection = 'column';
+  // Resetear avatar
+  document.getElementById('ce-avatar').value = '';
+  document.getElementById('ce-avatar-img').style.display = 'none';
+  document.getElementById('ce-avatar-placeholder').style.display = 'block';
+  document.getElementById('ce-avatar-label').textContent = 'Sin avatar seleccionado';
+  renderAvatarGrid('');
 }
 
 function abrirCasoEditor(id, evt) {
@@ -1847,6 +1925,20 @@ function abrirCasoEditor(id, evt) {
   document.getElementById('ce-desc').value = c.descripcion || '';
   document.getElementById('ce-instruccion').value = c.instruccion || '';
   document.getElementById('ce-feedback').value = c.instruccion_feedback || '';
+  // Cargar avatar existente
+  const avatarFile = c.avatar || '';
+  document.getElementById('ce-avatar').value = avatarFile;
+  if (avatarFile) {
+    document.getElementById('ce-avatar-img').src = AVATAR_BASE + avatarFile;
+    document.getElementById('ce-avatar-img').style.display = 'block';
+    document.getElementById('ce-avatar-placeholder').style.display = 'none';
+    document.getElementById('ce-avatar-label').textContent = avatarFile.replace('.webp', '').replace(/_/g, ' ');
+  } else {
+    document.getElementById('ce-avatar-img').style.display = 'none';
+    document.getElementById('ce-avatar-placeholder').style.display = 'block';
+    document.getElementById('ce-avatar-label').textContent = 'Sin avatar seleccionado';
+  }
+  renderAvatarGrid(avatarFile);
   document.getElementById('btn-eliminar-caso').style.display = 'inline-block';
   document.getElementById('caso-editor').style.display = 'flex';
   document.getElementById('caso-editor').style.flexDirection = 'column';
@@ -1865,6 +1957,7 @@ async function guardarCaso() {
     descripcion: document.getElementById('ce-desc').value.trim(),
     instruccion: document.getElementById('ce-instruccion').value.trim(),
     instruccion_feedback: document.getElementById('ce-feedback').value.trim(),
+    avatar: document.getElementById('ce-avatar').value || '',
     categoria: adminData.categorias[selectedCatIndex] || adminData.categorias[0] || 'General',
   };
 
