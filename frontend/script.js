@@ -55,7 +55,7 @@ const PATIENT_AVATARS = [
   'Nino_10_15_2.webp',
   'Nino_10_15_3.webp',
 ];
-const AVATAR_BASE = '/icons/';
+const AVATAR_BASE = 'icons/';
 
 // Al cargar la página, intenta restaurar sesión previa
 document.addEventListener('DOMContentLoaded', () => {
