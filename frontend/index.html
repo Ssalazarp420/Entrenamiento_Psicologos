@@ -695,37 +695,59 @@
                 <!-- ── Selector de avatar ── -->
                 <div class="form-field">
                   <label>Avatar del paciente</label>
-                  <div id="ce-avatar-preview" style="
-                    display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                    <div id="ce-avatar-img-wrap" style="
-                      width:54px; height:54px; border-radius:50%;
-                      background:rgba(108,193,206,.15);
-                      border:2px solid var(--teal);
-                      display:flex; align-items:center; justify-content:center;
-                      font-size:1.6rem; overflow:hidden; flex-shrink:0;">
+
+                  <!-- Botón disparador del desplegable -->
+                  <div id="ce-avatar-trigger" onclick="toggleAvatarDropdown()" style="
+                      display:flex; align-items:center; gap:12px;
+                      padding:8px 12px;
+                      background:var(--surface);
+                      border:1px solid var(--border);
+                      border-radius:10px;
+                      cursor:pointer;
+                      user-select:none;
+                      transition:border-color .2s;">
+
+                    <!-- Imagen preview -->
+                    <div style="width:40px; height:40px; border-radius:50%;
+                                background:rgba(108,193,206,.15); border:2px solid var(--teal);
+                                display:flex; align-items:center; justify-content:center;
+                                font-size:1.2rem; overflow:hidden; flex-shrink:0;">
                       <span id="ce-avatar-placeholder">👤</span>
                       <img id="ce-avatar-img" src="" alt=""
                         style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" />
                     </div>
-                    <span style="font-size:.8rem; color:var(--muted);" id="ce-avatar-label">Sin avatar
-                      seleccionado</span>
+
+                    <span id="ce-avatar-label" style="flex:1; font-size:.85rem; color:var(--muted);">
+                      Sin avatar seleccionado
+                    </span>
+
+                    <!-- Chevron -->
+                    <span id="ce-avatar-chevron" style="
+                        font-size:.75rem; color:var(--muted);
+                        transition:transform .25s; display:inline-block;">▼</span>
                   </div>
+
+                  <!-- Panel desplegable (oculto por defecto) -->
                   <div id="ce-avatar-grid" style="
-                    display:grid;
-                    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-                    gap:8px;
-                    max-height:220px;
-                    overflow-y:auto;
-                    padding:10px;
-                    background:var(--surface);
-                    border:1px solid var(--border);
-                    border-radius:10px;">
-                    <!-- Se puebla dinámicamente desde JS -->
-                    <div style="color:var(--muted); font-size:.8rem; padding:8px; grid-column:1/-1;">Cargando avatares…
+                      display:none;
+                      grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+                      gap:10px;
+                      max-height:240px;
+                      overflow-y:auto;
+                      padding:12px;
+                      margin-top:6px;
+                      background:var(--surface);
+                      border:1px solid var(--border);
+                      border-radius:10px;
+                      box-shadow:0 6px 20px rgba(0,0,0,.08);">
+                    <div style="color:var(--muted); font-size:.8rem; padding:8px; grid-column:1/-1;">
+                      Cargando avatares…
                     </div>
                   </div>
+
                   <input type="hidden" id="ce-avatar" value="" />
                 </div>
+
                 <div class="form-field"><label>Descripción visible al estudiante</label><textarea id="ce-desc" rows="2"
                     class="ai-textarea" placeholder="Descripción corta del caso..."></textarea></div>
                 <div class="form-field"><label>System prompt — Comportamiento del paciente</label><textarea

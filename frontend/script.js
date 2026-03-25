@@ -1858,6 +1858,7 @@ function seleccionarCategoria(idx, cat) {
 function renderAvatarGrid(selectedFile = '') {
   const grid = document.getElementById('ce-avatar-grid');
   if (!grid) return;
+  const wasOpen = grid.style.display === 'grid'; // preservar estado abierto/cerrado
 
   grid.innerHTML = PATIENT_AVATARS.map(file => {
     const isSelected = file === selectedFile;
@@ -1882,6 +1883,7 @@ function renderAvatarGrid(selectedFile = '') {
         </span>
       </div>`;
   }).join('');
+  if (!wasOpen) grid.style.display = 'none'; // re-ocultar si estaba cerrado
 }
 
 function selectAvatar(file) {
@@ -1898,6 +1900,30 @@ function selectAvatar(file) {
   if (label) label.textContent = file.replace('.webp', '').replace(/_/g, ' ');
   // Re-render grid para actualizar borde seleccionado
   renderAvatarGrid(file);
+  // Cerrar el desplegable al seleccionar
+  const grid = document.getElementById('ce-avatar-grid');
+  const chevron = document.getElementById('ce-avatar-chevron');
+  const trigger = document.getElementById('ce-avatar-trigger');
+  if (grid) grid.style.display = 'none';
+  if (chevron) chevron.style.transform = 'rotate(0deg)';
+  if (trigger) trigger.style.borderColor = 'var(--border)';
+}
+
+function toggleAvatarDropdown() {
+  const grid = document.getElementById('ce-avatar-grid');
+  const chevron = document.getElementById('ce-avatar-chevron');
+  const trigger = document.getElementById('ce-avatar-trigger');
+  const isOpen = grid.style.display === 'grid';
+
+  if (isOpen) {
+    grid.style.display = 'none';
+    chevron.style.transform = 'rotate(0deg)';
+    trigger.style.borderColor = 'var(--border)';
+  } else {
+    grid.style.display = 'grid';
+    chevron.style.transform = 'rotate(180deg)';
+    trigger.style.borderColor = 'var(--teal)';
+  }
 }
 
 function abrirNuevoCaso() {
