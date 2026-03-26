@@ -85,6 +85,7 @@ def require_admin(user=Depends(get_current_user)):
 # ---------------------------------------------------------------------------
 class RegisterRequest(BaseModel):
     nombre: str; email: str; password: str; rol: str = "estudiante"
+    genero: str = "otro"
 
 class NewSessionRequest(BaseModel):
     patient_id: Optional[str] = None
@@ -386,6 +387,7 @@ def register(req: RegisterRequest):
     usuario = {
         "id": str(uuid.uuid4()), "email": req.email, "nombre": req.nombre,
         "password": hash_password(req.password), "rol": req.rol,
+        "genero": req.genero,
         "creado_en": datetime.utcnow().isoformat(),
         "institucion_id": institucion_id, "activo": True,
     }
@@ -404,7 +406,8 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=403, detail="Cuenta desactivada. Contacta al administrador.")
     token = create_token({"sub": u["email"], "rol": u["rol"], "nombre": u["nombre"]})
     return {"access_token": token, "token_type": "bearer", "rol": u["rol"],
-            "nombre": u["nombre"], "institucion_id": u.get("institucion_id")}
+            "nombre": u["nombre"], "institucion_id": u.get("institucion_id"),
+            "genero": u.get("genero", "otro")}
 
 
 @app.get("/auth/me")
@@ -1159,7 +1162,7 @@ def editar_usuario(email: str, body: dict, user=Depends(require_admin)):
     items = list(c_usuarios.query_items(f"SELECT * FROM c WHERE c.email = '{email}'", enable_cross_partition_query=True))
     if not items: raise HTTPException(status_code=404, detail="Usuario no encontrado")
     u = items[0]
-    for campo in ["nombre", "rol", "activo", "institucion_id"]:
+    for campo in ["nombre", "rol", "activo", "institucion_id", "genero"]:
         if campo in body: u[campo] = body[campo]
     if body.get("password"): u["password"] = hash_password(body["password"])
     c_usuarios.upsert_item(u)

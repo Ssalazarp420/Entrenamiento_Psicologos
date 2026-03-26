@@ -142,7 +142,7 @@ async function doLogin() {
     const data = await res.json();
 
     token = data.access_token;
-    currentUser = { email, rol: data.rol, nombre: data.nombre };
+    currentUser = { email, rol: data.rol, nombre: data.nombre, genero: data.genero || 'otro' };
     saveSession();
 
     setupHeader();
@@ -173,6 +173,13 @@ function setupHeader() {
     document.body.classList.add('student-mode');
     const greet = document.getElementById('hero-greeting');
     if (greet) greet.textContent = `Hola ${currentUser.nombre} \uD83D\uDC4B`;
+    // Imagen hero según género
+    const heroImg = document.getElementById('hero-student-img');
+    if (heroImg) {
+      heroImg.src = (currentUser.genero === 'hombre')
+        ? 'https://psicologiaiassets.blob.core.windows.net/assets/Hombre_sentado_sin_fondo_2.webp'
+        : 'https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png';
+    }
   } else {
     document.body.classList.remove('student-mode');
   }
@@ -224,6 +231,9 @@ function logout() {
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
   showScreen('screen-login');
+  // Resetear imagen hero al estado por defecto
+  const heroImg = document.getElementById('hero-student-img');
+  if (heroImg) heroImg.src = 'https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png';
 }
 
 // ── Student selection flow helpers ────────────────────────
@@ -1686,7 +1696,7 @@ async function invitarUsuario() {
   try {
     const res = await fetch(`${API}/admin/instituciones/${inst.id}/vincular`, {
       method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ email, rol, institucion_id: inst.id }),
+      body: JSON.stringify({ email, rol, genero: document.getElementById('inv-genero').value, institucion_id: inst.id }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -1761,10 +1771,11 @@ function crearParticular() {
   const email = document.getElementById('np-email').value.trim();
   const password = document.getElementById('np-password').value;
   const rol = document.getElementById('np-rol').value;
+  const genero = document.getElementById('np-genero').value;
   if (!nombre || !email || !password) { alert('Completa todos los campos.'); return; }
   fetch(`${API}/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre, email, password, rol })
+    body: JSON.stringify({ nombre, email, password, rol, genero })
   }).then(r => r.json()).then(d => {
     closeAdminModal('modal-nuevo-particular');
     loadAdmin();

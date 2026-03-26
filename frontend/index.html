@@ -93,7 +93,8 @@
 
           <!-- Imagen hero central -->
           <div class="hero-image-area">
-            <img src="https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png"
+            <img id="hero-student-img"
+              src="https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png"
               alt="Psicóloga" style="width:100%; height:100%; object-fit:contain;" />
             <button class="btn-nuevo-caso" onclick="scrollToSelectionFlow()">
               💬 Nuevo caso
@@ -1003,6 +1004,13 @@
           <option value="estudiante">Estudiante</option>
           <option value="docente">Docente</option>
         </select>
+        <div class="form-field"><label>Género</label>
+          <select id="inv-genero">
+            <option value="otro">Otro / Prefiero no decir</option>
+            <option value="mujer">Mujer</option>
+            <option value="hombre">Hombre</option>
+          </select>
+        </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
         <button class="btn-ghost" onclick="closeAdminModal('modal-invitar-usuario')">Cancelar</button>
@@ -1027,6 +1035,13 @@
           <select id="np-rol">
             <option value="estudiante">Estudiante</option>
             <option value="docente">Docente</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Género</label>
+          <select id="np-genero">
+            <option value="otro">Otro / Prefiero no decir</option>
+            <option value="mujer">Mujer</option>
+            <option value="hombre">Hombre</option>
           </select>
         </div>
       </div>
