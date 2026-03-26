@@ -5,6 +5,7 @@ let currentUser = null;
 let sessionId = null;
 let patientName = '';
 let patientId = '';
+let patientAvatar = '';
 let isLoading = false;
 
 // ── PERSISTENCIA DE SESIÓN ────────────────────────────────
@@ -536,7 +537,14 @@ async function selectPatient(pid, name, age, cardEl) {
     cardEl.innerHTML = `<div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;"></div><div style="color:var(--muted);font-size:.8rem;margin-top:6px;">Iniciando…</div>`;
   }
   patientId = pid; patientName = name;
+  patientAvatar = allPatients[pid]?.avatar || '';
   document.getElementById('card-name').textContent = `${name}, ${age} años`;
+  const chatAvatarEl = document.getElementById('chat-patient-avatar');
+  if (chatAvatarEl) {
+    chatAvatarEl.innerHTML = patientAvatar
+      ? `<img src="${AVATAR_BASE}${patientAvatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<span>${name.charAt(0).toUpperCase()}</span>'" />`
+      : name.charAt(0).toUpperCase();
+  }
   document.getElementById('chat-box').innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Escribe tu primera intervención para iniciar la sesión con ${name}.</span></div>`;
 
   try {
@@ -1108,7 +1116,9 @@ function appendMsg(role, text) {
   } else {
     const isPatient = role === 'patient';
     msg.innerHTML = `
-      <div class="msg-avatar">${isPatient ? patientName.charAt(0) : currentUser.nombre.charAt(0).toUpperCase()}</div>
+      <div class="msg-avatar">${isPatient && patientAvatar
+        ? `<img src="${AVATAR_BASE}${patientAvatar}" alt="${patientName}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${patientName.charAt(0)}'" />`
+        : isPatient ? patientName.charAt(0) : currentUser.nombre.charAt(0).toUpperCase()}</div>
       <div>
         <div class="msg-name">${isPatient ? patientName : currentUser.nombre}</div>
         <div class="msg-bubble">${formatted}</div>
@@ -1123,7 +1133,9 @@ function showTyping() {
   const t = document.createElement('div');
   t.className = 'msg patient'; t.id = 'typing-indicator';
   t.innerHTML = `
-    <div class="msg-avatar">${patientName.charAt(0)}</div>
+    <div class="msg-avatar">${patientAvatar
+      ? `<img src="${AVATAR_BASE}${patientAvatar}" alt="${patientName}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${patientName.charAt(0)}'" />`
+      : patientName.charAt(0)}</div>
     <div>
       <div class="msg-name">${patientName}</div>
       <div class="msg-bubble typing">
