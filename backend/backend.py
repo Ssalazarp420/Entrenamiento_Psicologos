@@ -425,7 +425,7 @@ def list_patients(user=Depends(get_current_user)):
     casos = get_casos_dict()
     return {pid: {"name": p.get("name"), "age": p.get("age"),
                   "descripcion": p.get("descripcion", ""), "categoria": p.get("categoria", "General"),
-                  "dificultad": p.get("dificultad", "—")} for pid, p in casos.items()}
+                  "dificultad": p.get("dificultad", "—"), "avatar": p.get("avatar", "")} for pid, p in casos.items()}
 
 # ---------------------------------------------------------------------------
 # SESSIONS
