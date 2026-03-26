@@ -539,12 +539,6 @@ async function selectPatient(pid, name, age, cardEl) {
   patientId = pid; patientName = name;
   patientAvatar = allPatients[pid]?.avatar || '';
   document.getElementById('card-name').textContent = `${name}, ${age} años`;
-  const chatAvatarEl = document.getElementById('chat-patient-avatar');
-  if (chatAvatarEl) {
-    chatAvatarEl.innerHTML = patientAvatar
-      ? `<img src="${AVATAR_BASE}${patientAvatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<span>${name.charAt(0).toUpperCase()}</span>'" />`
-      : name.charAt(0).toUpperCase();
-  }
   document.getElementById('chat-box').innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Escribe tu primera intervención para iniciar la sesión con ${name}.</span></div>`;
 
   try {
@@ -561,6 +555,20 @@ async function selectPatient(pid, name, age, cardEl) {
     const hb = document.getElementById('alta-btn'); if (hb) { hb.style.display = 'none'; delete hb.dataset.shown; }
     _checkAltaCount = 0;
     showScreen('screen-chat'); setNavActive('screen-selection');
+    const chatAvatarEl = document.getElementById('chat-patient-avatar');
+    if (chatAvatarEl) {
+      if (patientAvatar) {
+        const img = document.createElement('img');
+        img.src = AVATAR_BASE + patientAvatar;
+        img.alt = patientName;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+        img.onerror = () => { chatAvatarEl.textContent = patientName.charAt(0).toUpperCase(); };
+        chatAvatarEl.innerHTML = '';
+        chatAvatarEl.appendChild(img);
+      } else {
+        chatAvatarEl.textContent = patientName.charAt(0).toUpperCase();
+      }
+    }
     document.getElementById('user-input').disabled = false;
     document.getElementById('send-btn').disabled = false;
     document.getElementById('end-btn').disabled = false;
@@ -649,7 +657,9 @@ async function loadRecentSessions() {
         return `
           <div class="recent-card-new ${colorCls}" onclick="reanudarSesion('${s.sesion_id}','${safeName}')">
             <div class="rcn-header">
-              <div class="rcn-avatar">${initial}</div>
+              <div class="rcn-avatar" style="padding:0;overflow:hidden;">${p.avatar
+            ? `<img src="${AVATAR_BASE}${p.avatar}" alt="${s.patient_name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${initial}'" />`
+            : initial}</div>
               <span class="rcn-name">${s.patient_name || '—'}</span>
             </div>
             <div class="rcn-date">${formatDate(s.inicio)}</div>
@@ -821,6 +831,21 @@ async function reanudarSesion(sesionId, patientNameFromList) {
     sessionId = data.session_id;
     patientId = data.patient.id;
     patientName = data.patient.name || patientNameFromList || 'Paciente';
+    patientAvatar = allPatients[patientId]?.avatar || '';
+    const chatAvatarEl = document.getElementById('chat-patient-avatar');
+    if (chatAvatarEl) {
+      if (patientAvatar) {
+        const img = document.createElement('img');
+        img.src = AVATAR_BASE + patientAvatar;
+        img.alt = patientName;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+        img.onerror = () => { chatAvatarEl.textContent = patientName.charAt(0).toUpperCase(); };
+        chatAvatarEl.innerHTML = '';
+        chatAvatarEl.appendChild(img);
+      } else {
+        chatAvatarEl.textContent = patientName.charAt(0).toUpperCase();
+      }
+    }
 
     const cardTitle = document.getElementById('card-name');
     if (cardTitle) cardTitle.textContent = `${patientName}, ${data.patient.age} años`;
