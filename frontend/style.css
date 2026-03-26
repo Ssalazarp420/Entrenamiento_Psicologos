@@ -2595,12 +2595,24 @@ body.student-mode #screen-selection {
   box-shadow: 0 8px 28px rgba(45, 126, 137, .45);
 }
 
-/* Right: recent sessions */
+/* Right: recent sessions - Contenedor a la derecha */
 .hero-right {
   display: flex;
   flex-direction: column;
   gap: 10px;
   z-index: 1;
+
+  /* ── Contenedor glass ── */
+  background: rgba(255, 255, 255, 0.35);
+  /* ← color y opacidad */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  /* ← redondeo */
+  padding: 16px;
+  /* ← espacio interno */
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.20);
 }
 
 .recent-panel-title {
@@ -2608,7 +2620,7 @@ body.student-mode #screen-selection {
   font-size: 1rem;
   color: var(--mauve);
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   text-align: left;
 }
 
