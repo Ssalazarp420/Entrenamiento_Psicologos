@@ -2615,6 +2615,7 @@ body.student-mode #screen-selection {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.20);
 }
 
+/*Titulo del panel de sesiones recientes*/
 .recent-panel-title {
   font-family: 'Playfair Display', serif;
   font-size: 1rem;
@@ -3204,8 +3205,8 @@ body.student-mode {
        Para hacerlo más rosado usa rgba(255, 200, 200, 0.5).
     ──────────────────────────────────────────────────────────── */
 .patient-case-severa {
-  background: rgba(233, 213, 255, 0.55) 0%;
-  border-color: #e9d5ff;
+  background: rgba(245, 159, 153, 0.55) 0%;
+  border-color: #f48b76;
 }
 
 /* Avatar circular encima del nombre */
