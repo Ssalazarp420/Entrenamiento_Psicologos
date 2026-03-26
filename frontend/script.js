@@ -59,7 +59,7 @@ const AVATAR_BASE = (() => {
   // En local (Live Server) el HTML está en /frontend/public/, raíz es el repo
   // En Azure el HTML está en la raíz del sitio
   const isLocal = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
-  return isLocal ? 'public/icons/' : 'icons/';
+  return isLocal ? 'public/icons/' : 'public/icons/';
 })();
 
 // Al cargar la página, intenta restaurar sesión previa
