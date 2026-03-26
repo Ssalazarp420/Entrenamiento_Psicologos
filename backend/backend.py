@@ -127,6 +127,7 @@ class CasoCreate(BaseModel):
     categoria: Optional[str] = "General"
     dificultad: Optional[str] = "Leve"
     specialty_hint: Optional[str] = None
+    avatar: Optional[str] = None
 
 class CategoriaCreate(BaseModel):
     nombre: str
