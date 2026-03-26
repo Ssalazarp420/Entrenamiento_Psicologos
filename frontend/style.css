@@ -332,6 +332,25 @@ main {
   gap: 12px;
 }
 
+/*Contendor del chat*/
+.chat-wrapper {
+  /* ── Contenedor externo glass ── */
+  background: rgba(16, 159, 178, 0.5);
+  /* ← color y opacidad del fondo */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 24px;
+  /* ← redondeo de las esquinas */
+  padding: 16px;
+  /* ← espacio entre el borde y las 3 secciones */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* ← separación entre las 3 secciones */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
 @keyframes fadeDown {
   from {
     opacity: 0;
@@ -770,7 +789,10 @@ main {
 
 #chat-box {
   /* ── Glass — sección 2: área de mensajes ── */
-  background: rgba(255, 255, 255, 0.45);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.70)),
+    /* ← opacidad del overlay blanco encima de la imagen (0=imagen pura, 1=blanco sólido) */
+    url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_chat_2.webp') center center / cover no-repeat;
   /* opacidad del fondo */
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);

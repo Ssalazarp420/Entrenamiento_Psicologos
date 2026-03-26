@@ -207,28 +207,30 @@
 
     <!-- CHAT -->
     <div class="screen" id="screen-chat">
-      <div class="patient-card anim anim-1">
-        <div class="avatar" id="chat-patient-avatar">👤</div>
-        <div class="patient-info">
-          <h2 id="card-name">—</h2>
+      <div class="chat-wrapper">
+        <div class="patient-card anim anim-1">
+          <div class="avatar" id="chat-patient-avatar">👤</div>
+          <div class="patient-info">
+            <h2 id="card-name">—</h2>
+          </div>
+          <div class="badge">Sesión simulada</div>
         </div>
-        <div class="badge">Sesión simulada</div>
-      </div>
-      <div id="chat-box" class="anim anim-2">
-        <div class="empty-state" id="empty-msg">
-          <div class="icon">🛋️</div>
-          <span id="empty-label">Escribe tu primera intervención para iniciar la sesión.</span>
+        <div id="chat-box" class="anim anim-2">
+          <div class="empty-state" id="empty-msg">
+            <div class="icon">🛋️</div>
+            <span id="empty-label">Escribe tu primera intervención para iniciar la sesión.</span>
+          </div>
         </div>
-      </div>
-      <div class="input-bar anim anim-3">
-        <textarea id="user-input" placeholder="Escribe tu intervención como psicólogo..."></textarea>
-        <button class="btn" id="send-btn" onclick="sendMessage()">Enviar</button>
-        <button class="btn" id="end-btn" onclick="endSession()">Guardar y cerrar</button>
-        <button class="btn" id="analyze-btn" onclick="analyzeSession()"
-          style="background:var(--accent2);color:#fff;display:none;">📋 Ver análisis IA</button>
-        <button class="btn" id="alta-btn" onclick="proposeAlta()"
-          style="background:var(--green);color:#1a2e1a;display:none;">✓ Proponer alta</button>
-      </div>
+        <div class="input-bar anim anim-3">
+          <textarea id="user-input" placeholder="Escribe tu intervención como psicólogo..."></textarea>
+          <button class="btn" id="send-btn" onclick="sendMessage()">Enviar</button>
+          <button class="btn" id="end-btn" onclick="endSession()">Guardar y cerrar</button>
+          <button class="btn" id="analyze-btn" onclick="analyzeSession()"
+            style="background:var(--accent2);color:#fff;display:none;">📋 Ver análisis IA</button>
+          <button class="btn" id="alta-btn" onclick="proposeAlta()"
+            style="background:var(--green);color:#1a2e1a;display:none;">✓ Proponer alta</button>
+        </div>
+      </div><!-- /chat-wrapper -->
     </div>
 
     <!-- HISTORIAL -->
@@ -545,7 +547,8 @@
                         <option>Enterprise (ilimitado)</option>
                       </select>
                     </div>
-                    <div class="form-field"><label>Fecha inicio</label><input id="sus-fecha-inicio" type="date" /></div>
+                    <div class="form-field"><label>Fecha inicio</label><input id="sus-fecha-inicio" type="date" />
+                    </div>
                     <div class="form-field"><label>Fecha vencimiento</label><input id="sus-fecha-fin" type="date" />
                     </div>
                     <div class="form-field"><label>Monto mensual (COP)</label><input id="sus-monto-input" type="number"
@@ -584,7 +587,8 @@
                     </div>
                   </div>
                 </div>
-                <button class="btn-accent" style="margin-top:16px" onclick="guardarContrato()">Guardar contrato</button>
+                <button class="btn-accent" style="margin-top:16px" onclick="guardarContrato()">Guardar
+                  contrato</button>
               </div>
               <div class="dtab-panel" id="dtab-pagos">
                 <div class="page-header" style="margin-bottom:16px">
@@ -684,7 +688,8 @@
                 <div class="form-field"><label>Nombre del paciente</label><input id="ce-nombre" type="text"
                     placeholder="Ej: Mateo" /></div>
                 <div class="form-grid-2">
-                  <div class="form-field"><label>Edad</label><input id="ce-edad" type="number" placeholder="22" /></div>
+                  <div class="form-field"><label>Edad</label><input id="ce-edad" type="number" placeholder="22" />
+                  </div>
                   <div class="form-field"><label>Dificultad</label>
                     <select id="ce-dificultad">
                       <option value="Leve">🟢 Leve</option>
@@ -773,7 +778,8 @@
             <div class="panel-header">
               <div>
                 <div class="panel-title">Sesiones de práctica</div>
-                <div class="panel-sub">Resumen de práctica clínica por estudiante y retroalimentación por docente</div>
+                <div class="panel-sub">Resumen de práctica clínica por estudiante y retroalimentación por docente
+                </div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <button id="ses-mode-est" class="btn-ghost"
