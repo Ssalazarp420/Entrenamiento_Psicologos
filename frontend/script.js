@@ -777,28 +777,57 @@ async function loadHistorial() {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-table">No tienes sesiones completadas aún.</td></tr>';
       return;
     }
-    tbody.innerHTML = data.map(s => `
+    tbody.innerHTML = data.map(s => {
+      const p = allPatients[s.patient_id] || {};
+      const initial = (s.patient_name || '?').charAt(0).toUpperCase();
+      const patientAvatar = p.avatar ? `${AVATAR_BASE}${p.avatar}` : null;
+      const safePatientName = (s.patient_name || '').replace(/'/g, "\\'");
+      const scoreClass = s.puntuacion != null ? 'hist-score' : 'hist-score-empty';
+      const scoreText = s.puntuacion != null ? s.puntuacion : '—';
+      const status = (s.estado || 'activa').toLowerCase();
+
+      return `
       <tr data-sid="${s.sesion_id}">
         <td style="text-align:center;">
           <input type="checkbox" class="hist-check" data-sid="${s.sesion_id}"
             onclick="toggleHistSelect(this,'${s.sesion_id}')">
         </td>
-        <td><strong>${s.patient_name || '—'}</strong></td>
-        <td style="font-size:.8rem;color:var(--muted)">${formatDate(s.inicio)}</td>
-        <td style="font-size:.8rem;color:var(--muted)">${formatDuration(s.inicio, s.fin)}</td>
-        <td>${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
-        <td><span class="status-pill status-${s.estado || 'activa'}">${s.estado || '—'}</span></td>
-        <td style="display:flex;gap:6px;align-items:center;">
-          <button class="btn-accent" style="padding:5px 10px;font-size:.75rem;"
-            onclick="reanudarSesion('${s.sesion_id}','${(s.patient_name || '').replace(/'/g, "\\'")}')">
-            ↩ Continuar
-          </button>
-          <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
-            onclick="loadDetalle('${s.sesion_id}')">Ver</button>
-          <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
-            onclick="eliminarSesion('${s.sesion_id}', this)">🗑</button>
+        <td>
+          <div class="hist-patient-cell">
+            <div class="hist-avatar">
+              ${patientAvatar 
+                ? `<img src="${patientAvatar}" alt="${s.patient_name}" onerror="this.parentElement.innerHTML='${initial}'" />`
+                : initial}
+            </div>
+            <strong>${s.patient_name || '—'}</strong>
+          </div>
         </td>
-      </tr>`).join('');
+        <td>
+          <div class="hist-date-box">
+            <span class="hist-date-main">${formatDate(s.inicio)}</span>
+          </div>
+        </td>
+        <td style="color:var(--muted); font-size:.85rem;">${formatDuration(s.inicio, s.fin)}</td>
+        <td>
+          <div class="${scoreClass}">${scoreText}${s.puntuacion != null ? '<small>/100</small>' : ''}</div>
+        </td>
+        <td>
+          <span class="status-pill status-${status}">${status}</span>
+        </td>
+        <td>
+          <div class="hist-actions">
+            <button class="btn-accent" style="padding:6px 12px; font-size:.78rem;"
+              onclick="reanudarSesion('${s.sesion_id}','${safePatientName}')">
+              ↩ Retomar
+            </button>
+            <button class="btn-ghost" style="padding:6px 12px; font-size:.78rem;"
+              onclick="loadDetalle('${s.sesion_id}')">Detalles</button>
+            <button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;"
+              onclick="eliminarSesion('${s.sesion_id}', this)">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-table" style="color:var(--red)">Error cargando historial.</td></tr>';
   }
@@ -1053,16 +1082,30 @@ async function cargarEstudiantesGrupo(grupoId, emails) {
     tbody.innerHTML = emails.map(email => {
       const ses = porEst[email] || [];
       const ultima = ses[0];
+      const name = email.split('@')[0];
+      const initial = name.charAt(0).toUpperCase();
+
       return `<tr>
-        <td><strong>${email.split('@')[0]}</strong></td>
+        <td>
+          <div class="hist-patient-cell">
+            <div class="hist-avatar">${initial}</div>
+            <strong>${name}</strong>
+          </div>
+        </td>
         <td style="font-size:.8rem;color:var(--muted)">${email}</td>
-        <td>${ses.length}</td>
-        <td>${ultima?.puntuacion != null ? `${ultima.puntuacion}/100` : '—'}</td>
-        <td style="display:flex;gap:6px;">
-          <button class="btn-ghost" style="padding:5px 10px;font-size:.75rem;"
-            onclick="verSesionesEstudiante('${email}', '${email.split('@')[0]}')">Ver sesiones</button>
-          <button class="btn-danger" style="padding:5px 10px;font-size:.75rem;"
-            onclick="quitarEstudianteGrupo('${email}')">Quitar</button>
+        <td style="text-align:center; font-weight:600;">${ses.length}</td>
+        <td>
+          ${ultima?.puntuacion != null 
+            ? `<div class="hist-score">${ultima.puntuacion}<small>/100</small></div>` 
+            : '<span class="hist-score-empty">—</span>'}
+        </td>
+        <td>
+          <div class="hist-actions">
+            <button class="btn-ghost" style="padding:6px 12px; font-size:.78rem;"
+              onclick="verSesionesEstudiante('${email}', '${name}')">Ver sesiones</button>
+            <button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;"
+              onclick="quitarEstudianteGrupo('${email}')">🗑</button>
+          </div>
         </td>
       </tr>`;
     }).join('');
@@ -1132,29 +1175,44 @@ async function verSesionesEstudiante(email, nombre) {
       list.innerHTML = '<div class="ov-empty">Este estudiante no tiene sesiones completadas.</div>';
       return;
     }
-    list.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-      <thead><tr style="background:rgba(255,255,255,.03);">
-        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Paciente</th>
-        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Fecha</th>
-        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Duración</th>
-        <th style="padding:10px 12px;text-align:left;font-size:.78rem;color:var(--muted);">Puntuación</th>
-        <th style="padding:10px 12px;"></th>
-      </tr></thead>
+    list.innerHTML = `<div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Paciente</th>
+          <th>Fecha</th>
+          <th>Duración</th>
+          <th style="text-align:center;">Puntuación</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody>
-        ${ses.map(s => `<tr style="border-top:1px solid var(--border);">
-          <td style="padding:10px 12px;font-size:.88rem;">${s.patient_name || '—'}</td>
-          <td style="padding:10px 12px;font-size:.8rem;color:var(--muted);">${formatDate(s.inicio)}</td>
-          <td style="padding:10px 12px;font-size:.8rem;color:var(--muted);">${formatDuration(s.inicio, s.fin)}</td>
-          <td style="padding:10px 12px;">${s.puntuacion != null ? `<strong>${s.puntuacion}</strong>/100` : '—'}</td>
-          <td style="padding:10px 12px;">
-            <button class="btn-accent" style="padding:5px 12px;font-size:.75rem;"
-              onclick="abrirEscribirRetro('${s.sesion_id}','${(s.patient_name || '').replace(/'/g, "\\'")}')">
-              ✏️ Comentar
-            </button>
+        ${ses.map(s => `<tr>
+          <td>
+            <div class="hist-patient-cell">
+              <strong>${s.patient_name || '—'}</strong>
+            </div>
+          </td>
+          <td style="font-size:.85rem;color:var(--muted);">${formatDate(s.inicio)}</td>
+          <td style="font-size:.8rem;color:var(--muted);">${formatDuration(s.inicio, s.fin)}</td>
+          <td>
+            <div style="display:flex; justify-content:center;">
+              ${s.puntuacion != null 
+                ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>` 
+                : '<span class="hist-score-empty">—</span>'}
+            </div>
+          </td>
+          <td>
+            <div class="hist-actions">
+              <button class="btn-accent" style="padding:6px 12px; font-size:.78rem;"
+                onclick="abrirEscribirRetro('${s.sesion_id}','${(s.patient_name || '').replace(/'/g, "\\'")}')">
+                ✏️ Comentar
+              </button>
+            </div>
           </td>
         </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table></div>`;
   } catch (e) {
     list.innerHTML = '<div class="ov-empty" style="color:var(--red)">Error cargando sesiones.</div>';
   }
@@ -1727,23 +1785,51 @@ async function loadInstUsuarios(instId) {
     const estudiantes = data.filter(u => u.rol === 'estudiante');
 
     document.getElementById('inst-docentes-tbody').innerHTML = docentes.length
-      ? docentes.map(u => `<tr>
-          <td>${u.nombre}</td>
+      ? docentes.map(u => {
+          const initial = (u.nombre || '?').charAt(0).toUpperCase();
+          return `<tr>
+          <td>
+            <div class="hist-patient-cell">
+              <div class="hist-avatar">${initial}</div>
+              <strong>${u.nombre}</strong>
+            </div>
+          </td>
           <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
-          <td>—</td>
-          <td><span class="status-pill ${u.activo !== false ? 'status-completada' : 'status-activa'}">${u.activo !== false ? 'Activo' : 'Inactivo'}</span></td>
-          <td><button class="btn-danger" onclick="desvincularUsuario('${u.email}','${instId}')">Desvincular</button></td>
-        </tr>`).join('')
+          <td style="text-align:center;color:var(--muted)">—</td>
+          <td>
+            <span class="status-pill ${u.activo !== false ? 'status-completada' : 'status-activa'}">
+              ${u.activo !== false ? 'Activo' : 'Inactivo'}
+            </span>
+          </td>
+          <td>
+            <div class="hist-actions">
+              <button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;"
+                onclick="desvincularUsuario('${u.email}','${instId}')">🗑</button>
+            </div>
+          </td>
+        </tr>`}).join('')
       : '<tr><td colspan="5" class="empty-table">Sin docentes vinculados</td></tr>';
 
     document.getElementById('inst-estudiantes-tbody').innerHTML = estudiantes.length
-      ? estudiantes.map(u => `<tr>
-          <td>${u.nombre}</td>
+      ? estudiantes.map(u => {
+          const initial = (u.nombre || '?').charAt(0).toUpperCase();
+          return `<tr>
+          <td>
+            <div class="hist-patient-cell">
+              <div class="hist-avatar">${initial}</div>
+              <strong>${u.nombre}</strong>
+            </div>
+          </td>
           <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
-          <td>—</td>
+          <td style="text-align:center;color:var(--muted)">—</td>
           <td style="font-size:.78rem;color:var(--muted)">${formatDate(u.creado_en)}</td>
-          <td><button class="btn-danger" onclick="desvincularUsuario('${u.email}','${instId}')">Desvincular</button></td>
-        </tr>`).join('')
+          <td>
+            <div class="hist-actions">
+              <button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;"
+                onclick="desvincularUsuario('${u.email}','${instId}')">🗑</button>
+            </div>
+          </td>
+        </tr>`}).join('')
       : '<tr><td colspan="5" class="empty-table">Sin estudiantes vinculados</td></tr>';
   } catch (e) {
     document.getElementById('inst-docentes-tbody').innerHTML = '<tr><td colspan="5" class="empty-table" style="color:var(--red)">Error cargando usuarios</td></tr>';
@@ -1753,14 +1839,20 @@ async function loadInstUsuarios(instId) {
 function renderInstPagos(nombreInst) {
   const pagos = (adminData.pagos || []).filter(p => p.origen === nombreInst);
   document.getElementById('inst-pagos-tbody').innerHTML = pagos.length
-    ? pagos.map(p => `<tr>
-        <td style="font-size:.8rem">${formatDate(p.fecha)}</td>
-        <td><strong>$${Number(p.monto || 0).toLocaleString()}</strong></td>
+    ? pagos.map(p => {
+        const status = (p.estado || 'pendiente').toLowerCase();
+        return `<tr>
+        <td>
+          <div class="hist-date-box">
+            <span class="hist-date-main">${formatDate(p.fecha)}</span>
+          </div>
+        </td>
+        <td><strong style="color:var(--teal-deep);font-size:1.05rem;">$${Number(p.monto || 0).toLocaleString()}</strong></td>
         <td style="font-size:.8rem;color:var(--muted)">${p.metodo || '—'}</td>
-        <td style="font-size:.78rem;color:var(--muted)">${p.referencia || '—'}</td>
-        <td><span class="status-pill ${p.estado === 'confirmado' ? 'status-completada' : 'status-activa'}">${p.estado || '—'}</span></td>
+        <td style="font-size:.78rem;color:var(--muted);font-family:monospace;">${p.referencia || '—'}</td>
+        <td><span class="status-pill status-${status === 'confirmado' ? 'completada' : 'activa'}">${status}</span></td>
         <td></td>
-      </tr>`).join('')
+      </tr>`}).join('')
     : '<tr><td colspan="6" class="empty-table">Sin pagos registrados</td></tr>';
 }
 
@@ -1935,16 +2027,29 @@ function filtrarParticulares() {
   if (q) users = users.filter(u => u.nombre?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
   const tbody = document.getElementById('part-tbody');
   tbody.innerHTML = users.length
-    ? users.map(u => `<tr>
-        <td>${u.nombre}</td>
+    ? users.map(u => {
+        const initial = (u.nombre || '?').charAt(0).toUpperCase();
+        return `<tr>
+        <td>
+          <div class="hist-patient-cell">
+            <div class="hist-avatar">${initial}</div>
+            <strong>${u.nombre}</strong>
+          </div>
+        </td>
         <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
-        <td><span class="role-badge role-${u.rol}">${u.rol}</span></td>
+        <td><span class="status-pill status-activa" style="text-transform:uppercase; font-size:10px;">${u.rol}</span></td>
         <td style="font-size:.78rem;color:var(--muted)">—</td>
         <td style="font-size:.78rem;color:var(--muted)">—</td>
-        <td style="font-size:.78rem;color:var(--muted)">$0</td>
-        <td><button class="btn-detail" onclick="verParticular('${u.email}')">Ver</button>
-            ${u.email !== currentUser?.email ? `<button class="btn-danger" onclick="deleteUser('${u.email}')">Eliminar</button>` : ''}</td>
-      </tr>`).join('')
+        <td><strong style="color:var(--teal-deep)">$0</strong></td>
+        <td>
+          <div class="hist-actions">
+            <button class="btn-ghost" style="padding:6px 12px; font-size:.78rem;" onclick="verParticular('${u.email}')">Ver</button>
+            ${u.email !== currentUser?.email 
+              ? `<button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;" onclick="deleteUser('${u.email}')">🗑</button>` 
+              : ''}
+          </div>
+        </td>
+      </tr>`}).join('')
     : '<tr><td colspan="7" class="empty-table">Sin usuarios particulares</td></tr>';
 }
 
@@ -2401,17 +2506,34 @@ function renderSesionesAdminEstudiantes(data) {
   const tbody = document.getElementById('admin-ses-tbody');
   if (!tbody) return;
   tbody.innerHTML = data.length
-    ? data.map(s => `<tr>
+    ? data.map(s => {
+        const name = s.nombre || (s.usuario_id || '—').split('@')[0];
+        const initial = name.charAt(0).toUpperCase();
+        return `<tr>
         <td>
-          <div style="font-size:.9rem;font-weight:600;">${s.nombre || (s.usuario_id || '—').split('@')[0]}</div>
-          <div style="font-size:.78rem;color:var(--muted);">${s.usuario_id || '—'}</div>
+          <div class="hist-patient-cell">
+            <div class="hist-avatar">${initial}</div>
+            <div style="display:flex; flex-direction:column;">
+              <strong>${name}</strong>
+              <small style="color:var(--muted); font-size:11px;">${s.usuario_id || '—'}</small>
+            </div>
+          </div>
         </td>
-        <td>${s.total_sesiones || 0}</td>
-        <td>${s.minutos_totales != null ? s.minutos_totales + ' min' : '—'}</td>
-        <td>${s.puntuacion_promedio != null ? `<strong>${s.puntuacion_promedio}</strong>/100` : '—'}</td>
-        <td style="font-size:.78rem;color:var(--muted);">${s.ultima_sesion ? formatDate(s.ultima_sesion) : '—'}</td>
-        <td><button class="btn-detail" onclick="verSesionesEstudianteAdmin('${s.usuario_id}')">Ver detalle</button></td>
-      </tr>`).join('')
+        <td style="text-align:center; font-weight:600;">${s.total_sesiones || 0}</td>
+        <td style="color:var(--muted); font-size:.85rem;">${s.minutos_totales != null ? s.minutos_totales + ' min' : '—'}</td>
+        <td style="text-align:center;">
+          ${s.puntuacion_promedio != null 
+            ? `<div class="hist-score">${s.puntuacion_promedio}<small>/100</small></div>` 
+            : '<span class="hist-score-empty">—</span>'}
+        </td>
+        <td style="font-size:.85rem;color:var(--muted);">${s.ultima_sesion ? formatDate(s.ultima_sesion) : '—'}</td>
+        <td>
+          <div class="hist-actions">
+            <button class="btn-ghost" style="padding:6px 12px; font-size:.78rem;"
+              onclick="verSesionesEstudianteAdmin('${s.usuario_id}')">Ver detalle</button>
+          </div>
+        </td>
+      </tr>`}).join('')
     : '<tr><td colspan="6" class="empty-table">Sin sesiones registradas</td></tr>';
 }
 
@@ -2419,17 +2541,30 @@ function renderSesionesAdminDocentes(data) {
   const tbody = document.getElementById('admin-ses-tbody');
   if (!tbody) return;
   tbody.innerHTML = data.length
-    ? data.map(d => `<tr>
+    ? data.map(d => {
+        const name = d.docente_nombre || (d.docente_email || '—').split('@')[0];
+        const initial = name.charAt(0).toUpperCase();
+        return `<tr>
         <td>
-          <div style="font-size:.9rem;font-weight:600;">${d.docente_nombre || (d.docente_email || '—').split('@')[0]}</div>
-          <div style="font-size:.78rem;color:var(--muted);">${d.docente_email || '—'}</div>
+          <div class="hist-patient-cell">
+            <div class="hist-avatar">${initial}</div>
+            <div style="display:flex; flex-direction:column;">
+              <strong>${name}</strong>
+              <small style="color:var(--muted); font-size:11px;">${d.docente_email || '—'}</small>
+            </div>
+          </div>
         </td>
-        <td>${d.total_retro || 0}</td>
-        <td>${d.total_estudiantes || 0}</td>
-        <td style="font-size:.78rem;color:var(--muted);">${d.ultima_retro ? formatDate(d.ultima_retro) : '—'}</td>
-        <td><button class="btn-detail" onclick="verDocenteEstudiantesAdmin('${d.docente_email}')">Ver estudiantes</button></td>
+        <td style="text-align:center; font-weight:600;">${d.total_retro || 0}</td>
+        <td style="text-align:center; font-weight:600;">${d.total_estudiantes || 0}</td>
+        <td style="font-size:.85rem;color:var(--muted);">${d.ultima_retro ? formatDate(d.ultima_retro) : '—'}</td>
+        <td>
+          <div class="hist-actions">
+            <button class="btn-ghost" style="padding:6px 12px; font-size:.78rem;"
+              onclick="verDocenteEstudiantesAdmin('${d.docente_email}')">Ver estudiantes</button>
+          </div>
+        </td>
         <td></td>
-      </tr>`).join('')
+      </tr>`}).join('')
     : '<tr><td colspan="6" class="empty-table">Sin retroalimentaciones registradas</td></tr>';
 }
 
@@ -2617,15 +2752,21 @@ function filtrarPagos() {
   if (mes) pagos = pagos.filter(p => p.fecha?.startsWith(mes));
   const tbody = document.getElementById('cont-tbody');
   tbody.innerHTML = pagos.length
-    ? pagos.map(p => `<tr>
-        <td style="font-size:.8rem">${formatDate(p.fecha)}</td>
-        <td>${p.origen || '—'}</td>
-        <td><span class="inst-pill ${p.tipo === 'institucional' ? 'inst-pill-plan' : 'inst-pill-active'}">${p.tipo || '—'}</span></td>
-        <td><strong>$${Number(p.monto || 0).toLocaleString()}</strong></td>
-        <td style="font-size:.78rem;color:var(--muted)">${p.metodo || '—'}</td>
-        <td style="font-size:.78rem;color:var(--muted)">${p.referencia || '—'}</td>
-        <td><span class="status-pill ${p.estado === 'confirmado' ? 'status-completada' : 'status-activa'}">${p.estado || 'pendiente'}</span></td>
-      </tr>`).join('')
+    ? pagos.map(p => {
+        const status = (p.estado || 'pendiente').toLowerCase();
+        return `<tr>
+        <td>
+          <div class="hist-date-box">
+            <span class="hist-date-main">${formatDate(p.fecha)}</span>
+          </div>
+        </td>
+        <td><strong>${p.origen || '—'}</strong></td>
+        <td><span class="status-pill status-alta" style="font-size:10px;">${p.tipo || '—'}</span></td>
+        <td><strong style="color:var(--teal-deep);font-size:1.05rem;">$${Number(p.monto || 0).toLocaleString()}</strong></td>
+        <td style="font-size:.8rem;color:var(--muted)">${p.metodo || '—'}</td>
+        <td style="font-size:.78rem;color:var(--muted);font-family:monospace;">${p.referencia || '—'}</td>
+        <td><span class="status-pill status-${status === 'confirmado' ? 'completada' : 'activa'}">${status === 'confirmado' ? 'Confirmado' : 'Pendiente'}</span></td>
+      </tr>`}).join('')
     : '<tr><td colspan="7" class="empty-table">Sin registros de pago</td></tr>';
 }
 

@@ -1014,72 +1014,211 @@ em {
   color: var(--red);
 }
 
-/* TABLES */
+/* ── TABLES — Premium Design ─────────────────────────── */
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .table-wrap {
+  width: 100%;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 thead tr {
-  background: var(--surface);
+  background: rgba(108, 193, 206, 0.04);
+  border-bottom: 1px solid var(--border);
 }
 
 th {
-  padding: 14px 18px;
+  padding: 16px 20px;
   text-align: left;
-  font-size: .72rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-weight: 700;
   color: var(--muted);
-  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 td {
-  padding: 14px 18px;
-  font-size: .85rem;
-  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
 }
 
-tr:hover td {
-  background: rgba(255, 255, 255, .02);
+tbody tr:last-child td {
+  border-bottom: none;
 }
 
+tbody tr {
+  transition: all 0.2s;
+}
+
+tbody tr:hover {
+  background: #fbfdff;
+}
+
+.empty-table {
+  padding: 60px 40px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Status Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.status-activa {
+  background: rgba(217, 119, 6, 0.1);
+  color: #D97706;
+}
+
+.status-completada {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+}
+
+.status-expirada {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+}
+
+.status-alta {
+  background: rgba(108, 193, 206, 0.12);
+  color: var(--teal-deep);
+}
+
+/* Row elements */
+.hist-patient-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hist-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal-deep);
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(108,193,206,0.1), rgba(108,193,206,0.2));
+}
+
+.hist-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hist-date-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.hist-date-main {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hist-score {
+  font-weight: 800;
+  color: var(--teal-deep);
+  font-size: 1.05rem;
+}
+
+.hist-score-empty {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.hist-score small {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* Custom Checkbox */
+.hist-check {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--teal);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Score Badges Logic */
 .score-pill {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: .75rem;
-  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 42px;
 }
 
 .score-high {
-  background: rgba(52, 211, 153, .15);
-  color: var(--green);
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
 }
 
 .score-mid {
-  background: rgba(251, 191, 36, .15);
-  color: var(--yellow);
+  background: rgba(217, 119, 6, 0.1);
+  color: #D97706;
 }
 
 .score-low {
   background: rgba(248, 113, 113, .15);
   color: var(--red);
+}
+
+/* Actions in tables */
+.hist-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Student-mode History specific tweaks */
+body.student-mode .screen#screen-historial {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .status-pill {
@@ -2210,6 +2349,7 @@ tr:hover td {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 
 /* ── Pantalla selección estudiante (light mode) ── */
 .student-home {
