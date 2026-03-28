@@ -438,8 +438,76 @@ def new_session(req: NewSessionRequest, user=Depends(get_current_user)):
         casos = get_casos_dict()
         if patient_id not in casos:
             raise HTTPException(status_code=400, detail=f"Perfil '{patient_id}' no encontrado.")
-        session_id = str(uuid.uuid4())
         profile = casos[patient_id]
+
+        # ── Verificar si ya existe una sesión activa (sin alta) con este paciente ──
+        existing_query = (
+            "SELECT * FROM c "
+            f"WHERE c.usuario_id = '{user['email']}' "
+            f"AND c.patient_id = '{patient_id}' "
+            "AND (NOT IS_DEFINED(c.alta) OR c.alta = false)"
+        )
+        existing_sessions = list(c_sesiones.query_items(existing_query, enable_cross_partition_query=True))
+        if existing_sessions:
+            # Ordenar por inicio descendente para tomar la más reciente
+            existing_sessions.sort(key=lambda s: s.get("inicio", ""), reverse=True)
+            ses = existing_sessions[0]
+            existing_id = ses["sesion_id"]
+
+            # Reconstruir historial desde memoria o transcripción guardada
+            history_for_client = []
+            if existing_id in sessions:
+                for m in sessions[existing_id]["messages"]:
+                    if isinstance(m, HumanMessage):
+                        history_for_client.append({"role": "psi", "text": m.content})
+                    elif isinstance(m, AIMessage):
+                        history_for_client.append({"role": "patient", "text": m.content})
+            else:
+                det_items = list(c_detalle.query_items(
+                    f"SELECT * FROM c WHERE c.sesion_id = '{existing_id}'",
+                    enable_cross_partition_query=True,
+                ))
+                mensajes_lm: List = [SystemMessage(content=profile["instruccion"])]
+                if det_items:
+                    transcripcion = det_items[0].get("transcripcion", "") or ""
+                    for linea in transcripcion.splitlines():
+                        linea = linea.strip()
+                        if not linea:
+                            continue
+                        if linea.startswith("Psicólogo:"):
+                            contenido = linea.split(":", 1)[1].strip()
+                            if contenido:
+                                mensajes_lm.append(HumanMessage(content=contenido))
+                                history_for_client.append({"role": "psi", "text": contenido})
+                        elif linea.startswith(f"{profile['name']}:"):
+                            contenido = linea.split(":", 1)[1].strip()
+                            if contenido:
+                                mensajes_lm.append(AIMessage(content=contenido))
+                                history_for_client.append({"role": "patient", "text": contenido})
+                # Registrar en memoria para continuar el chat
+                sessions[existing_id] = {
+                    "messages": mensajes_lm,
+                    "patient_id": patient_id,
+                    "usuario_id": user["email"],
+                    "inicio": ses.get("inicio") or datetime.utcnow().isoformat(),
+                }
+
+            logger.info(
+                "[session/new] Sesión activa existente encontrada. user=%s patient_id=%s session_id=%s",
+                user["email"], patient_id, existing_id,
+            )
+            return {
+                "session_id": existing_id,
+                "resumed": True,
+                "patient": {
+                    "id": patient_id, "name": profile["name"], "age": profile["age"],
+                    "descripcion": profile.get("descripcion", ""),
+                },
+                "history": history_for_client,
+            }
+
+        # ── No hay sesión activa: crear una nueva ──
+        session_id = str(uuid.uuid4())
         sessions[session_id] = {
             "messages": [SystemMessage(content=profile["instruccion"])],
             "patient_id": patient_id, "usuario_id": user["email"],
@@ -450,7 +518,7 @@ def new_session(req: NewSessionRequest, user=Depends(get_current_user)):
             "patient_id": patient_id, "patient_name": profile["name"],
             "inicio": datetime.utcnow().isoformat(), "estado": "activa", "puntuacion": None,
         })
-        return {"session_id": session_id, "patient": {
+        return {"session_id": session_id, "resumed": False, "patient": {
             "id": patient_id, "name": profile["name"], "age": profile["age"],
             "descripcion": profile.get("descripcion", ""),
         }}

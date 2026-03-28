@@ -534,12 +534,10 @@ async function selectPatient(pid, name, age, cardEl) {
   const orig = cardEl ? cardEl.innerHTML : null;
   if (cardEl) {
     cardEl.style.opacity = '0.6'; cardEl.style.pointerEvents = 'none';
-    cardEl.innerHTML = `<div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;"></div><div style="color:var(--muted);font-size:.8rem;margin-top:6px;">Iniciando…</div>`;
+    cardEl.innerHTML = `<div class="spinner" style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;"></div><div style="color:var(--muted);font-size:.8rem;margin-top:6px;">Cargando…</div>`;
   }
   patientId = pid; patientName = name;
   patientAvatar = allPatients[pid]?.avatar || '';
-  document.getElementById('card-name').textContent = `${name}, ${age} años`;
-  document.getElementById('chat-box').innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Escribe tu primera intervención para iniciar la sesión con ${name}.</span></div>`;
 
   try {
     const res = await fetch(`${API}/session/new`, {
@@ -550,11 +548,9 @@ async function selectPatient(pid, name, age, cardEl) {
     const data = await res.json();
     if (!data.session_id) throw new Error('Sin session_id en respuesta');
     sessionId = data.session_id;
-    // Ocultar/resetear botones extra
-    const ab = document.getElementById('analyze-btn'); if (ab) { ab.style.display = 'none'; }
-    const hb = document.getElementById('alta-btn'); if (hb) { hb.style.display = 'none'; delete hb.dataset.shown; }
-    _checkAltaCount = 0;
-    showScreen('screen-chat'); setNavActive('screen-selection');
+
+    // ── Configurar header del chat ──
+    document.getElementById('card-name').textContent = `${name}, ${age} años`;
     const chatAvatarEl = document.getElementById('chat-patient-avatar');
     if (chatAvatarEl) {
       if (patientAvatar) {
@@ -569,6 +565,31 @@ async function selectPatient(pid, name, age, cardEl) {
         chatAvatarEl.textContent = patientName.charAt(0).toUpperCase();
       }
     }
+
+    const chatBox = document.getElementById('chat-box');
+
+    if (data.resumed) {
+      // ── Sesión previa activa: cargar historial existente ──
+      chatBox.innerHTML = '';
+      const history = data.history || [];
+      if (history.length === 0) {
+        chatBox.innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Continúa tu sesión con ${name}. Escribe tu siguiente intervención.</span></div>`;
+      } else {
+        history.forEach(m => { if (m && m.text && m.role) appendMsg(m.role, m.text); });
+      }
+      // Mostrar botón "Ver análisis" si ya hay transcripción
+      const ab = document.getElementById('analyze-btn'); if (ab) ab.style.display = history.length ? '' : 'none';
+      showToast(`↩ Retomando sesión previa con ${name}`);
+    } else {
+      // ── Sesión nueva ──
+      chatBox.innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Escribe tu primera intervención para iniciar la sesión con ${name}.</span></div>`;
+      const ab = document.getElementById('analyze-btn'); if (ab) { ab.style.display = 'none'; }
+    }
+
+    // Ocultar/resetear botón alta
+    const hb = document.getElementById('alta-btn'); if (hb) { hb.style.display = 'none'; delete hb.dataset.shown; }
+    _checkAltaCount = 0;
+    showScreen('screen-chat'); setNavActive('screen-selection');
     document.getElementById('user-input').disabled = false;
     document.getElementById('send-btn').disabled = false;
     document.getElementById('end-btn').disabled = false;
