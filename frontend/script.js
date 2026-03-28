@@ -208,12 +208,46 @@ function setupHeader() {
     btn.textContent = t.label;
     btn.dataset.screen = t.id;
     btn.onclick = () => {
-      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      t.action();
+      confirmNavigation(() => {
+        document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        t.action();
+      });
     };
     tabs.appendChild(btn);
   });
+}
+
+/**
+ * Intercepta la navegación si hay una sesión activa sin guardar.
+ * @param {Function} callback - Acción a realizar si el usuario confirma o no hay sesión.
+ */
+function confirmNavigation(callback) {
+  if (!sessionId) {
+    callback();
+    return;
+  }
+
+  // Si hay sessionId, mostramos el modal estético de advertencia
+  const modal = document.getElementById('modal-warning');
+  const patientSpan = document.getElementById('warn-patient-name');
+  if (patientSpan) patientSpan.textContent = patientName || 'el paciente';
+
+  const confirmBtn = document.getElementById('confirm-leave-btn');
+  // Limpiar listeners previos para evitar ejecuciones múltiples
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+  newConfirmBtn.onclick = () => {
+    const sid = sessionId;
+    sessionId = null; // Limpiamos para que no vuelva a saltar la advertencia
+    closeAdminModal('modal-warning');
+    callback();
+    // Opcionalmente podrías limpiar la sesión en el servidor aquí, pero mejor dejarla 
+    // para que el usuario pueda retomarla después si no le dio "terminar".
+  };
+
+  openAdminModal('modal-warning');
 }
 
 function routeByRole() {
@@ -222,19 +256,21 @@ function routeByRole() {
 }
 
 function logout() {
-  token = null; currentUser = null; sessionId = null;
-  clearSession();
-  document.body.classList.remove('student-mode');
-  const logoText = document.getElementById('logo-text');
-  if (logoText) logoText.innerHTML = 'Sim<span>Psi</span>';
-  document.getElementById('header-auth').style.display = 'none';
-  document.getElementById('header-guest').style.display = 'block';
-  document.getElementById('login-email').value = '';
-  document.getElementById('login-password').value = '';
-  showScreen('screen-login');
-  // Resetear imagen hero al estado por defecto
-  const heroImg = document.getElementById('hero-student-img');
-  if (heroImg) heroImg.src = 'https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png';
+  confirmNavigation(() => {
+    token = null; currentUser = null; sessionId = null;
+    clearSession();
+    document.body.classList.remove('student-mode');
+    const logoText = document.getElementById('logo-text');
+    if (logoText) logoText.innerHTML = 'Sim<span>Psi</span>';
+    document.getElementById('header-auth').style.display = 'none';
+    document.getElementById('header-guest').style.display = 'block';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+    showScreen('screen-login');
+    // Resetear imagen hero al estado por defecto
+    const heroImg = document.getElementById('hero-student-img');
+    if (heroImg) heroImg.src = 'https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png';
+  });
 }
 
 // ── Student selection flow helpers ────────────────────────
@@ -769,23 +805,30 @@ async function loadHistorial() {
 }
 
 async function eliminarSesion(sesionId, btn) {
-  if (!confirm('¿Eliminar esta sesión?\nSe borrará completamente incluyendo el análisis y las retroalimentaciones.')) return;
-  btn.disabled = true; btn.textContent = '…';
-  try {
-    const res = await fetch(`${API}/historial/sesion/${sesionId}`, {
-      method: 'DELETE', headers: authHeaders()
-    });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    showToast('Sesión eliminada');
-    if (historialSeleccionadas.has(sesionId)) {
-      historialSeleccionadas.delete(sesionId);
-      actualizarBotonEliminarSeleccionadas();
+  showConfirmModal({
+    title: '¿Eliminar sesión?',
+    msg: 'Se borrará completamente incluyendo el análisis y las retroalimentaciones. Esta acción <strong>no se puede deshacer</strong>.',
+    icon: '🗑️',
+    confirmText: 'Sí, eliminar',
+    onConfirm: async () => {
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const res = await fetch(`${API}/historial/sesion/${sesionId}`, {
+          method: 'DELETE', headers: authHeaders()
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        showToast('Sesión eliminada');
+        if (historialSeleccionadas.has(sesionId)) {
+          historialSeleccionadas.delete(sesionId);
+          actualizarBotonEliminarSeleccionadas();
+        }
+        loadHistorial();
+      } catch (e) {
+        showToast('Error al eliminar: ' + e.message, true);
+        btn.disabled = false; btn.textContent = '🗑';
+      }
     }
-    loadHistorial();
-  } catch (e) {
-    showToast('Error al eliminar: ' + e.message, true);
-    btn.disabled = false; btn.textContent = '🗑';
-  }
+  });
 }
 
 function toggleHistSelect(checkbox, sesionId) {
@@ -815,25 +858,33 @@ function actualizarBotonEliminarSeleccionadas() {
 async function eliminarSesionesSeleccionadas() {
   const ids = Array.from(historialSeleccionadas);
   if (!ids.length) return;
-  if (!confirm(`¿Eliminar ${ids.length} sesión(es)?\nSe borrarán completamente incluyendo el análisis y las retroalimentaciones.`)) return;
-  let ok = 0, fail = 0;
-  for (const sid of ids) {
-    try {
-      const res = await fetch(`${API}/historial/sesion/${sid}`, {
-        method: 'DELETE', headers: authHeaders()
-      });
-      if (res.ok) ok++;
-      else fail++;
-    } catch (e) {
-      fail++;
+
+  showConfirmModal({
+    title: `¿Eliminar ${ids.length} sesiones?`,
+    msg: `Se borrarán completamente ${ids.length} sesiones incluyendo sus análisis y retroalimentaciones. <strong>Esta acción no se puede deshacer</strong>.`,
+    icon: '🗑️',
+    confirmText: `Eliminar ${ids.length} sesiones`,
+    onConfirm: async () => {
+      let ok = 0, fail = 0;
+      for (const sid of ids) {
+        try {
+          const res = await fetch(`${API}/historial/sesion/${sid}`, {
+            method: 'DELETE', headers: authHeaders()
+          });
+          if (res.ok) ok++;
+          else fail++;
+        } catch (e) {
+          fail++;
+        }
+      }
+      showToast(`Sesiones eliminadas: ${ok}${fail ? ` · Errores: ${fail}` : ''}`);
+      historialSeleccionadas = new Set();
+      const selectAll = document.getElementById('hist-select-all');
+      if (selectAll) selectAll.checked = false;
+      actualizarBotonEliminarSeleccionadas();
+      loadHistorial();
     }
-  }
-  showToast(`Sesiones eliminadas: ${ok}${fail ? ` · Errores: ${fail}` : ''}`);
-  historialSeleccionadas = new Set();
-  const selectAll = document.getElementById('hist-select-all');
-  if (selectAll) selectAll.checked = false;
-  actualizarBotonEliminarSeleccionadas();
-  loadHistorial();
+  });
 }
 
 async function reanudarSesion(sesionId, patientNameFromList) {
@@ -954,7 +1005,12 @@ async function abrirGrupoDocente(grupoId) {
 }
 
 async function eliminarGrupoDocente(grupoId, nombre) {
-  if (!confirm(`¿Eliminar el grupo "${nombre}"?\nLos estudiantes no se borran, solo el grupo.`)) return;
+  showConfirmModal({
+    title: '¿Eliminar grupo?',
+    msg: `¿Estás seguro de eliminar el grupo "<strong>${nombre}</strong>"? Los estudiantes no se borrarán, solo la asociación al grupo.`,
+    icon: '📂',
+    confirmText: 'Sí, eliminar grupo',
+    onConfirm: async () => {
   try {
     const res = await fetch(`${API}/docente/grupos/${grupoId}`, {
       method: 'DELETE', headers: authHeaders(),
@@ -966,6 +1022,8 @@ async function eliminarGrupoDocente(grupoId, nombre) {
     showToast(`Grupo "${nombre}" eliminado`);
     await loadDocente();
   } catch (e) { showToast('Error: ' + e.message, true); }
+    }
+  });
 }
 
 function cerrarGrupoDetail() {
@@ -1036,7 +1094,12 @@ async function docenteAgregarEstudiante() {
 
 async function quitarEstudianteGrupo(email) {
   if (!docenteGrupoActual) return;
-  if (!confirm(`¿Quitar a ${email} de este grupo?`)) return;
+  showConfirmModal({
+    title: '¿Quitar estudiante?',
+    msg: `¿Estás seguro de quitar a <strong>${email}</strong> de este grupo?`,
+    icon: '👤',
+    confirmText: 'Quitar del grupo',
+    onConfirm: async () => {
   try {
     const res = await fetch(`${API}/docente/grupos/${docenteGrupoActual.id}/quitar-estudiante`, {
       method: 'POST', headers: authHeaders(), body: JSON.stringify({ email }),
@@ -1047,6 +1110,8 @@ async function quitarEstudianteGrupo(email) {
     await cargarEstudiantesGrupo(docenteGrupoActual.id, docenteGrupoActual.estudiantes);
     showToast('Estudiante quitado del grupo');
   } catch (e) { showToast('Error: ' + e.message, true); }
+    }
+  });
 }
 
 // ── Ver sesiones de un estudiante (modal) ────────────────
@@ -1259,57 +1324,109 @@ async function maybeCheckAlta() {
   } catch (_) { }
 }
 
-// "Guardar y cerrar" — guarda sin análisis IA, libera memoria, vuelve a selección
+/**
+ * Muestra un modal de confirmación estético personalizado.
+ * @param {Object} options - { title, msg, icon, onConfirm, onCancel, confirmText }
+ */
+function showConfirmModal(options) {
+  const modal = document.getElementById('modal-confirm');
+  if (!modal) return;
+
+  document.getElementById('confirm-title').textContent = options.title || '¿Estás seguro?';
+  document.getElementById('confirm-msg').innerHTML = options.msg || '';
+  document.getElementById('confirm-icon').textContent = options.icon || '❓';
+  
+  const yesBtn = document.getElementById('confirm-yes-btn');
+  const noBtn = document.getElementById('confirm-no-btn');
+  
+  yesBtn.textContent = options.confirmText || 'Sí, continuar';
+  
+  // Limpiar listeners antiguos usando clonación
+  const newYes = yesBtn.cloneNode(true);
+  const newNo = noBtn.cloneNode(true);
+  yesBtn.parentNode.replaceChild(newYes, yesBtn);
+  noBtn.parentNode.replaceChild(newNo, noBtn);
+
+  newYes.onclick = () => {
+    closeAdminModal('modal-confirm');
+    if (options.onConfirm) options.onConfirm();
+  };
+
+  newNo.onclick = () => {
+    closeAdminModal('modal-confirm');
+    if (options.onCancel) options.onCancel();
+  };
+
+  openAdminModal('modal-confirm');
+}
+
 async function endSession() {
   if (!sessionId || isLoading) return;
-  if (!confirm('¿Guardar la sesión y cerrar el chat?\n\nPodrás retomarla desde "Mi historial" o desde el panel lateral.')) return;
 
-  isLoading = true;
-  const eb = document.getElementById('end-btn');
-  const sb = document.getElementById('send-btn');
-  if (eb) { eb.disabled = true; eb.textContent = 'Guardando…'; }
-  if (sb) sb.disabled = true;
-  document.getElementById('user-input').disabled = true;
+  showConfirmModal({
+    title: '¿Guardar y cerrar?',
+    msg: `Tu progreso con <strong>${patientName || 'el paciente'}</strong> quedará guardado para que puedas retomarlo después en tu historial.`,
+    icon: '💾',
+    confirmText: 'Guardar sesión',
+    onConfirm: async () => {
+      isLoading = true;
+      const eb = document.getElementById('end-btn');
+      const sb = document.getElementById('send-btn');
+      if (eb) { eb.disabled = true; eb.textContent = 'Guardando…'; }
+      if (sb) sb.disabled = true;
+      document.getElementById('user-input').disabled = true;
 
-  try {
-    const res = await fetch(`${API}/session/save`, {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ session_id: sessionId }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `Error ${res.status}`); }
-    const data = await res.json();
-    showToast(`Sesión #${data.numero_sesion} guardada ✓`);
-    _closeAndReset();
-  } catch (e) {
-    showToast('Error al guardar: ' + e.message, true);
-    isLoading = false;
-    if (eb) { eb.disabled = false; eb.textContent = 'Guardar y cerrar'; }
-    if (sb) sb.disabled = false;
-    document.getElementById('user-input').disabled = false;
-  }
+      try {
+        const res = await fetch(`${API}/session/save`, {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ session_id: sessionId }),
+          signal: AbortSignal.timeout(20000),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `Error ${res.status}`); }
+        const data = await res.json();
+        showToast(`Sesión #${data.numero_sesion} guardada ✓`);
+        _closeAndReset();
+      } catch (e) {
+        showToast('Error al guardar: ' + e.message, true);
+        isLoading = false;
+        if (eb) { eb.disabled = false; eb.textContent = 'Guardar y cerrar'; }
+        if (sb) sb.disabled = false;
+        document.getElementById('user-input').disabled = false;
+      }
+    }
+  });
 }
 
 // "Ver análisis IA" — llama a /session/end para generar el reporte completo
 async function analyzeSession() {
   if (!sessionId || isLoading) return;
-  if (!confirm('¿Generar el análisis clínico de esta sesión?\n\nEsto tomará unos segundos.')) return;
-  const overlay = document.getElementById('modal-overlay');
-  const mc = document.getElementById('modal-content');
-  overlay.classList.add('active');
-  mc.innerHTML = `<div class="modal-title">Analizando sesión…</div><div class="modal-subtitle">La IA supervisora está generando tu reporte clínico</div><div class="spinner"></div>`;
-  try {
-    const res = await fetch(`${API}/session/end`, {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ session_id: sessionId }),
-      signal: AbortSignal.timeout(120000),
-    });
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `Error ${res.status}`); }
-    const data = await res.json();
-    _renderReport(data, mc);
-  } catch (e) {
-    mc.innerHTML = `<div class="modal-title">Error</div><div class="modal-subtitle">${e.message}</div><button class="modal-close" onclick="closeSessionModal()">Cerrar</button>`;
-  }
+
+  showConfirmModal({
+    title: '¿Generar análisis?',
+    msg: 'La IA supervisora evaluará tu desempeño clínico. Esto cerrará la sesión actual y tardará unos segundos.',
+    icon: '📊',
+    confirmText: 'Analizar ahora',
+    onConfirm: async () => {
+      const overlay = document.getElementById('modal-overlay');
+      const mc = document.getElementById('modal-content');
+      overlay.classList.add('active');
+      mc.innerHTML = `<div class="modal-title">Analizando sesión…</div><div class="modal-subtitle">La IA supervisora está generando tu reporte clínico</div><div class="spinner"></div>`;
+      try {
+        const res = await fetch(`${API}/session/end`, {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ session_id: sessionId }),
+          signal: AbortSignal.timeout(120000),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `Error ${res.status}`); }
+        const data = await res.json();
+        _renderReport(data, mc);
+        _closeAndReset();
+      } catch (e) {
+        overlay.classList.remove('active');
+        showToast('Error en el análisis: ' + e.message, true);
+      }
+    }
+  });
 }
 
 function _renderReport(data, mc) {
@@ -1768,8 +1885,13 @@ async function invitarUsuario() {
 }
 
 async function desvincularUsuario(email, instId) {
-  if (!confirm('¿Desvincular este usuario de la institución?')) return;
-  try {
+  showConfirmModal({
+    title: '¿Desvincular usuario?',
+    msg: `¿Estás seguro de desvincular a <strong>${email}</strong> de esta institución?`,
+    icon: '🔗',
+    confirmText: 'Desvincular ahora',
+    onConfirm: async () => {
+      try {
     const res = await fetch(`${API}/admin/instituciones/${instId}/desvincular/${encodeURIComponent(email)}`, {
       method: 'POST', headers: authHeaders(),
     });
@@ -1777,6 +1899,8 @@ async function desvincularUsuario(email, instId) {
     await loadInstUsuarios(instId);
     showToast('Usuario desvinculado');
   } catch (e) { showToast('Error: ' + e.message, true); }
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2105,9 +2229,14 @@ async function guardarCaso() {
 async function eliminarCaso() {
   if (!selectedCasoId) return;
   const nombre = adminData.casos[selectedCasoId]?.name || selectedCasoId;
-  if (!confirm(`¿Eliminar el caso "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
 
-  const btn = document.getElementById('btn-eliminar-caso');
+  showConfirmModal({
+    title: '¿Eliminar caso?',
+    msg: `¿Seguro que deseas eliminar el caso "<strong>${nombre}</strong>"? Esta acción es permanente.`,
+    icon: '📝',
+    confirmText: 'Eliminar caso',
+    onConfirm: async () => {
+      const btn = document.getElementById('btn-eliminar-caso');
   if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
 
   try {
@@ -2125,6 +2254,8 @@ async function eliminarCaso() {
     showToast('Error al eliminar: ' + e.message, true);
     if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
   }
+    }
+  });
 }
 
 async function crearCategoria() {
@@ -2583,32 +2714,49 @@ function handleContratoFile(input) {
   document.getElementById('contrato-file-name').textContent = fname || 'Haz clic para cargar el contrato PDF';
 }
 
-// ---- TOAST ----
+// ---- TOAST PREMIUM ----
 function showToast(msg, isError = false) {
-  let t = document.getElementById('admin-toast');
+  let t = document.getElementById('premium-toast');
   if (!t) {
     t = document.createElement('div');
-    t.id = 'admin-toast';
-    t.style.cssText = 'position:fixed;bottom:28px;right:28px;padding:11px 22px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s,background .3s;max-width:320px;';
+    t.id = 'premium-toast';
+    t.className = 'toast-premium';
+    t.innerHTML = `
+      <div class="toast-icon"></div>
+      <div class="toast-msg"></div>
+    `;
     document.body.appendChild(t);
   }
-  t.textContent = msg;
-  t.style.background = isError ? '#DC2626' : 'var(--green)';
-  t.style.color = isError ? '#fff' : '#0a1a0a';
-  t.style.opacity = '1';
+  
+  t.className = 'toast-premium' + (isError ? ' error' : '');
+  t.querySelector('.toast-icon').textContent = isError ? '✕' : '✓';
+  t.querySelector('.toast-msg').textContent = msg;
+  
+  // Forzar reflow para reiniciar la animación
+  t.classList.remove('visible');
+  void t.offsetWidth;
+  t.classList.add('visible');
+  
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.style.opacity = '0', isError ? 4000 : 2500);
+  t._timer = setTimeout(() => t.classList.remove('visible'), isError ? 5000 : 3500);
 }
 
 // Keep deleteUser from old admin
 async function deleteUser(email) {
-  if (!confirm(`¿Eliminar al usuario ${email}? Esta acción no se puede deshacer.`)) return;
-  try {
-    await fetch(`${API}/admin/usuario/${encodeURIComponent(email)}`, { method: 'DELETE', headers: authHeaders() });
+  showConfirmModal({
+    title: '¿Eliminar usuario?',
+    msg: `¿Estás seguro de eliminar al usuario <strong>${email}</strong>? Esta acción es irreversible.`,
+    icon: '🚫',
+    confirmText: 'Sí, eliminar',
+    onConfirm: async () => {
+      try {
+        await fetch(`${API}/admin/usuario/${encodeURIComponent(email)}`, { method: 'DELETE', headers: authHeaders() });
     loadAdmin();
     loadParticulares();
     showToast('Usuario eliminado');
   } catch (e) { alert('Error al eliminar el usuario.'); }
+    }
+  });
 }
 
 function scoreCls(s) {
