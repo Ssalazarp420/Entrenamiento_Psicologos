@@ -178,8 +178,8 @@ function setupHeader() {
     const heroImg = document.getElementById('hero-student-img');
     if (heroImg) {
       heroImg.src = (currentUser.genero === 'hombre')
-        ? 'https://psicologiaiassets.blob.core.windows.net/assets/Hombre_sentado_sin_fondo_2.webp'
-        : 'https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png';
+        ? 'https://psicologiaiassets.blob.core.windows.net/assets/Hombre_sentado_2.webp'
+        : 'https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_2.webp';
     }
   } else {
     document.body.classList.remove('student-mode');
@@ -1011,17 +1011,17 @@ async function eliminarGrupoDocente(grupoId, nombre) {
     icon: '📂',
     confirmText: 'Sí, eliminar grupo',
     onConfirm: async () => {
-  try {
-    const res = await fetch(`${API}/docente/grupos/${grupoId}`, {
-      method: 'DELETE', headers: authHeaders(),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `Error ${res.status}`);
-    }
-    showToast(`Grupo "${nombre}" eliminado`);
-    await loadDocente();
-  } catch (e) { showToast('Error: ' + e.message, true); }
+      try {
+        const res = await fetch(`${API}/docente/grupos/${grupoId}`, {
+          method: 'DELETE', headers: authHeaders(),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Error ${res.status}`);
+        }
+        showToast(`Grupo "${nombre}" eliminado`);
+        await loadDocente();
+      } catch (e) { showToast('Error: ' + e.message, true); }
     }
   });
 }
@@ -1100,16 +1100,16 @@ async function quitarEstudianteGrupo(email) {
     icon: '👤',
     confirmText: 'Quitar del grupo',
     onConfirm: async () => {
-  try {
-    const res = await fetch(`${API}/docente/grupos/${docenteGrupoActual.id}/quitar-estudiante`, {
-      method: 'POST', headers: authHeaders(), body: JSON.stringify({ email }),
-    });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    docenteGrupoActual.estudiantes = docenteGrupoActual.estudiantes.filter(e => e !== email);
-    document.getElementById('dg-sub').textContent = `${docenteGrupoActual.estudiantes.length} estudiantes en este grupo`;
-    await cargarEstudiantesGrupo(docenteGrupoActual.id, docenteGrupoActual.estudiantes);
-    showToast('Estudiante quitado del grupo');
-  } catch (e) { showToast('Error: ' + e.message, true); }
+      try {
+        const res = await fetch(`${API}/docente/grupos/${docenteGrupoActual.id}/quitar-estudiante`, {
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ email }),
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        docenteGrupoActual.estudiantes = docenteGrupoActual.estudiantes.filter(e => e !== email);
+        document.getElementById('dg-sub').textContent = `${docenteGrupoActual.estudiantes.length} estudiantes en este grupo`;
+        await cargarEstudiantesGrupo(docenteGrupoActual.id, docenteGrupoActual.estudiantes);
+        showToast('Estudiante quitado del grupo');
+      } catch (e) { showToast('Error: ' + e.message, true); }
     }
   });
 }
@@ -1335,12 +1335,12 @@ function showConfirmModal(options) {
   document.getElementById('confirm-title').textContent = options.title || '¿Estás seguro?';
   document.getElementById('confirm-msg').innerHTML = options.msg || '';
   document.getElementById('confirm-icon').textContent = options.icon || '❓';
-  
+
   const yesBtn = document.getElementById('confirm-yes-btn');
   const noBtn = document.getElementById('confirm-no-btn');
-  
+
   yesBtn.textContent = options.confirmText || 'Sí, continuar';
-  
+
   // Limpiar listeners antiguos usando clonación
   const newYes = yesBtn.cloneNode(true);
   const newNo = noBtn.cloneNode(true);
@@ -1892,13 +1892,13 @@ async function desvincularUsuario(email, instId) {
     confirmText: 'Desvincular ahora',
     onConfirm: async () => {
       try {
-    const res = await fetch(`${API}/admin/instituciones/${instId}/desvincular/${encodeURIComponent(email)}`, {
-      method: 'POST', headers: authHeaders(),
-    });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    await loadInstUsuarios(instId);
-    showToast('Usuario desvinculado');
-  } catch (e) { showToast('Error: ' + e.message, true); }
+        const res = await fetch(`${API}/admin/instituciones/${instId}/desvincular/${encodeURIComponent(email)}`, {
+          method: 'POST', headers: authHeaders(),
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        await loadInstUsuarios(instId);
+        showToast('Usuario desvinculado');
+      } catch (e) { showToast('Error: ' + e.message, true); }
     }
   });
 }
@@ -2237,23 +2237,23 @@ async function eliminarCaso() {
     confirmText: 'Eliminar caso',
     onConfirm: async () => {
       const btn = document.getElementById('btn-eliminar-caso');
-  if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
 
-  try {
-    const res = await fetch(`${API}/admin/casos/${selectedCasoId}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-    });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
+      try {
+        const res = await fetch(`${API}/admin/casos/${selectedCasoId}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
 
-    document.getElementById('caso-editor').style.display = 'none';
-    selectedCasoId = null;
-    showToast(`"${nombre}" eliminado`);
-    await loadCasosAdmin();
-  } catch (e) {
-    showToast('Error al eliminar: ' + e.message, true);
-    if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
-  }
+        document.getElementById('caso-editor').style.display = 'none';
+        selectedCasoId = null;
+        showToast(`"${nombre}" eliminado`);
+        await loadCasosAdmin();
+      } catch (e) {
+        showToast('Error al eliminar: ' + e.message, true);
+        if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+      }
     }
   });
 }
@@ -2727,16 +2727,16 @@ function showToast(msg, isError = false) {
     `;
     document.body.appendChild(t);
   }
-  
+
   t.className = 'toast-premium' + (isError ? ' error' : '');
   t.querySelector('.toast-icon').textContent = isError ? '✕' : '✓';
   t.querySelector('.toast-msg').textContent = msg;
-  
+
   // Forzar reflow para reiniciar la animación
   t.classList.remove('visible');
   void t.offsetWidth;
   t.classList.add('visible');
-  
+
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('visible'), isError ? 5000 : 3500);
 }
@@ -2751,10 +2751,10 @@ async function deleteUser(email) {
     onConfirm: async () => {
       try {
         await fetch(`${API}/admin/usuario/${encodeURIComponent(email)}`, { method: 'DELETE', headers: authHeaders() });
-    loadAdmin();
-    loadParticulares();
-    showToast('Usuario eliminado');
-  } catch (e) { alert('Error al eliminar el usuario.'); }
+        loadAdmin();
+        loadParticulares();
+        showToast('Usuario eliminado');
+      } catch (e) { alert('Error al eliminar el usuario.'); }
     }
   });
 }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -93,8 +93,7 @@
 
           <!-- Imagen hero central -->
           <div class="hero-image-area">
-            <img id="hero-student-img"
-              src="https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_chat_no_bubble.png"
+            <img id="hero-student-img" src="https://psicologiaiassets.blob.core.windows.net/assets/Mujer_sentada_2.webp"
               alt="Psicóloga" style="width:100%; height:100%; object-fit:contain;" />
             <button class="btn-nuevo-caso" onclick="scrollToSelectionFlow()">
               💬 Nuevo caso
@@ -1100,50 +1099,53 @@
     </div>
   </div>
 
-    <!-- Modal advertencia cambios no guardados -->
-    <div class="modal-overlay" id="modal-warning">
-      <div class="modal-box" style="width:min(440px,95vw); text-align:center; padding:36px 32px;">
-        <div style="font-size:3.5rem; margin-bottom:12px; filter: drop-shadow(0 4px 12px rgba(217,119,6,0.2));">⚠️</div>
-        <div class="modal-title" style="margin-bottom:12px;">¿Deseas salir sin guardar?</div>
-        <div class="modal-subtitle" style="margin-bottom:24px; line-height:1.6; font-size:0.92rem;">
-          Tienes una sesión con <strong id="warn-patient-name" style="color:var(--accent2);">este paciente</strong> activa. 
-          Si sales ahora sin <span style="font-weight:600;">Guardar y cerrar</span>, tus avances de esta sesión se perderán permanentemente.
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <button class="btn-primary" style="background:var(--accent); margin-top:0;" onclick="closeAdminModal('modal-warning')">
-            Continuar en el chat
-          </button>
-          <button class="btn-ghost" id="confirm-leave-btn" style="padding:12px; font-size:0.85rem; color:var(--red);">
-            Salir sin guardar
-          </button>
-        </div>
+  <!-- Modal advertencia cambios no guardados -->
+  <div class="modal-overlay" id="modal-warning">
+    <div class="modal-box" style="width:min(440px,95vw); text-align:center; padding:36px 32px;">
+      <div style="font-size:3.5rem; margin-bottom:12px; filter: drop-shadow(0 4px 12px rgba(217,119,6,0.2));">⚠️</div>
+      <div class="modal-title" style="margin-bottom:12px;">¿Deseas salir sin guardar?</div>
+      <div class="modal-subtitle" style="margin-bottom:24px; line-height:1.6; font-size:0.92rem;">
+        Tienes una sesión con <strong id="warn-patient-name" style="color:var(--accent2);">este paciente</strong>
+        activa.
+        Si sales ahora sin <span style="font-weight:600;">Guardar y cerrar</span>, tus avances de esta sesión se
+        perderán permanentemente.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button class="btn-primary" style="background:var(--accent); margin-top:0;"
+          onclick="closeAdminModal('modal-warning')">
+          Continuar en el chat
+        </button>
+        <button class="btn-ghost" id="confirm-leave-btn" style="padding:12px; font-size:0.85rem; color:var(--red);">
+          Salir sin guardar
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- Modal confirmación genérico (PREMIUM) -->
-    <div class="modal-overlay" id="modal-confirm">
-      <div class="modal-box" style="width:min(440px,95vw); padding:36px 32px;">
-        <div class="modal-confirm-info">
-          <div class="modal-confirm-icon" id="confirm-icon">❓</div>
-          <div class="modal-title" id="confirm-title">¿Estás seguro?</div>
-          <div class="modal-subtitle" id="confirm-msg" style="margin-bottom:0;">Esta acción no se puede deshacer.</div>
-        </div>
-        <div class="modal-confirm-actions">
-          <button class="btn-primary" id="confirm-yes-btn" style="background:var(--accent); margin-top:0;">
-            Sí, continuar
-          </button>
-          <button class="btn-ghost-danger" id="confirm-no-btn">
-            Cancelar
-          </button>
-        </div>
+  <!-- Modal confirmación genérico (PREMIUM) -->
+  <div class="modal-overlay" id="modal-confirm">
+    <div class="modal-box" style="width:min(440px,95vw); padding:36px 32px;">
+      <div class="modal-confirm-info">
+        <div class="modal-confirm-icon" id="confirm-icon">❓</div>
+        <div class="modal-title" id="confirm-title">¿Estás seguro?</div>
+        <div class="modal-subtitle" id="confirm-msg" style="margin-bottom:0;">Esta acción no se puede deshacer.</div>
+      </div>
+      <div class="modal-confirm-actions">
+        <button class="btn-primary" id="confirm-yes-btn" style="background:var(--accent); margin-top:0;">
+          Sí, continuar
+        </button>
+        <button class="btn-ghost-danger" id="confirm-no-btn">
+          Cancelar
+        </button>
       </div>
     </div>
+  </div>
 
-    <div id="modal-overlay">
-      <div class="modal" id="modal-content">
-        <div class="spinner"></div>
-      </div>
+  <div id="modal-overlay">
+    <div class="modal" id="modal-content">
+      <div class="spinner"></div>
     </div>
+  </div>
 
   <script src='script.js'></script>
 </body>
