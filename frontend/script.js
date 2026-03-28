@@ -190,11 +190,11 @@ function setupHeader() {
 
   const allTabs = {
     estudiante: [
-      { id: 'screen-selection', label: 'Nueva sesión', action: () => { resetStudentDashboard(); loadPatients(); } },
+      { id: 'screen-selection', label: 'Ir al Inicio', action: () => { resetStudentDashboard(); loadPatients(); } },
       { id: 'screen-historial', label: 'Mi historial', action: () => { showScreen('screen-historial'); loadHistorial(); } },
     ],
     docente: [
-      { id: 'screen-docente', label: 'Sesiones estudiantes', action: () => { showScreen('screen-docente'); loadDocente(); } },
+      { id: 'screen-docente', label: 'Ir al Inicio', action: () => { showScreen('screen-docente'); loadDocente(); } },
     ],
     admin: [
       { id: 'screen-admin', label: 'Panel Admin', action: () => { showScreen('screen-admin'); loadAdmin(); } },
