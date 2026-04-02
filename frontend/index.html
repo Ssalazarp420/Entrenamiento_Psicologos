@@ -202,12 +202,14 @@
 
     <!-- CHAT -->
     <div class="screen" id="screen-chat">
-      
+
       <!-- === BURBUJA FLOTANTE PARA EL ALTA === -->
       <!-- Puedes mover la burbuja arriba/abajo/izquierda/derecha editando la clase .floating-alta-tip en style.css -->
       <div id="floating-alta-tip" class="floating-alta-tip anim anim-2">
         <div id="floating-alta-icon" style="font-size:1.6rem; margin-bottom:6px;">💡</div>
-        <div id="floating-alta-text">Si logras avanzar lo suficiente con este paciente, se habilitará la opción para <strong>dar de alta</strong>.</div>
+        <div id="floating-alta-text">Si logras avanzar lo suficiente con este paciente, se habilitará la opción para
+          <strong>dar de alta</strong>.
+        </div>
       </div>
       <!-- ===================================== -->
 
@@ -277,62 +279,128 @@
 
     <!-- PANEL DOCENTE -->
     <div class="screen" id="screen-docente" style="position: relative;">
-      
+
       <!-- HERO DOCENTE -->
-      <div class="docente-hero" id="docente-hero-section" style="position: relative; overflow: hidden; margin-bottom: 24px;">
+      <div class="docente-hero" id="docente-hero-section"
+        style="position: relative; overflow: visible; margin-bottom: 24px; display: flex; justify-content: center; padding: 20px;">
         <!-- Fondo decorativo (Imagen) -->
         <div class="docente-hero-bg" style="
             position: absolute; 
-            inset: 0; 
+            top: -50px; bottom: -100px; /* Expande el espacio vertical para más libertad de movimiento */
+            left: 50%; 
+            width: 100vw; 
+            transform: translateX(-50%);
+            overflow: hidden; /* Esto asegura que se recorte solo al llegar al borde de la pantalla del monitor */
             z-index: 0;
             display: flex;
-            /* Para cambiar la posición vertical, ajusta align-items (center, flex-start, flex-end) */
             align-items: center; 
-            /* Para cambiar la posición horizontal, ajusta justify-content (center, flex-start, flex-end, etc) */
             justify-content: center;
-            opacity: 0.4; /* Ajusta la transparencia si se requiere */
+            opacity: 1; /* <-- MODIFICA LA OPACIDAD/TRANSPARENCIA DE LA IMAGEN AQUÍ (De 0.0 a 1.0) */
             pointer-events: none;
         ">
-          <!-- Para cambiar el tamaño de la imagen, ajusta el width (ej: 33.33% es 1/3) -->
-          <img src="https://psicologiaiassets.blob.core.windows.net/assets/mind_garden_NB.webp" alt="Background" style="width: 33.33%; min-width: 300px; height: auto; object-fit: contain;" />
+          <!-- Para mover la imagen de fondo: añade la propiedad 'transform: translate(Xpx, Ypx)' 
+               Ejemplo: transform: translate(50px, -20px); 
+               Donde un X positivo la mueve a la derecha y un Y positivo la mueve hacia abajo -->
+          <img src="https://psicologiaiassets.blob.core.windows.net/assets/mind_garden_NB.webp" alt="Background"
+            style="width: 33.33%; min-width: 300px; height: auto; object-fit: contain; transform: translate(-400px, 160px);" />
         </div>
 
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 1; padding: 20px;">
-          <!-- IZQUIERDA: Saludo, título y botón -->
-          <div class="page-header anim anim-1" style="border: none; margin: 0; padding: 0; flex: 1; min-width: 280px; align-items: flex-start; flex-direction: column;">
-            <div style="margin-bottom: 16px;">
-              <div class="hero-greeting" id="docente-hero-greeting" style="color: var(--text); font-size: 2.2rem; margin-bottom: 8px;">Hola 👋</div>
-              <div class="section-title">Mis grupos</div>
-              <div class="section-sub">Gestiona tus grupos y deja retroalimentaciones a tus estudiantes</div>
-            </div>
-            <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;" onclick="openCrearGrupoModal()">
-              + Nuevo grupo
-            </button>
-          </div>
+        <div
+          style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1200px; position: relative; z-index: 1;">
 
-          <!-- DERECHA: Teléfono de tips -->
-          <div class="hero-right anim anim-1" style="flex-shrink: 0; background: none; border: none; box-shadow: none; padding: 0; align-items: flex-end;">
-            <div class="phone-mockup" style="transform: scale(0.85); transform-origin: center right; min-height: 400px; margin: 0;">
-              <div class="phone-notch"></div>
-              <div class="phone-brain">
-                <img src="https://psicologiaiassets.blob.core.windows.net/assets/cerebro_azul_1.png" alt="Brain" style="width:100%; height:100%; object-fit:contain;" />
+          <!-- 1) SALUDO (Arriba de todo) -->
+          <div class="hero-greeting anim anim-1" id="docente-hero-greeting"
+            style="color: var(--text); font-size: 2.2rem; margin-bottom: 24px;">Hola 👋</div>
+
+          <!-- Contenedor relativo para poder centrar la columna principal y posicionar el teléfono a la derecha -->
+          <div
+            style="position: relative; display: flex; justify-content: center; align-items: flex-start; width: 100%;">
+
+            <!-- Columna Central: Contenedores con efecto vidrio -->
+            <!-- Al quitarle la influencia del teléfono, ahora está perfectamente centrada en la pantalla -->
+            <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center;">
+
+              <!-- Contenedor 1: Títulos "Mis grupos" -->
+              <!-- Puedes modificar independientemente el ancho (width/max-width), alto (height/min-height) y color (background) -->
+              <div class="glass-container anim anim-1" style="
+                  background: rgba(255, 255, 255, 0.45); /* Modifica el color y opacidad aquí */
+                  backdrop-filter: blur(8px);
+                  -webkit-backdrop-filter: blur(8px);
+                  border: 1px solid rgba(226, 232, 240, 0.6);
+                  border-radius: 20px;
+                  padding: 24px 40px;
+                  text-align: center;
+                  width: 100%;             /* Modifica el ancho aquí */
+                  max-width: 600px;        /* Modifica el ancho máximo aquí */
+                  min-height: auto;        /* Modifica la altura aquí (ej: 150px) */
+                  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                  margin: 0 auto;          /* Mantiene el contenedor centrado */
+              ">
+                <div class="section-title" style="margin: 0; margin-bottom: 6px;">Mis grupos</div>
+                <div class="section-sub" style="margin: 0;">Gestiona tus grupos y deja retroalimentaciones a tus
+                  estudiantes</div>
               </div>
-              <div class="phone-bar">
-                <div class="phone-bar-status">💡 TIP DEL DIA </div>
-              </div>
-              <div class="phone-chat-area">
-                <div class="pcb pcb-left" id="docente-phone-tip-bubble" style="box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                  Cargando consejo…
+
+              <!-- Contenedor 2: Botón y Lista de Grupos -->
+              <!-- Puedes modificar independientemente el ancho (width/max-width), alto (height/min-height) y color (background) -->
+              <div class="glass-container anim anim-2" style="
+                  background: rgba(255, 255, 255, 0.45); /* Modifica el color y opacidad aquí */
+                  backdrop-filter: blur(8px);
+                  -webkit-backdrop-filter: blur(8px);
+                  border: 1px solid rgba(226, 232, 240, 0.6);
+                  border-radius: 20px;
+                  padding: 24px;
+                  width: 100%;             /* Modifica el ancho aquí */
+                  max-width: 900px;        /* Modifica el ancho máximo aquí */
+                  min-height: auto;        /* Modifica la altura aquí (ej: 400px) */
+                  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                  margin: 0 auto;          /* Mantiene el contenedor centrado */
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 20px;
+              ">
+                <button class="btn-primary" style="width:auto;padding:10px 22px;margin:0;"
+                  onclick="openCrearGrupoModal()">
+                  + Nuevo grupo
+                </button>
+                <!-- Lista de grupos (se renderiza aquí adentro) -->
+                <div id="docente-grupos-wrap"
+                  style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;width:100%;">
                 </div>
               </div>
             </div>
+
+            <!-- DERECHA: Teléfono de tips (posicionado de forma absoluta para no empujar los contenedores centrales) -->
+            <div class="hero-right anim anim-1"
+              style="position: absolute; right: 0; top: 0; background: none; border: none; box-shadow: none; padding: 0; z-index: 2;">
+              <!-- 
+                Para desplazar el teléfono en cualquier dirección, modifica los valores dentro de translate(Xpx, Ypx)
+                - Un valor X negativo lo mueve a la izquierda (-20px) o positivo a la derecha.
+                - Un valor Y positivo lo mueve hacia abajo (20px) o negativo hacia arriba.
+                Ejemplo: transform: scale(0.85) translate(-40px, 30px);
+              -->
+              <div class="phone-mockup"
+                style="transform: scale(0.95) translate(220px, 0px); transform-origin: top right; min-height: 400px; margin: 0;">
+                <div class="phone-notch"></div>
+                <div class="phone-brain">
+                  <img src="https://psicologiaiassets.blob.core.windows.net/assets/cerebro_azul_1.png" alt="Brain"
+                    style="width:100%; height:100%; object-fit:contain;" />
+                </div>
+                <div class="phone-bar">
+                  <div class="phone-bar-status">💡 TIP DEL DIA </div>
+                </div>
+                <div class="phone-chat-area">
+                  <div class="pcb pcb-left" id="docente-phone-tip-bubble"
+                    style="box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    Cargando consejo…
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-      </div>
-
-      <!-- Lista de grupos -->
-      <div id="docente-grupos-wrap" class="anim anim-2"
-        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
       </div>
 
       <!-- Detalle de grupo seleccionado -->
@@ -715,8 +783,10 @@
                 <div class="panel-sub">Gestión de pacientes simulados</div>
               </div>
               <div style="display:flex;gap:8px">
-                <button class="btn-ghost" onclick="openAdminModal_analisisObjetivo()">✏️ Modificar prompt analisis objetivo</button>
-                <button class="btn-ghost" onclick="openAdminModal_altaObjetivo()">✏️ Modificar prompt para dar de alta</button>
+                <button class="btn-ghost" onclick="openAdminModal_analisisObjetivo()">✏️ Modificar prompt analisis
+                  objetivo</button>
+                <button class="btn-ghost" onclick="openAdminModal_altaObjetivo()">✏️ Modificar prompt para dar de
+                  alta</button>
                 <button class="btn-accent" onclick="abrirNuevoCaso()">+ Nuevo caso</button>
               </div>
             </div>
@@ -1039,7 +1109,8 @@
         generar el reporte de cierre.</div>
       <div class="form-field">
         <label>Instrucciones del supervisor clínico (Proceso de Alta)</label>
-        <textarea id="alto-instruccion" rows="14" class="ai-textarea" style="font-size:.82rem;line-height:1.7"></textarea>
+        <textarea id="alto-instruccion" rows="14" class="ai-textarea"
+          style="font-size:.82rem;line-height:1.7"></textarea>
       </div>
       <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
         <button class="btn-ghost" onclick="closeAdminModal('modal-alta-objetivo')">Cancelar</button>
