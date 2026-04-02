@@ -318,7 +318,8 @@
 
             <!-- Columna Central: Contenedores con efecto vidrio -->
             <!-- Al quitarle la influencia del teléfono, ahora está perfectamente centrada en la pantalla -->
-            <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; overflow: visible !important;">
+            <div
+              style="display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; overflow: visible !important;">
 
               <!-- Contenedor 1: Títulos "Mis grupos" -->
               <!-- Puedes modificar independientemente el ancho (width/max-width), alto (height/min-height) y color (background) -->
@@ -362,7 +363,7 @@
               ">
                 <button class="btn-primary" style="width:auto;padding:10px 22px;margin:0;"
                   onclick="openCrearGrupoModal()">
-                  + Nuevo grupo
+                  Crear Nuevo grupo
                 </button>
                 <!-- Lista de grupos (se renderiza aquí adentro) -->
                 <div id="docente-grupos-wrap"
@@ -413,9 +414,9 @@
             <div class="section-sub" id="dg-sub" style="margin:0;"></div>
           </div>
         </div>
-        <div style="display:flex;gap:10px;margin-bottom:18px;">
+        <div style="display:flex; gap:10px; margin-bottom:18px; max-width: 450px;">
           <input id="dg-add-email" type="email" placeholder="Agregar estudiante por email..."
-            style="flex:1;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;" />
+            style="flex:1; padding:9px 14px; border-radius:9px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:.85rem;" />
           <button class="btn-accent" style="padding:9px 18px;" onclick="docenteAgregarEstudiante()">Agregar</button>
         </div>
         <div class="table-wrap anim anim-2">

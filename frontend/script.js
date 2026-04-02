@@ -1009,6 +1009,7 @@ let docenteGrupoActual = null;  // { id, nombre, estudiantes[] }
 
 async function loadDocente() {
   refreshPhoneTip();
+  document.getElementById('docente-hero-section').style.display = 'flex';
   document.getElementById('docente-grupo-detail').style.display = 'none';
   document.getElementById('docente-grupos-wrap').style.display = 'grid';
   const wrap = document.getElementById('docente-grupos-wrap');
@@ -1051,7 +1052,7 @@ async function abrirGrupoDocente(grupoId) {
     if (!grupo) { showToast('Grupo no encontrado', true); return; }
 
     docenteGrupoActual = { id: grupo.id, nombre: grupo.nombre, estudiantes: grupo.estudiantes || [] };
-    document.getElementById('docente-grupos-wrap').style.display = 'none';
+    document.getElementById('docente-hero-section').style.display = 'none';
     document.getElementById('docente-grupo-detail').style.display = 'block';
     document.getElementById('dg-nombre').textContent = grupo.nombre;
     document.getElementById('dg-sub').textContent = `${docenteGrupoActual.estudiantes.length} estudiantes en este grupo`;
@@ -1085,7 +1086,7 @@ async function eliminarGrupoDocente(grupoId, nombre) {
 
 function cerrarGrupoDetail() {
   document.getElementById('docente-grupo-detail').style.display = 'none';
-  document.getElementById('docente-grupos-wrap').style.display = 'grid';
+  document.getElementById('docente-hero-section').style.display = 'flex';
   docenteGrupoActual = null;
 }
 
