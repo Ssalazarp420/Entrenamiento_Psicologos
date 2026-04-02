@@ -626,7 +626,8 @@ async function selectPatient(pid, name, age, cardEl) {
       chatBox.innerHTML = '';
       const history = data.history || [];
       if (history.length === 0) {
-        chatBox.innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Continúa tu sesión con ${name}. Escribe tu siguiente intervención.</span></div>`;
+        appendMsg('sistema-left', '💡 <strong>Tip clínico:</strong> Si logras avanzar lo suficiente con este paciente, se habilitará la opción para <strong>dar de alta</strong>.');
+        chatBox.insertAdjacentHTML('beforeend', `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Continúa tu sesión con ${name}. Escribe tu siguiente intervención.</span></div>`);
       } else {
         history.forEach(m => { if (m && m.text && m.role) appendMsg(m.role, m.text); });
       }
@@ -635,7 +636,9 @@ async function selectPatient(pid, name, age, cardEl) {
       showToast(`↩ Retomando sesión previa con ${name}`);
     } else {
       // ── Sesión nueva ──
-      chatBox.innerHTML = `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Escribe tu primera intervención para iniciar la sesión con ${name}.</span></div>`;
+      chatBox.innerHTML = '';
+      appendMsg('sistema-left', '💡 <strong>Tip clínico:</strong> Si logras avanzar lo suficiente con este paciente, se habilitará la opción para <strong>dar de alta</strong>.');
+      chatBox.insertAdjacentHTML('beforeend', `<div class="empty-state" id="empty-msg"><div class="icon">🛋️</div><span>Escribe tu primera intervención para iniciar la sesión con ${name}.</span></div>`);
       const ab = document.getElementById('analyze-btn'); if (ab) { ab.style.display = 'none'; }
     }
 
@@ -1299,6 +1302,8 @@ function appendMsg(role, text) {
 
   if (role === 'sistema') {
     msg.innerHTML = `<div style="width:100%;text-align:center;font-size:.78rem;color:var(--muted);padding:4px 0;">${formatted}</div>`;
+  } else if (role === 'sistema-left') {
+    msg.innerHTML = `<div style="width:100%;text-align:left;font-size:.85rem;color:var(--teal-deep);padding:10px 14px;background:rgba(108,193,206,.15);border-left:4px solid var(--teal);border-radius:0 12px 12px 0;margin:8px 0;box-shadow:0 2px 8px rgba(0,0,0,.04);line-height:1.4;">${formatted}</div>`;
   } else {
     const isPatient = role === 'patient';
     msg.innerHTML = `
@@ -1393,7 +1398,13 @@ async function maybeCheckAlta() {
       hb.style.display = '';
       if (hb.dataset.shown !== '1') {
         hb.dataset.shown = '1';
-        appendMsg('sistema', `🎯 ${data.mensaje}`);
+        const actHtml = `
+          <div id="alta-prompt-btn-group" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn-accent" style="padding:6px 14px; font-size:.82rem; border-radius:8px;" onclick="proposeAlta(); document.getElementById('alta-prompt-btn-group').style.display='none';">✓ Dar de alta ahora</button>
+            <button class="btn-ghost" style="padding:6px 14px; font-size:.82rem; border-radius:8px; border:1px solid rgba(0,0,0,.1);" onclick="document.getElementById('alta-prompt-btn-group').style.display='none';">Aún no quiero dar de alta</button>
+          </div>
+        `;
+        appendMsg('sistema-left', `🎯 <strong>Ya puedes dar de alta:</strong> ${data.mensaje}${actHtml}`);
       }
     }
   } catch (_) { }

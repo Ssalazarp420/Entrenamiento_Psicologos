@@ -330,6 +330,55 @@ main {
   width: 100%;
   margin: 0 auto;
   gap: 12px;
+  position: relative; /* Agregado para posicionar la burbuja flotante */
+}
+
+/* BURBUJA FLOTANTE PARA DAR DE ALTA (EXTERNA AL CHAT) */
+.floating-alta-tip {
+  position: absolute;
+  /* =========================================================================
+     👇 MODIFICA ESTOS VALORES PARA MOVER LA BURBUJA ARRIBA/ABAJO/IZQ/DER 👇
+     ========================================================================= */
+  top: 130px;        /* Distancia desde ARRIBA. Aumenta para moverla hacia ABAJO. Disminuye para moverla ARRIBA. */
+  left: -240px;      /* Distancia desde la IZQUIERDA. Al ser negativo (-240px) la saca hacia la izquierda del chat. */
+                     /* Hazlo más negativo (ej: -280px) para moverla más a la izquierda. */
+                     /* Hazlo menos negativo o positivo para acercarla al chat o meterla dentro. */
+                     
+  width: 210px;      /* ANCHO de la burbuja. Aumenta si el texto no cabe. */
+  /* ========================================================================= */
+  
+  background: var(--card);
+  border: 1px solid rgba(16, 159, 178, 0.3);
+  border-left: 4px solid var(--teal);
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.45;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+/* El piquito tipo globo de chat apuntando hacia la derecha */
+.floating-alta-tip::after {
+  content: '';
+  position: absolute;
+  right: -8px; 
+  top: 24px;
+  width: 0; 
+  height: 0; 
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 8px solid var(--card);
+}
+
+/* Ocultar en pantallas donde no haya suficiente espacio a los lados */
+@media (max-width: 1240px) {
+  .floating-alta-tip {
+    display: none !important;
+  }
 }
 
 /*Contendor del chat*/
