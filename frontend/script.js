@@ -37,7 +37,8 @@ function restoreSession() {
 
 // ── Avatares de pacientes disponibles ─────────────────────
 const PATIENT_AVATARS = [
-  // Fila superior (de izquierda a derecha)
+  'Hombre_29_1.webp',
+  'Mujer_25_1.webp',
   'Hombre_30_1.webp',
   'Mujer_30_1.webp',
   'Hombre_35_1.webp',
