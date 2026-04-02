@@ -187,6 +187,12 @@ function setupHeader() {
     document.body.classList.remove('student-mode');
   }
 
+  if (currentUser.rol === 'docente') {
+    const greetDocente = document.getElementById('docente-hero-greeting');
+    if (greetDocente) greetDocente.textContent = `Hola ${currentUser.nombre} \uD83D\uDC4B`;
+  }
+
+
   const tabs = document.getElementById('nav-tabs');
   tabs.innerHTML = '';
 
@@ -342,10 +348,11 @@ const CLINICAL_TIPS = [
 ];
 
 function refreshPhoneTip() {
-  const el = document.getElementById('phone-tip-bubble');
-  if (!el) return;
   const tip = CLINICAL_TIPS[Math.floor(Math.random() * CLINICAL_TIPS.length)];
-  el.textContent = tip;
+  const el = document.getElementById('phone-tip-bubble');
+  if (el) el.textContent = tip;
+  const docenteEl = document.getElementById('docente-phone-tip-bubble');
+  if (docenteEl) docenteEl.textContent = tip;
 }
 
 async function loadPatients() {
@@ -1001,6 +1008,7 @@ async function reanudarSesion(sesionId, patientNameFromList) {
 let docenteGrupoActual = null;  // { id, nombre, estudiantes[] }
 
 async function loadDocente() {
+  refreshPhoneTip();
   document.getElementById('docente-grupo-detail').style.display = 'none';
   document.getElementById('docente-grupos-wrap').style.display = 'grid';
   const wrap = document.getElementById('docente-grupos-wrap');

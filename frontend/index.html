@@ -276,15 +276,58 @@
     </div>
 
     <!-- PANEL DOCENTE -->
-    <div class="screen" id="screen-docente">
-      <div class="page-header anim anim-1">
-        <div>
-          <div class="section-title">Mis grupos</div>
-          <div class="section-sub">Gestiona tus grupos y deja retroalimentaciones a tus estudiantes</div>
+    <div class="screen" id="screen-docente" style="position: relative;">
+      
+      <!-- HERO DOCENTE -->
+      <div class="docente-hero" id="docente-hero-section" style="position: relative; overflow: hidden; margin-bottom: 24px;">
+        <!-- Fondo decorativo (Imagen) -->
+        <div class="docente-hero-bg" style="
+            position: absolute; 
+            inset: 0; 
+            z-index: 0;
+            display: flex;
+            /* Para cambiar la posición vertical, ajusta align-items (center, flex-start, flex-end) */
+            align-items: center; 
+            /* Para cambiar la posición horizontal, ajusta justify-content (center, flex-start, flex-end, etc) */
+            justify-content: center;
+            opacity: 0.4; /* Ajusta la transparencia si se requiere */
+            pointer-events: none;
+        ">
+          <!-- Para cambiar el tamaño de la imagen, ajusta el width (ej: 33.33% es 1/3) -->
+          <img src="https://psicologiaiassets.blob.core.windows.net/assets/mind_garden_NB.webp" alt="Background" style="width: 33.33%; min-width: 300px; height: auto; object-fit: contain;" />
         </div>
-        <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;" onclick="openCrearGrupoModal()">
-          + Nuevo grupo
-        </button>
+
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 1; padding: 20px;">
+          <!-- IZQUIERDA: Saludo, título y botón -->
+          <div class="page-header anim anim-1" style="border: none; margin: 0; padding: 0; flex: 1; min-width: 280px; align-items: flex-start; flex-direction: column;">
+            <div style="margin-bottom: 16px;">
+              <div class="hero-greeting" id="docente-hero-greeting" style="color: var(--text); font-size: 2.2rem; margin-bottom: 8px;">Hola 👋</div>
+              <div class="section-title">Mis grupos</div>
+              <div class="section-sub">Gestiona tus grupos y deja retroalimentaciones a tus estudiantes</div>
+            </div>
+            <button class="btn-primary" style="width:auto;padding:10px 22px;margin-top:0;" onclick="openCrearGrupoModal()">
+              + Nuevo grupo
+            </button>
+          </div>
+
+          <!-- DERECHA: Teléfono de tips -->
+          <div class="hero-right anim anim-1" style="flex-shrink: 0; background: none; border: none; box-shadow: none; padding: 0; align-items: flex-end;">
+            <div class="phone-mockup" style="transform: scale(0.85); transform-origin: center right; min-height: 400px; margin: 0;">
+              <div class="phone-notch"></div>
+              <div class="phone-brain">
+                <img src="https://psicologiaiassets.blob.core.windows.net/assets/cerebro_azul_1.png" alt="Brain" style="width:100%; height:100%; object-fit:contain;" />
+              </div>
+              <div class="phone-bar">
+                <div class="phone-bar-status">💡 TIP DEL DIA </div>
+              </div>
+              <div class="phone-chat-area">
+                <div class="pcb pcb-left" id="docente-phone-tip-bubble" style="box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                  Cargando consejo…
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Lista de grupos -->
