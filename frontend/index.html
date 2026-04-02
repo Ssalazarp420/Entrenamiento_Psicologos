@@ -663,8 +663,8 @@
                 <div class="panel-sub">Gestión de pacientes simulados</div>
               </div>
               <div style="display:flex;gap:8px">
-                <button class="btn-ghost" onclick="openAdminModal_analisisObjetivo()">✏️ Análisis objetivo
-                  global</button>
+                <button class="btn-ghost" onclick="openAdminModal_analisisObjetivo()">✏️ Modificar prompt analisis objetivo</button>
+                <button class="btn-ghost" onclick="openAdminModal_altaObjetivo()">✏️ Modificar prompt para dar de alta</button>
                 <button class="btn-accent" onclick="abrirNuevoCaso()">+ Nuevo caso</button>
               </div>
             </div>
@@ -965,7 +965,7 @@
   <!-- Modal: análisis objetivo global -->
   <div id="modal-analisis-objetivo" class="admin-modal-overlay" onclick="closeAdminModal('modal-analisis-objetivo')">
     <div class="admin-modal admin-modal-wide" onclick="event.stopPropagation()">
-      <div class="modal-title">Análisis objetivo global</div>
+      <div class="modal-title">Prompt análisis objetivo</div>
       <div class="modal-subtitle">System prompt aplicado a TODOS los casos al finalizar una sesión. Define cómo el
         supervisor IA evalúa al estudiante.</div>
       <div class="form-field">
@@ -975,6 +975,23 @@
       <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
         <button class="btn-ghost" onclick="closeAdminModal('modal-analisis-objetivo')">Cancelar</button>
         <button class="btn-accent" onclick="guardarAnalisisObjetivo()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: prompt para dar de alta -->
+  <div id="modal-alta-objetivo" class="admin-modal-overlay" onclick="closeAdminModal('modal-alta-objetivo')">
+    <div class="admin-modal admin-modal-wide" onclick="event.stopPropagation()">
+      <div class="modal-title">Prompt para dar de alta</div>
+      <div class="modal-subtitle">System prompt aplicado al proceso de ALTA terapéutica. Define los criterios y forma de
+        generar el reporte de cierre.</div>
+      <div class="form-field">
+        <label>Instrucciones del supervisor clínico (Proceso de Alta)</label>
+        <textarea id="alto-instruccion" rows="14" class="ai-textarea" style="font-size:.82rem;line-height:1.7"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="closeAdminModal('modal-alta-objetivo')">Cancelar</button>
+        <button class="btn-accent" onclick="guardarAltaObjetivo()">Guardar cambios</button>
       </div>
     </div>
   </div>

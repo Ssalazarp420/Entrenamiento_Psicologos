@@ -2405,7 +2405,7 @@ async function crearCategoria() {
   }
 }
 
-// ── Análisis objetivo global ──────────────────────────────
+// ── Gestión de Prompts Globales (Admin) ──────────────────────
 async function openAdminModal_analisisObjetivo() {
   openAdminModal('modal-analisis-objetivo');
   const textarea = document.getElementById('ao-instruccion');
@@ -2440,6 +2440,47 @@ async function guardarAnalisisObjetivo() {
     if (!res.ok) throw new Error(`Error ${res.status}`);
     closeAdminModal('modal-analisis-objetivo');
     showToast('Análisis objetivo actualizado ✓');
+  } catch (e) {
+    showToast('Error al guardar: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+  }
+}
+
+async function openAdminModal_altaObjetivo() {
+  openAdminModal('modal-alta-objetivo');
+  const textarea = document.getElementById('alto-instruccion');
+  textarea.value = 'Cargando…';
+  textarea.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/admin/config/alta_objetivo`, { headers: authHeaders() });
+    const data = await res.json();
+    textarea.value = data.valor || '';
+  } catch (e) {
+    textarea.value = '';
+    showToast('No se pudo cargar el prompt de alta', true);
+  } finally {
+    textarea.disabled = false;
+  }
+}
+
+async function guardarAltaObjetivo() {
+  const valor = document.getElementById('alto-instruccion').value.trim();
+  if (!valor) { showToast('El texto no puede estar vacío', true); return; }
+
+  const btn = document.querySelector('#modal-alta-objetivo .btn-accent');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  try {
+    const res = await fetch(`${API}/admin/config/alta_objetivo`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ valor }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    closeAdminModal('modal-alta-objetivo');
+    showToast('Prompt de alta actualizado ✓');
   } catch (e) {
     showToast('Error al guardar: ' + e.message, true);
   } finally {

@@ -348,6 +348,17 @@ def get_analisis_objetivo():
         pass
     return ANALISIS_OBJETIVO_SEED
 
+def get_alta_objetivo():
+    try:
+        items = list(c_config.query_items(
+            "SELECT * FROM c WHERE c.id = 'alta_objetivo'",
+            enable_cross_partition_query=True
+        ))
+        if items: return items[0]["valor"]
+    except Exception:
+        pass
+    return ALTA_OBJETIVO_SEED
+
 CHECK_ALTA_SEED = """Eres un supervisor clínico experto. Evalúa si el proceso terapéutico
 con este paciente simulado está listo para plantear un ALTA terapéutica.
 
@@ -659,8 +670,9 @@ def marcar_alta(req: AltaRequest, user=Depends(get_current_user)):
     reflexion = req.reflexion or ""
 
     model = get_model()
+    alta_prompt = get_alta_objetivo()
     alta_reporte = model.invoke([
-        SystemMessage(content=ALTA_OBJETIVO_SEED),
+        SystemMessage(content=alta_prompt),
         HumanMessage(content=(
             f"Paciente simulado: {profile['name']}, {profile['age']} años — dificultad {profile.get('dificultad', 'Leve')}.\n"
             f"Número total de sesiones realizadas con este paciente: {num_sesiones}.\n\n"
@@ -1388,6 +1400,7 @@ def obtener_config(clave: str, user=Depends(require_admin)):
     items = list(c_config.query_items(f"SELECT * FROM c WHERE c.id = '{clave}'", enable_cross_partition_query=True))
     if not items:
         if clave == "analisis_objetivo": return {"id": clave, "valor": ANALISIS_OBJETIVO_SEED}
+        if clave == "alta_objetivo": return {"id": clave, "valor": ALTA_OBJETIVO_SEED}
         raise HTTPException(status_code=404, detail=f"Clave '{clave}' no encontrada")
     return items[0]
 
