@@ -37,24 +37,25 @@ function restoreSession() {
 
 // ── Avatares de pacientes disponibles ─────────────────────
 const PATIENT_AVATARS = [
-  'Adulto_40_50_1.webp',
-  'Adulto_40_50_2.webp',
-  'Adulto_40_50_3.webp',
-  'Joven_20_25_1.webp',
-  'Joven_20_25_2.webp',
-  'Joven_20_25_3.webp',
-  'mujer_20_25_anos_1.webp',
-  'mujer_20_25_anos_2.webp',
-  'mujer_20_25_anos_3.webp',
-  'mujer_40_50_anos_1.webp',
-  'mujer_40_50_anos_2.webp',
-  'mujer_40_50_anos_3.webp',
-  'Nina_10_15_1.webp',
-  'Nina_10_15_2.webp',
-  'Nina_10_15_3.webp',
-  'Nino_10_15_1.webp',
-  'Nino_10_15_2.webp',
-  'Nino_10_15_3.webp',
+  // Fila superior (de izquierda a derecha)
+  'Hombre_30_1.webp',
+  'Mujer_30_1.webp',
+  'Hombre_35_1.webp',
+  'Mujer_30_2.webp',
+  'Mujer_30_3.webp',
+  'Hombre_35_2.webp',
+  'Mujer_30_4.webp',
+  'Hombre_50_1.webp',
+  'Hombre_29_2.webp',
+  'Mujer_25_2.webp',
+  'Mujer_20_1.webp',
+  'Mujer_22_1.webp',
+  'Mujer_24_1.webp',
+  'Mujer_23_1.webp',
+  'Mujer_18_1.webp',
+  'Mujer_19_1.webp',
+  'Mujer_21_1.webp',
+  'Mujer_24_2.webp'
 ];
 const AVATAR_BASE = (() => {
   // En local (Live Server) el HTML está en /frontend/public/, raíz es el repo
@@ -795,9 +796,9 @@ async function loadHistorial() {
         <td>
           <div class="hist-patient-cell">
             <div class="hist-avatar">
-              ${patientAvatar 
-                ? `<img src="${patientAvatar}" alt="${s.patient_name}" onerror="this.parentElement.innerHTML='${initial}'" />`
-                : initial}
+              ${patientAvatar
+          ? `<img src="${patientAvatar}" alt="${s.patient_name}" onerror="this.parentElement.innerHTML='${initial}'" />`
+          : initial}
             </div>
             <strong>${s.patient_name || '—'}</strong>
           </div>
@@ -1095,9 +1096,9 @@ async function cargarEstudiantesGrupo(grupoId, emails) {
         <td style="font-size:.8rem;color:var(--muted)">${email}</td>
         <td style="text-align:center; font-weight:600;">${ses.length}</td>
         <td>
-          ${ultima?.puntuacion != null 
-            ? `<div class="hist-score">${ultima.puntuacion}<small>/100</small></div>` 
-            : '<span class="hist-score-empty">—</span>'}
+          ${ultima?.puntuacion != null
+          ? `<div class="hist-score">${ultima.puntuacion}<small>/100</small></div>`
+          : '<span class="hist-score-empty">—</span>'}
         </td>
         <td>
           <div class="hist-actions">
@@ -1197,9 +1198,9 @@ async function verSesionesEstudiante(email, nombre) {
           <td style="font-size:.8rem;color:var(--muted);">${formatDuration(s.inicio, s.fin)}</td>
           <td>
             <div style="display:flex; justify-content:center;">
-              ${s.puntuacion != null 
-                ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>` 
-                : '<span class="hist-score-empty">—</span>'}
+              ${s.puntuacion != null
+        ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>`
+        : '<span class="hist-score-empty">—</span>'}
             </div>
           </td>
           <td>
@@ -1786,8 +1787,8 @@ async function loadInstUsuarios(instId) {
 
     document.getElementById('inst-docentes-tbody').innerHTML = docentes.length
       ? docentes.map(u => {
-          const initial = (u.nombre || '?').charAt(0).toUpperCase();
-          return `<tr>
+        const initial = (u.nombre || '?').charAt(0).toUpperCase();
+        return `<tr>
           <td>
             <div class="hist-patient-cell">
               <div class="hist-avatar">${initial}</div>
@@ -1812,8 +1813,8 @@ async function loadInstUsuarios(instId) {
 
     document.getElementById('inst-estudiantes-tbody').innerHTML = estudiantes.length
       ? estudiantes.map(u => {
-          const initial = (u.nombre || '?').charAt(0).toUpperCase();
-          return `<tr>
+        const initial = (u.nombre || '?').charAt(0).toUpperCase();
+        return `<tr>
           <td>
             <div class="hist-patient-cell">
               <div class="hist-avatar">${initial}</div>
@@ -1840,8 +1841,8 @@ function renderInstPagos(nombreInst) {
   const pagos = (adminData.pagos || []).filter(p => p.origen === nombreInst);
   document.getElementById('inst-pagos-tbody').innerHTML = pagos.length
     ? pagos.map(p => {
-        const status = (p.estado || 'pendiente').toLowerCase();
-        return `<tr>
+      const status = (p.estado || 'pendiente').toLowerCase();
+      return `<tr>
         <td>
           <div class="hist-date-box">
             <span class="hist-date-main">${formatDate(p.fecha)}</span>
@@ -2028,8 +2029,8 @@ function filtrarParticulares() {
   const tbody = document.getElementById('part-tbody');
   tbody.innerHTML = users.length
     ? users.map(u => {
-        const initial = (u.nombre || '?').charAt(0).toUpperCase();
-        return `<tr>
+      const initial = (u.nombre || '?').charAt(0).toUpperCase();
+      return `<tr>
         <td>
           <div class="hist-patient-cell">
             <div class="hist-avatar">${initial}</div>
@@ -2044,9 +2045,9 @@ function filtrarParticulares() {
         <td>
           <div class="hist-actions">
             <button class="btn-ghost" style="padding:6px 12px; font-size:.78rem;" onclick="verParticular('${u.email}')">Ver</button>
-            ${u.email !== currentUser?.email 
-              ? `<button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;" onclick="deleteUser('${u.email}')">🗑</button>` 
-              : ''}
+            ${u.email !== currentUser?.email
+          ? `<button class="btn-ghost-danger" style="padding:4px 8px; font-size:1rem; min-width:36px; display:flex; align-items:center; justify-content:center;" onclick="deleteUser('${u.email}')">🗑</button>`
+          : ''}
           </div>
         </td>
       </tr>`}).join('')
@@ -2507,9 +2508,9 @@ function renderSesionesAdminEstudiantes(data) {
   if (!tbody) return;
   tbody.innerHTML = data.length
     ? data.map(s => {
-        const name = s.nombre || (s.usuario_id || '—').split('@')[0];
-        const initial = name.charAt(0).toUpperCase();
-        return `<tr>
+      const name = s.nombre || (s.usuario_id || '—').split('@')[0];
+      const initial = name.charAt(0).toUpperCase();
+      return `<tr>
         <td>
           <div class="hist-patient-cell">
             <div class="hist-avatar">${initial}</div>
@@ -2522,9 +2523,9 @@ function renderSesionesAdminEstudiantes(data) {
         <td style="text-align:center; font-weight:600;">${s.total_sesiones || 0}</td>
         <td style="color:var(--muted); font-size:.85rem;">${s.minutos_totales != null ? s.minutos_totales + ' min' : '—'}</td>
         <td style="text-align:center;">
-          ${s.puntuacion_promedio != null 
-            ? `<div class="hist-score">${s.puntuacion_promedio}<small>/100</small></div>` 
-            : '<span class="hist-score-empty">—</span>'}
+          ${s.puntuacion_promedio != null
+          ? `<div class="hist-score">${s.puntuacion_promedio}<small>/100</small></div>`
+          : '<span class="hist-score-empty">—</span>'}
         </td>
         <td style="font-size:.85rem;color:var(--muted);">${s.ultima_sesion ? formatDate(s.ultima_sesion) : '—'}</td>
         <td>
@@ -2542,9 +2543,9 @@ function renderSesionesAdminDocentes(data) {
   if (!tbody) return;
   tbody.innerHTML = data.length
     ? data.map(d => {
-        const name = d.docente_nombre || (d.docente_email || '—').split('@')[0];
-        const initial = name.charAt(0).toUpperCase();
-        return `<tr>
+      const name = d.docente_nombre || (d.docente_email || '—').split('@')[0];
+      const initial = name.charAt(0).toUpperCase();
+      return `<tr>
         <td>
           <div class="hist-patient-cell">
             <div class="hist-avatar">${initial}</div>
@@ -2753,8 +2754,8 @@ function filtrarPagos() {
   const tbody = document.getElementById('cont-tbody');
   tbody.innerHTML = pagos.length
     ? pagos.map(p => {
-        const status = (p.estado || 'pendiente').toLowerCase();
-        return `<tr>
+      const status = (p.estado || 'pendiente').toLowerCase();
+      return `<tr>
         <td>
           <div class="hist-date-box">
             <span class="hist-date-main">${formatDate(p.fecha)}</span>
