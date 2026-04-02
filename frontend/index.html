@@ -306,7 +306,7 @@
         </div>
 
         <div
-          style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1200px; position: relative; z-index: 1;">
+          style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1200px; position: relative; z-index: 1; overflow: visible !important;">
 
           <!-- 1) SALUDO (Arriba de todo) -->
           <div class="hero-greeting anim anim-1" id="docente-hero-greeting"
@@ -314,11 +314,11 @@
 
           <!-- Contenedor relativo para poder centrar la columna principal y posicionar el teléfono a la derecha -->
           <div
-            style="position: relative; display: flex; justify-content: center; align-items: flex-start; width: 100%;">
+            style="position: relative; display: flex; justify-content: center; align-items: flex-start; width: 100%; overflow: visible !important;">
 
             <!-- Columna Central: Contenedores con efecto vidrio -->
             <!-- Al quitarle la influencia del teléfono, ahora está perfectamente centrada en la pantalla -->
-            <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center;">
+            <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; overflow: visible !important;">
 
               <!-- Contenedor 1: Títulos "Mis grupos" -->
               <!-- Puedes modificar independientemente el ancho (width/max-width), alto (height/min-height) y color (background) -->
@@ -372,8 +372,9 @@
             </div>
 
             <!-- DERECHA: Teléfono de tips (posicionado de forma absoluta para no empujar los contenedores centrales) -->
-            <div class="hero-right anim anim-1"
-              style="position: absolute; right: 0; top: 0; background: none; border: none; box-shadow: none; padding: 0; z-index: 2;">
+            <!-- Le quitamos la clase 'hero-right' para que no aplique un efecto de vidrio borroso invisible encima de los botones -->
+            <div class="anim anim-1"
+              style="position: absolute; right: 0; top: 0; background: none; border: none; box-shadow: none; padding: 0; z-index: 2; overflow: visible !important;">
               <!-- 
                 Para desplazar el teléfono en cualquier dirección, modifica los valores dentro de translate(Xpx, Ypx)
                 - Un valor X negativo lo mueve a la izquierda (-20px) o positivo a la derecha.
