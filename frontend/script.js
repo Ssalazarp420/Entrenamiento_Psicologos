@@ -282,20 +282,18 @@ function resetStudentDashboard() {
   const hero = document.getElementById('student-hero-section');
   if (hero) hero.style.display = 'grid';
   // Ocultar todos los contenedores del flujo
-  ['sf-header-categorias', 'step-categorias-wrap', 'sf-header-pacientes', 'step-pacientes-wrap']
+  ['step-categorias-wrap', 'step-pacientes-header', 'step-pacientes-wrap']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
 function scrollToSelectionFlow() {
   const hero = document.getElementById('student-hero-section');
   if (hero) hero.style.display = 'none';
-  // Mostrar Vista A: encabezado + libro de categorías
-  const h = document.getElementById('sf-header-categorias');
+  // Mostrar Vista A: libro de categorías
   const b = document.getElementById('step-categorias-wrap');
-  if (h) h.style.display = 'flex';
   if (b) { b.style.display = 'block'; b.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   // Asegurar que Vista B esté oculta
-  ['sf-header-pacientes', 'step-pacientes-wrap']
+  ['step-pacientes-header', 'step-pacientes-wrap']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
@@ -471,12 +469,19 @@ function selectCategoria(cat) {
   selectedCategoria = cat;
   selectedDificultad = null;
   // Ocultar Vista A
-  ['sf-header-categorias', 'step-categorias-wrap']
+  ['step-categorias-wrap']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  // Actualizar título de la categoría seleccionada
+  const sttl = document.getElementById('selected-cat-title');
+  if (sttl) {
+    const emoji = getCategoryEmoji(cat);
+    sttl.innerHTML = `${emoji} ${cat}`;
+  }
+
   // Mostrar Vista B
-  const h = document.getElementById('sf-header-pacientes');
+  const h = document.getElementById('step-pacientes-header');
   const p = document.getElementById('step-pacientes-wrap');
-  if (h) h.style.display = 'flex';
+  if (h) h.style.display = 'block';
   if (p) { p.style.display = 'block'; p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   // Resetea botones de dificultad
   document.querySelectorAll('.filter-dif-btn').forEach(b => b.classList.remove('active'));
@@ -500,12 +505,10 @@ function selectDificultad(dif) {
 
 function volverALibroCategorias() {
   // Ocultar Vista B
-  ['sf-header-pacientes', 'step-pacientes-wrap']
+  ['step-pacientes-header', 'step-pacientes-wrap']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
   // Mostrar Vista A
-  const h = document.getElementById('sf-header-categorias');
   const b = document.getElementById('step-categorias-wrap');
-  if (h) h.style.display = 'flex';
   if (b) b.style.display = 'block';
 }
 
@@ -542,19 +545,31 @@ function renderPatientCards() {
   const generateGridCardHTML = ([pid, p]) => {
     const safeName = String(p.name || '').replace(/'/g, "\\'");
     const initial = safeName ? safeName.charAt(0).toUpperCase() : '?';
+    const description = p.descripcion || 'Sin descripción disponible.';
 
     return `
-          <div class="book-patient-card ${catColorClass}" style="margin:0; width:100%;" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
-            <div class="bp-icon" style="padding:0; overflow:hidden;">
-              ${p.avatar
+          <div class="flip-card" onclick="selectPatient('${pid}','${safeName}',${p.age},this)">
+            <div class="flip-card-inner">
+              <div class="flip-card-front book-patient-card ${catColorClass}" style="margin:0; width:100%;">
+                <div class="bp-icon" style="padding:0; overflow:hidden;">
+                  ${p.avatar
         ? `<img src="${AVATAR_BASE}${p.avatar}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none'" />`
         : initial}
+                </div>
+                <div class="bp-info">
+                  <h3>${p.name}</h3>
+                  <span class="bp-age">${p.age} años</span>
+                </div>
+                <div class="bp-start">→</div>
+              </div>
+              <div class="flip-card-back ${catColorClass}">
+                <div class="back-content">
+                  <h4>Descripción</h4>
+                  <p>${description}</p>
+                  <div class="bp-start" style="opacity:1; transform:none; margin-top:10px;">Seleccionar →</div>
+                </div>
+              </div>
             </div>
-            <div class="bp-info">
-              <h3>${p.name}</h3>
-              <span class="bp-age">${p.age} años</span>
-            </div>
-            <div class="bp-start">→</div>
           </div>`;
   };
 

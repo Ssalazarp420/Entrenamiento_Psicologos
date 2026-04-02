@@ -116,12 +116,7 @@
       <!-- ══ FLUJO DE SELECCIÓN: Categoría → Dificultad → Pacientes ══ -->
 
       <!-- ── Vista A · Contenedor 1: Encabezado "Nueva sesión" ── -->
-      <div id="sf-header-categorias" class="sf-header-box" style="display:none;">
-        <div class="sf-header-text">
-          <div class="selection-flow-title">Nueva sesión</div>
-          <div class="selection-flow-sub">Selecciona el tipo de caso.</div>
-        </div>
-      </div>
+
 
       <!-- ── Vista A · Contenedor 2: Libro de categorías ── -->
       <div id="step-categorias-wrap" class="sf-book-box" style="display:none;">
@@ -153,15 +148,15 @@
         </div>
       </div>
 
-      <!-- ── Vista B · Contenedor 3: Encabezado "Selecciona dificultad" ── -->
-      <div id="sf-header-pacientes" class="sf-header-box" style="display:none;">
-        <div class="sf-header-text">
-          <div class="selection-flow-title">Nueva sesión</div>
-          <div class="selection-flow-sub">Selecciona la dificultad y el paciente.</div>
+      <!-- ── Vista B · Contenedor Superior: Título ── -->
+      <div id="step-pacientes-header" class="sf-title-box" style="display:none;">
+        <div class="selected-category-header" style="margin:0; padding:0; border:none;">
+           <span class="sc-label">Caso seleccionado</span>
+           <h2 id="selected-cat-title" class="sc-title">—</h2>
         </div>
       </div>
 
-      <!-- ── Vista B · Contenedor 4: Dificultad y tarjetas de pacientes ── -->
+      <!-- ── Vista B · Contenedor Inferior: Dificultad y tarjetas de pacientes ── -->
       <div id="step-pacientes-wrap" class="sf-book-box" style="display:none;">
         <button class="btn-ghost" style="margin-bottom:16px; font-size:0.85rem;" onclick="volverALibroCategorias()">←
           Volver a Tipos de caso</button>
