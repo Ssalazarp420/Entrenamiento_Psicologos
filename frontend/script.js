@@ -35,29 +35,54 @@ function restoreSession() {
   }
 }
 
-// ── Avatares de pacientes disponibles ─────────────────────
+// ── Avatares de pacientes disponibles (Ordenados según vista local) ─────────────────────
 const PATIENT_AVATARS = [
+  // Fila 1
+  'Hombre_26.webp',
+  'Hombre_28.webp',
   'Hombre_29_1.webp',
-  'Mujer_25_1.webp',
-  'Hombre_30_1.webp',
-  'Mujer_30_1.webp',
-  'Hombre_35_1.webp',
-  'Mujer_30_2.webp',
-  'Mujer_30_3.webp',
-  'Hombre_35_2.webp',
-  'Mujer_30_4.webp',
-  'Hombre_50_1.webp',
   'Hombre_29_2.webp',
-  'Mujer_25_2.webp',
-  'Mujer_20_1.webp',
-  'Mujer_22_1.webp',
-  'Mujer_24_1.webp',
-  'Mujer_23_1.webp',
+  'Hombre_30_1.webp',
+  'Hombre_33.webp',
+  'Hombre_35_1.webp',
+  'Hombre_35_2.webp',
+  'Hombre_39.webp',
+  'Hombre_39_2.webp',
+  'Hombre_40.webp',
+  'Hombre_41.webp',
+
+  // Fila 2
+  'Hombre_43.webp',
+  'Hombre_45.webp',
+  'Hombre_50_1.webp',
   'Mujer_18_1.webp',
   'Mujer_19_1.webp',
+  'Mujer_20_1.webp',
   'Mujer_21_1.webp',
-  'Mujer_24_2.webp'
+  'Mujer_22_1.webp',
+  'Mujer_23_1.webp',
+  'Mujer_24_1.webp',
+  'Mujer_24_2.webp',
+  'Mujer_25_1.webp',
+
+  // Fila 3
+  'Mujer_25_2.webp',
+  'Mujer_26.webp',
+  'Mujer_28.webp',
+  'Mujer_30.webp',
+  'Mujer_30_1.webp',
+  'Mujer_30_2.webp',
+  'Mujer_30_3.webp',
+  'Mujer_30_4.webp',
+  'Mujer_32.webp',
+  'Mujer_32_2.webp',
+  'Mujer_35.webp',
+  'Mujer_37.webp',
+
+  // Fila 4
+  'Mujer_37_2.webp'
 ];
+
 const AVATAR_BASE = (() => {
   // En local (Live Server) el HTML está en /frontend/public/, raíz es el repo
   // En Azure el HTML está en la raíz del sitio
@@ -438,7 +463,7 @@ function renderCategoriesBook() {
     const emoji = getCategoryEmoji(catName);
     const safeCat = String(catName).replace(/'/g, "\\'");
     const isActive = selectedCategoria === catName;
-    
+
     return `
           <div class="book-cat-btn${isActive ? ' active' : ''}" onclick="seleccionarCategoriaParaDetalle('${safeCat}')">
             <div class="cat-btn-icon">${emoji}</div>
@@ -494,7 +519,7 @@ function seleccionarCategoriaParaDetalle(catNombre) {
   if (empty) empty.style.display = 'none';
   if (content) {
     content.style.display = 'block';
-    
+
     document.getElementById('cd-header-emoji').textContent = getCategoryEmoji(catNombre);
     document.getElementById('cd-header-name').textContent = catNombre;
     document.getElementById('cd-val-prevalencia').textContent = catObj.prevalencia || 'Media';
@@ -2449,7 +2474,7 @@ async function eliminarCaso() {
 function abrirEditarCategoria(idx) {
   const cat = adminData.categorias[idx];
   if (!cat) return;
-  
+
   openAdminModal('modal-nueva-categoria');
   document.getElementById('modal-cat-title').textContent = 'Editar categoría';
   document.getElementById('nc-original-nombre').value = cat.nombre || cat;
@@ -2472,7 +2497,7 @@ function resetModalCategoria() {
 
 // Override original openAdminModal for category to reset it
 const originalOpenAdminModal = openAdminModal;
-openAdminModal = function(id) {
+openAdminModal = function (id) {
   if (id === 'modal-nueva-categoria') resetModalCategoria();
   originalOpenAdminModal(id);
 };
@@ -2483,7 +2508,7 @@ async function guardarCategoria() {
   const prevalencia = document.getElementById('nc-prevalencia').value.trim();
   const tipo_intervencion = document.getElementById('nc-intervencion').value.trim();
   const duracion_estimada = document.getElementById('nc-duracion').value.trim();
-  
+
   if (!nombre) return;
 
   const payload = { nombre, prevalencia, tipo_intervencion, duracion_estimada };
@@ -2496,12 +2521,12 @@ async function guardarCategoria() {
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
-    
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `Error ${res.status}`);
     }
-    
+
     await loadCasosAdmin();
     closeAdminModal('modal-nueva-categoria');
     showToast(isEdit ? `Categoría "${nombre}" actualizada ✓` : `Categoría "${nombre}" creada ✓`);
