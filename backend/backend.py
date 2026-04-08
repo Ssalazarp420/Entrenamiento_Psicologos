@@ -131,6 +131,9 @@ class CasoCreate(BaseModel):
 
 class CategoriaCreate(BaseModel):
     nombre: str
+    prevalencia: Optional[str] = "Media"
+    tipo_intervencion: Optional[str] = "TCC"
+    duracion_estimada: Optional[str] = "8 Sesiones"
 
 class PagoCreate(BaseModel):
     tipo: str; origen: str
@@ -1373,24 +1376,83 @@ def eliminar_caso(caso_id: str, user=Depends(require_admin)):
 def listar_categorias(user=Depends(require_admin)):
     import json
     items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
-    return json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED
+    if items:
+        cats = json.loads(items[0]["valor"])
+        # Migración al vuelo si son strings
+        if cats and isinstance(cats[0], str):
+            cats = [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in cats]
+        return cats
+    return [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in CATEGORIAS_SEED]
 
 # Endpoint público — cualquier usuario autenticado puede leer las categorías
 @app.get("/categorias")
 def listar_categorias_publico(user=Depends(get_current_user)):
     import json
     items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
-    return json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED
+    if items:
+        cats = json.loads(items[0]["valor"])
+        if cats and isinstance(cats[0], str):
+            cats = [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in cats]
+        return cats
+    return [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in CATEGORIAS_SEED]
 
 @app.post("/admin/categorias")
 def crear_categoria(req: CategoriaCreate, user=Depends(require_admin)):
     import json
     items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
-    cats = json.loads(items[0]["valor"]) if items else CATEGORIAS_SEED.copy()
-    if req.nombre in cats: raise HTTPException(status_code=400, detail="La categoría ya existe")
-    cats.append(req.nombre)
+    cats = []
+    if items:
+        cats = json.loads(items[0]["valor"])
+        if cats and isinstance(cats[0], str):
+            cats = [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in cats]
+    else:
+        cats = [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in CATEGORIAS_SEED]
+    
+    # Buscar si ya existe por nombre
+    for c in cats:
+        if c["nombre"] == req.nombre:
+            raise HTTPException(status_code=400, detail="La categoría ya existe")
+            
+    cats.append(req.dict())
     c_config.upsert_item({"id": "categorias", "valor": json.dumps(cats)})
     return {"mensaje": "Categoría creada", "categorias": cats}
+
+@app.put("/admin/categorias/{nombre}")
+def actualizar_categoria(nombre: str, req: CategoriaCreate, user=Depends(require_admin)):
+    import json
+    items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Categorías no encontradas")
+    
+    cats = json.loads(items[0]["valor"])
+    if cats and isinstance(cats[0], str):
+        cats = [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in cats]
+        
+    found = False
+    for i, c in enumerate(cats):
+        if c["nombre"] == nombre:
+            cats[i] = req.dict()
+            found = True
+            break
+            
+    if not found: raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    
+    c_config.upsert_item({"id": "categorias", "valor": json.dumps(cats)})
+    return {"mensaje": "Categoría actualizada", "categorias": cats}
+
+@app.delete("/admin/categorias/{nombre}")
+def eliminar_categoria(nombre: str, user=Depends(require_admin)):
+    import json
+    items = list(c_config.query_items("SELECT * FROM c WHERE c.id = 'categorias'", enable_cross_partition_query=True))
+    if not items: raise HTTPException(status_code=404, detail="Categorías no encontradas")
+    
+    cats = json.loads(items[0]["valor"])
+    if cats and isinstance(cats[0], str):
+        cats = [{"nombre": c, "prevalencia": "Media", "tipo_intervencion": "TCC", "duracion_estimada": "8 Sesiones"} for c in cats]
+        
+    cats = [c for c in cats if c["nombre"] != nombre]
+    
+    c_config.upsert_item({"id": "categorias", "valor": json.dumps(cats)})
+    return {"mensaje": "Categoría eliminada", "categorias": cats}
 
 # ---------------------------------------------------------------------------
 # ADMIN — CONFIG GLOBAL

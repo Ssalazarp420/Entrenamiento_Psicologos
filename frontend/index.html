@@ -120,19 +120,65 @@
 
       <!-- ── Vista A · Contenedor 2: Libro de categorías ── -->
       <div id="step-categorias-wrap" class="sf-book-box" style="display:none;">
-        <!-- TEXTO DEL LIBRO: Cambia 'Tipo de caso' por lo que desees mostrar como título de esta vista -->
         <div class="sf-book-label">Tipología de caso</div>
 
         <div id="categories-book">
+          <!-- Página izquierda: Lista de categorías -->
           <div class="book-page book-page-left">
-            <div id="categories-page-left-content"></div>
-          </div>
-          <div class="book-page book-page-right">
-            <div id="categories-page-right-content"></div>
+            <div id="categories-page-left-content" class="categories-grid-left"></div>
             <div class="book-nav" id="categories-book-nav">
-              <button class="btn-book-nav" id="btn-cat-prev" onclick="changeCatPage(-1)">◀ Atrás</button>
+              <button class="btn-book-nav" id="btn-cat-prev" onclick="changeCatPage(-1)">◀</button>
               <span class="book-page-indicator" id="cat-page-indicator">1 / 1</span>
-              <button class="btn-book-nav" id="btn-cat-next" onclick="changeCatPage(1)">Siguiente ▶</button>
+              <button class="btn-book-nav" id="btn-cat-next" onclick="changeCatPage(1)">▶</button>
+            </div>
+          </div>
+
+          <!-- Página derecha: Detalle de categoría seleccionada -->
+          <div class="book-page book-page-right">
+            <div id="category-detail-right" class="category-detail-container">
+              <div id="cd-empty-state" class="cd-empty">
+                <div class="cd-empty-icon">👈</div>
+                <div class="cd-empty-text">Selecciona una tipología para ver los detalles</div>
+              </div>
+              
+              <div id="cd-content" style="display:none;">
+                <div class="cd-header">
+                  <div class="cd-icon" id="cd-header-emoji">😟</div>
+                  <h2 class="cd-title" id="cd-header-name">Ansiedad</h2>
+                </div>
+                
+                <div class="cd-info-list">
+                  <div class="cd-info-item">
+                    <span class="cd-info-icon">👥</span>
+                    <div class="cd-info-text">
+                      <span class="cd-info-label">Prevalencia:</span>
+                      <span class="cd-info-val" id="cd-val-prevalencia">Alta</span>
+                    </div>
+                  </div>
+                  <div class="cd-info-item">
+                    <span class="cd-info-icon">📍</span>
+                    <div class="cd-info-text">
+                      <span class="cd-info-label">Tipo de Intervención:</span>
+                      <span class="cd-info-val" id="cd-val-intervencion">TCC</span>
+                    </div>
+                  </div>
+                  <div class="cd-info-item">
+                    <span class="cd-info-icon">🗓️</span>
+                    <div class="cd-info-text">
+                      <span class="cd-info-label">Duración Estimada:</span>
+                      <span class="cd-info-val" id="cd-val-duracion">8 Sesiones</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="cd-visual-elements">
+                  <img src="https://psicologiaiassets.blob.core.windows.net/assets/iconos_psicologia_flotantes.png" alt="Visual" style="width:100%; height:auto; opacity:0.8;" />
+                </div>
+
+                <button class="btn-elegir-caso" id="btn-elegir-caso" onclick="confirmarSeleccionCategoria()">
+                  Elegir caso
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1113,16 +1159,36 @@
     </div>
   </div>
 
-  <!-- Modal: nueva categoría de casos -->
+  <!-- Modal: nueva/editar categoría de casos -->
   <div id="modal-nueva-categoria" class="admin-modal-overlay" onclick="closeAdminModal('modal-nueva-categoria')">
     <div class="admin-modal" onclick="event.stopPropagation()">
-      <div class="modal-title">Nueva categoría</div>
+      <div class="modal-title" id="modal-cat-title">Nueva categoría</div>
       <div class="modal-subtitle">Agrupa los casos de pacientes por tipo o condición</div>
-      <div class="form-field"><label>Nombre de la categoría</label><input id="nc-nombre" type="text"
-          placeholder="Ej: Ansiedad, Depresión, Forense..." /></div>
+      <input type="hidden" id="nc-original-nombre" value="" />
+      
+      <div class="form-field">
+        <label>Nombre de la categoría</label>
+        <input id="nc-nombre" type="text" placeholder="Ej: Ansiedad, Depresión..." />
+      </div>
+      
+      <div class="form-field">
+        <label>Prevalencia</label>
+        <input id="nc-prevalencia" type="text" placeholder="Ej: Alta, Media, Baja..." />
+      </div>
+      
+      <div class="form-field">
+        <label>Tipo de Intervención</label>
+        <input id="nc-intervencion" type="text" placeholder="Ej: TCC, Humanista, Psicodinámica..." />
+      </div>
+      
+      <div class="form-field">
+        <label>Duración Estimada</label>
+        <input id="nc-duracion" type="text" placeholder="Ej: 8 Sesiones, 12 Semanas..." />
+      </div>
+      
       <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
         <button class="btn-ghost" onclick="closeAdminModal('modal-nueva-categoria')">Cancelar</button>
-        <button class="btn-accent" onclick="crearCategoria()">Crear</button>
+        <button class="btn-accent" id="btn-guardar-categoria" onclick="guardarCategoria()">Crear</button>
       </div>
     </div>
   </div>

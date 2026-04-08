@@ -432,29 +432,27 @@ function renderCategoriesBook() {
   const startIdx = currentCatPage * ITEMS_PER_PAGE;
   const paginated = allCategories.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
-  const leftItems = paginated.slice(0, 3);
-  const rightItems = paginated.slice(3, 6);
-
-  const generateCardHTML = (cat) => {
-    if (!cat) return '';
-    const emoji = getCategoryEmoji(cat);
-    const safeCat = String(cat).replace(/'/g, "\\'");
+  const generateCardHTML = (catObj) => {
+    if (!catObj) return '';
+    const catName = catObj.nombre || catObj;
+    const emoji = getCategoryEmoji(catName);
+    const safeCat = String(catName).replace(/'/g, "\\'");
+    const isActive = selectedCategoria === catName;
+    
     return `
-          <div class="book-cat-btn" onclick="selectCategoria('${safeCat}')">
+          <div class="book-cat-btn${isActive ? ' active' : ''}" onclick="seleccionarCategoriaParaDetalle('${safeCat}')">
             <div class="cat-btn-icon">${emoji}</div>
             <div class="bp-info">
-              <h3>${cat}</h3>
+              <h3>${catName}</h3>
             </div>
-            <div class="bp-start">Seleccionar →</div>
+            <div class="bp-start">${isActive ? 'Seleccionado' : 'Ver detalle →'}</div>
           </div>`;
   };
 
   const leftContainer = document.getElementById('categories-page-left-content');
-  const rightContainer = document.getElementById('categories-page-right-content');
   const navNode = document.getElementById('categories-book-nav');
 
-  if (leftContainer) leftContainer.innerHTML = leftItems.map(generateCardHTML).join('');
-  if (rightContainer) rightContainer.innerHTML = rightItems.map(generateCardHTML).join('');
+  if (leftContainer) leftContainer.innerHTML = paginated.map(generateCardHTML).join('');
 
   const prevBtn = document.getElementById('btn-cat-prev');
   const nextBtn = document.getElementById('btn-cat-next');
@@ -473,18 +471,41 @@ function renderCategoriesBook() {
 }
 
 function changeCatPage(dir) {
-  const totalPages = Math.ceil(allCategories.length / 6); // ITEMS_PER_PAGE is 6
+  const ITEMS_PER_PAGE = 6;
+  const totalPages = Math.ceil(allCategories.length / ITEMS_PER_PAGE);
   let newPage = currentCatPage + dir;
   if (newPage < 0 || newPage >= totalPages) return;
 
   currentCatPage = newPage;
-  const bc = document.getElementById('categories-book');
-  if (bc) {
-    bc.classList.remove('book-flip');
-    void bc.offsetWidth;
-    bc.classList.add('book-flip');
-  }
   renderCategoriesBook();
+}
+
+function seleccionarCategoriaParaDetalle(catNombre) {
+  selectedCategoria = catNombre;
+  const catObj = allCategories.find(c => (c.nombre || c) === catNombre);
+  if (!catObj) return;
+
+  // Actualizar UI del libro (izquierda)
+  renderCategoriesBook();
+
+  // Mostrar detalle (derecha)
+  const empty = document.getElementById('cd-empty-state');
+  const content = document.getElementById('cd-content');
+  if (empty) empty.style.display = 'none';
+  if (content) {
+    content.style.display = 'block';
+    
+    document.getElementById('cd-header-emoji').textContent = getCategoryEmoji(catNombre);
+    document.getElementById('cd-header-name').textContent = catNombre;
+    document.getElementById('cd-val-prevalencia').textContent = catObj.prevalencia || 'Media';
+    document.getElementById('cd-val-intervencion').textContent = catObj.tipo_intervencion || 'TCC';
+    document.getElementById('cd-val-duracion').textContent = catObj.duracion_estimada || '8 Sesiones';
+  }
+}
+
+function confirmarSeleccionCategoria() {
+  if (!selectedCategoria) return;
+  selectCategoria(selectedCategoria);
 }
 
 function selectCategoria(cat) {
@@ -1706,7 +1727,7 @@ async function loadAdmin() {
   // Overview: sesiones
   loadSesionesOverview();
   // Cases KPI
-  document.getElementById('kpi-cases').textContent = Object.keys(adminData.casos || {}).length || 3;
+  loadCasosAdmin();
   document.getElementById('kpi-inst').textContent = adminData.instituciones.length || '—';
   loadContabilidadKpis();
 }
@@ -2156,9 +2177,9 @@ async function loadCasosAdmin() {
 
     // Si no hay categoría seleccionada y hay categorías, selecciona la primera
     if (selectedCatIndex === null && adminData.categorias.length) {
-      seleccionarCategoria(0, adminData.categorias[0]);
+      seleccionarCategoriaAdmin(0, adminData.categorias[0]);
     } else if (selectedCatIndex !== null) {
-      seleccionarCategoria(selectedCatIndex, adminData.categorias[selectedCatIndex]);
+      seleccionarCategoriaAdmin(selectedCatIndex, adminData.categorias[selectedCatIndex]);
     }
   } catch (e) {
     document.getElementById('casos-cat-list').innerHTML =
@@ -2175,24 +2196,34 @@ function setCasosLoading(on) {
 
 function renderCategorias() {
   const list = document.getElementById('casos-cat-list');
+  if (!list) return;
   if (!adminData.categorias.length) {
     list.innerHTML = '<div class="ov-empty" style="font-size:.78rem">Sin categorías</div>';
     return;
   }
-  list.innerHTML = adminData.categorias.map((cat, i) => {
+  list.innerHTML = adminData.categorias.map((catObj, i) => {
+    const cat = catObj.nombre || catObj;
     const count = Object.values(adminData.casos).filter(c => c.categoria === cat).length;
-    return `<div class="cat-item${i === selectedCatIndex ? ' active' : ''}"
-      onclick="seleccionarCategoria(${i},'${cat.replace(/'/g, "\\'")}')">
-      <span>${cat}</span><span class="cat-count">${count}</span>
-    </div>`;
+    return `
+      <div class="cat-item${i === selectedCatIndex ? ' active' : ''}">
+        <div class="cat-item-info" onclick="seleccionarCategoriaAdmin(${i},'${cat.replace(/'/g, "\\'")}')">
+          <span>${cat}</span><span class="cat-count">${count}</span>
+        </div>
+        <div class="cat-item-actions">
+          <button class="btn-cat-action" title="Editar" onclick="abrirEditarCategoria(${i})">✏️</button>
+          <button class="btn-cat-action btn-cat-action-del" title="Eliminar" onclick="eliminarCategoria('${cat.replace(/'/g, "\\'")}')">🗑</button>
+        </div>
+      </div>`;
   }).join('');
 }
 
-function seleccionarCategoria(idx, cat) {
+function seleccionarCategoriaAdmin(idx, cat) {
   selectedCatIndex = idx;
   renderCategorias();
-  const casos = Object.entries(adminData.casos).filter(([, c]) => c.categoria === cat);
+  const catName = typeof cat === 'object' ? cat.nombre : cat;
+  const casos = Object.entries(adminData.casos).filter(([, c]) => c.categoria === catName);
   const wrap = document.getElementById('casos-list-wrap');
+  if (!wrap) return;
   wrap.innerHTML = casos.length
     ? casos.map(([id, c]) => `
         <div class="caso-item" onclick="abrirCasoEditor('${id}', event)">
@@ -2415,29 +2446,90 @@ async function eliminarCaso() {
   });
 }
 
-async function crearCategoria() {
+function abrirEditarCategoria(idx) {
+  const cat = adminData.categorias[idx];
+  if (!cat) return;
+  
+  openAdminModal('modal-nueva-categoria');
+  document.getElementById('modal-cat-title').textContent = 'Editar categoría';
+  document.getElementById('nc-original-nombre').value = cat.nombre || cat;
+  document.getElementById('nc-nombre').value = cat.nombre || cat;
+  document.getElementById('nc-prevalencia').value = cat.prevalencia || '';
+  document.getElementById('nc-intervencion').value = cat.tipo_intervencion || '';
+  document.getElementById('nc-duracion').value = cat.duracion_estimada || '';
+  document.getElementById('btn-guardar-categoria').textContent = 'Guardar cambios';
+}
+
+function resetModalCategoria() {
+  document.getElementById('modal-cat-title').textContent = 'Nueva categoría';
+  document.getElementById('nc-original-nombre').value = '';
+  document.getElementById('nc-nombre').value = '';
+  document.getElementById('nc-prevalencia').value = '';
+  document.getElementById('nc-intervencion').value = '';
+  document.getElementById('nc-duracion').value = '';
+  document.getElementById('btn-guardar-categoria').textContent = 'Crear';
+}
+
+// Override original openAdminModal for category to reset it
+const originalOpenAdminModal = openAdminModal;
+openAdminModal = function(id) {
+  if (id === 'modal-nueva-categoria') resetModalCategoria();
+  originalOpenAdminModal(id);
+};
+
+async function guardarCategoria() {
+  const originalNombre = document.getElementById('nc-original-nombre').value;
   const nombre = document.getElementById('nc-nombre').value.trim();
+  const prevalencia = document.getElementById('nc-prevalencia').value.trim();
+  const tipo_intervencion = document.getElementById('nc-intervencion').value.trim();
+  const duracion_estimada = document.getElementById('nc-duracion').value.trim();
+  
   if (!nombre) return;
 
+  const payload = { nombre, prevalencia, tipo_intervencion, duracion_estimada };
+  const isEdit = !!originalNombre;
+
   try {
-    const res = await fetch(`${API}/admin/categorias`, {
-      method: 'POST',
+    const url = isEdit ? `${API}/admin/categorias/${encodeURIComponent(originalNombre)}` : `${API}/admin/categorias`;
+    const res = await fetch(url, {
+      method: isEdit ? 'PUT' : 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ nombre }),
+      body: JSON.stringify(payload),
     });
+    
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `Error ${res.status}`);
     }
-    const data = await res.json();
-    adminData.categorias = data.categorias || [...adminData.categorias, nombre];
+    
+    await loadCasosAdmin();
     closeAdminModal('modal-nueva-categoria');
-    document.getElementById('nc-nombre').value = '';
-    renderCategorias();
-    showToast(`Categoría "${nombre}" creada ✓`);
+    showToast(isEdit ? `Categoría "${nombre}" actualizada ✓` : `Categoría "${nombre}" creada ✓`);
   } catch (e) {
     showToast('Error: ' + e.message, true);
   }
+}
+
+async function eliminarCategoria(nombre) {
+  showConfirmModal({
+    title: '¿Eliminar categoría?',
+    msg: `¿Seguro que deseas eliminar la categoría "<strong>${nombre}</strong>"? Todos los casos asociados dejarán de estar visibles en esta carpeta.`,
+    icon: '📂',
+    confirmText: 'Eliminar categoría',
+    onConfirm: async () => {
+      try {
+        const res = await fetch(`${API}/admin/categorias/${encodeURIComponent(nombre)}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        await loadCasosAdmin();
+        showToast(`Categoría "${nombre}" eliminada`);
+      } catch (e) {
+        showToast('Error al eliminar: ' + e.message, true);
+      }
+    }
+  });
 }
 
 // ── Gestión de Prompts Globales (Admin) ──────────────────────

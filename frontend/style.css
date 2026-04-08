@@ -2203,7 +2203,7 @@ body.student-mode .screen#screen-historial {
 /* Casos IA layout */
 .casos-layout {
   display: grid;
-  grid-template-columns: 160px 1fr 1fr;
+  grid-template-columns: 210px 1fr 1fr;
   gap: 14px;
   align-items: start;
 }
@@ -2225,15 +2225,15 @@ body.student-mode .screen#screen-historial {
 }
 
 .cat-item {
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: .82rem;
+  padding: 6px 4px 6px 10px;
+  border-radius: 9px;
+  font-size: .83rem;
   cursor: pointer;
   transition: all .18s;
   color: var(--muted);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
 }
 
 .cat-item:hover {
@@ -2242,15 +2242,78 @@ body.student-mode .screen#screen-historial {
 }
 
 .cat-item.active {
-  background: rgba(91, 141, 238, .12);
+  background: rgba(91, 141, 238, .1);
   color: var(--accent);
 }
 
-.cat-count {
-  font-size: .7rem;
+.cat-item-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  gap: 6px;
+}
+
+.cat-item-info span:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  transform: translateX(5px);
+  pointer-events: none;
+}
+
+.cat-item:hover .cat-item-actions {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.btn-cat-action {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 6px;
   background: var(--surface);
-  padding: 1px 7px;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.2s;
+  color: var(--muted);
+}
+
+.btn-cat-action:hover {
+  background: var(--card);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+.btn-cat-action-del:hover {
+  color: var(--red);
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.05);
+}
+
+.cat-count {
+  font-size: .65rem;
+  font-weight: 700;
+  background: rgba(108, 193, 206, 0.15);
+  color: #0e7490;
+  padding: 2px 6px;
+  border-radius: 6px;
+  min-width: 14px;
+  text-align: center;
 }
 
 .casos-list {
@@ -3612,6 +3675,232 @@ body.student-mode {
 .sf-diff-book-box {
   padding: var(--pad-diff-content);
   /* resto igual que .sf-book-box */
+}
+
+/* ── NUEVOS ESTILOS PARA EL LIBRO DE CATEGORÍAS ────────────────── */
+
+.categories-grid-left {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 90%;
+  padding: 10px;
+}
+
+.book-cat-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 12px;
+  padding: 15px 10px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  min-height: 100px;
+  justify-content: center;
+}
+
+.book-cat-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(108, 193, 206, 0.15);
+  border-color: var(--teal);
+}
+
+.book-cat-btn.active {
+  background: var(--teal);
+  color: white;
+  border-color: var(--teal-deep);
+  box-shadow: 0 8px 20px rgba(108, 193, 206, 0.4);
+}
+
+.book-cat-btn.active .cat-btn-icon {
+  background: rgba(255,255,255,0.2);
+}
+
+.cat-btn-icon {
+  font-size: 1.8rem;
+  width: 50px;
+  height: 50px;
+  background: rgba(108, 193, 206, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-cat-btn h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+  color: inherit;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.bp-start {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* Página derecha: Detalle */
+.category-detail-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.cd-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.cd-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.cd-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  border-bottom: 1.5px solid rgba(0,0,0,0.05);
+  padding-bottom: 20px;
+}
+
+.cd-icon {
+  font-size: 2.8rem;
+  background: white;
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+.cd-title {
+  font-size: 2.2rem;
+  font-family: 'Playfair Display', serif;
+  color: var(--teal-deep);
+  margin: 0;
+}
+
+.cd-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 30px;
+}
+
+.cd-info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cd-info-icon {
+  font-size: 1.4rem;
+  opacity: 0.7;
+}
+
+.cd-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.cd-info-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cd-info-val {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cd-visual-elements {
+  margin-top: auto;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.btn-elegir-caso {
+  width: 100%;
+  padding: 16px;
+  background: var(--btn-gradient, linear-gradient(135deg, #a78bfa, #7c3aed));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+
+.btn-elegir-caso:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.4);
+}
+
+.btn-elegir-caso:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Colores por defecto para el botón (Gradient púrpura como el de la imagen) */
+#btn-elegir-caso {
+  background: linear-gradient(135deg, #b794f4, #805ad5);
+}
+
+/* Responsive book fixes */
+@media (max-width: 1150px) {
+  #categories-book {
+    width: 95vw;
+    height: auto;
+    aspect-ratio: auto;
+    background: white;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    border-radius: 30px;
+    flex-direction: column;
+    padding: 30px;
+    transform: none;
+    left: 0;
+  }
+  
+  .book-page-left, .book-page-right {
+    position: relative;
+    top: 0; left: 0; right: 0;
+    width: 100%;
+    height: auto;
+    padding: 0;
+  }
+  
+  .book-page-left { margin-bottom: 40px; }
+  
+  .categories-grid-left {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
 }
 
 /* ── TOAST PREMIUM ────────────────────────────────────── */
