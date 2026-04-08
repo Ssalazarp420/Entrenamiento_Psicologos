@@ -297,14 +297,14 @@ function scrollToSelectionFlow() {
   if (hero) hero.style.display = 'none';
   // Mostrar Vista A: libro de categorías
   const b = document.getElementById('step-categorias-wrap');
-  if (b) { 
-    b.style.display = 'block'; 
-    b.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+  if (b) {
+    b.style.display = 'block';
+    b.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   // Asegurar que Vista B esté oculta
   ['step-pacientes-header', 'step-pacientes-wrap']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-  
+
   // Renderizar por si los datos ya están cargados
   if (allCategories.length > 0) {
     renderCategoriesBook();
@@ -440,8 +440,8 @@ function renderCategoriesBook() {
     const emoji = getCategoryEmoji(cat);
     const safeCat = String(cat).replace(/'/g, "\\'");
     return `
-          <div class="book-patient-card patient-case-leve" style="border-left-color: var(--teal); cursor:pointer;" onclick="selectCategoria('${safeCat}')">
-            <div class="bp-icon" style="background:var(--card); font-size:1.5rem;">${emoji}</div>
+          <div class="book-cat-btn" onclick="selectCategoria('${safeCat}')">
+            <div class="cat-btn-icon">${emoji}</div>
             <div class="bp-info">
               <h3>${cat}</h3>
             </div>
@@ -476,7 +476,7 @@ function changeCatPage(dir) {
   const totalPages = Math.ceil(allCategories.length / 6); // ITEMS_PER_PAGE is 6
   let newPage = currentCatPage + dir;
   if (newPage < 0 || newPage >= totalPages) return;
-  
+
   currentCatPage = newPage;
   const bc = document.getElementById('categories-book');
   if (bc) {

@@ -330,7 +330,8 @@ main {
   width: 100%;
   margin: 0 auto;
   gap: 12px;
-  position: relative; /* Agregado para posicionar la burbuja flotante */
+  position: relative;
+  /* Agregado para posicionar la burbuja flotante */
 }
 
 /* BURBUJA FLOTANTE PARA DAR DE ALTA (EXTERNA AL CHAT) */
@@ -339,20 +340,23 @@ main {
   /* =========================================================================
      👇 MODIFICA ESTOS VALORES PARA MOVER LA BURBUJA ARRIBA/ABAJO/IZQ/DER 👇
      ========================================================================= */
-  top: 130px;        /* Distancia desde ARRIBA. Aumenta para moverla hacia ABAJO. Disminuye para moverla ARRIBA. */
-  left: -240px;      /* Distancia desde la IZQUIERDA. Al ser negativo (-240px) la saca hacia la izquierda del chat. */
-                     /* Hazlo más negativo (ej: -280px) para moverla más a la izquierda. */
-                     /* Hazlo menos negativo o positivo para acercarla al chat o meterla dentro. */
-                     
-  width: 210px;      /* ANCHO de la burbuja. Aumenta si el texto no cabe. */
+  top: 130px;
+  /* Distancia desde ARRIBA. Aumenta para moverla hacia ABAJO. Disminuye para moverla ARRIBA. */
+  left: -240px;
+  /* Distancia desde la IZQUIERDA. Al ser negativo (-240px) la saca hacia la izquierda del chat. */
+  /* Hazlo más negativo (ej: -280px) para moverla más a la izquierda. */
+  /* Hazlo menos negativo o positivo para acercarla al chat o meterla dentro. */
+
+  width: 210px;
+  /* ANCHO de la burbuja. Aumenta si el texto no cabe. */
   /* ========================================================================= */
-  
+
   background: var(--card);
   border: 1px solid rgba(16, 159, 178, 0.3);
   border-left: 4px solid var(--teal);
   border-radius: 14px;
   padding: 14px 18px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
   font-size: 0.85rem;
   color: var(--text);
   line-height: 1.45;
@@ -365,10 +369,10 @@ main {
 .floating-alta-tip::after {
   content: '';
   position: absolute;
-  right: -8px; 
+  right: -8px;
   top: 24px;
-  width: 0; 
-  height: 0; 
+  width: 0;
+  height: 0;
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
   border-left: 8px solid var(--card);
@@ -3005,21 +3009,21 @@ body.student-mode #screen-selection {
      0.0 = completamente transparente | 0.45 = semitransparente | 1.0 = opaco
      Ej. fondo azul suave: rgba(224, 242, 254, 0.7)
      Ej. sin fondo:        transparent                                        */
-  background: rgba(255, 255, 255, 0.45);
+  background: transparent;
 
   /* DESENFOQUE DE FONDO (efecto cristal)
      Desenfoca lo que hay detrás del contenedor.
      0px = sin efecto | 8px = suave | 20px = muy desenfocado
      Quitar el efecto: pon blur(0px) en ambas líneas               */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   /* Necesario para Safari */
 
   /* PADDING — espacio entre el borde del contenedor y su contenido
      Formato: padding: arriba  derecha/izquierda  abajo
      Aumentar el número horizontal aleja el contenido de los bordes laterales,
      pero NO cambia el ancho externo de la caja (para eso usa max-width)       */
-  padding: var(--pad-book-box);
+  padding: 0;
   width: 90%;
   /* ← controla el ancho real del contenedor glass */
   max-width: 700px;
@@ -3033,7 +3037,7 @@ body.student-mode #screen-selection {
      Formato: grosor  estilo  color(con transparencia)
      Quitar el borde: border: none
      Borde más visible: border: 2px solid rgba(108, 193, 206, 0.8)             */
-  border: 1px solid rgba(226, 232, 240, 0.6);
+  border: none;
 
   /* SEPARACIÓN INFERIOR — espacio entre este contenedor y el siguiente elemento
      Aumentar para más aire debajo, reducir para elementos más juntos           */
@@ -3248,98 +3252,54 @@ body.student-mode {
   background: transparent;
 }
 
-/* BOOK LAYOUT */
-.book-container {
+/* BOOK LAYOUT — imagen PNG de fondo */
+#categories-book {
   position: relative;
+  margin: 0 auto;
+  aspect-ratio: 2472 / 1228;
+  background: url('https://psicologiaiassets.blob.core.windows.net/assets/libro_2_NB.webp') no-repeat center center;
+  background-size: contain;
   display: flex;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  /*5px → desplazamiento horizontal (positivo = derecha)
+  10px → desplazamiento vertical (positivo = abajo)
+  25px → desenfoque (más alto = más suave)
+  rgba(0,0,0,0.4) → color y opacidad*/
+  filter: drop-shadow(5px 10px 10px rgba(0, 0, 0, 0.7));
+  width: 1100px;
+  max-width: none;
+  /* mueve hacia abajo, usa negativo para arriba */
+}
+
+/* Página izquierda — títulos y botones de categoría */
+.book-page-left {
+  position: absolute;
+  top: 8%;
+  left: 8%;
+  width: 38%;
+  height: 78%;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  margin: 40px auto;
-  max-width: 960px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 
-    0 15px 50px rgba(0, 0, 0, 0.12),
-    inset 0 0 40px rgba(0, 0, 0, 0.01),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
-  padding: 40px 50px;
-  gap: 60px;
-  min-height: 520px;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  overflow: visible;
-}
-
-.book-container.book-flip {
-  animation: pageTurn 0.5s ease forwards;
-}
-
-@keyframes pageTurn {
-  0% {
-    transform: scale(0.98);
-    opacity: 0.8;
-  }
-
-  50% {
-    transform: scale(1.02);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Simulate the center crease/spine */
-.book-spine {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 40px;
-  margin-left: -20px;
-  background: linear-gradient(to right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(0, 0, 0, 0.05) 45%,
-      rgba(0, 0, 0, 0.1) 50%,
-      rgba(0, 0, 0, 0.05) 55%,
-      rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Rings binding */
-.book-rings {
-  position: absolute;
-  top: 40px;
-  bottom: 40px;
-  left: 50%;
-  width: 30px;
-  margin-left: -15px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  z-index: 11;
-  pointer-events: none;
-}
-
-.book-rings .ring {
-  height: 12px;
-  width: 30px;
-  background: linear-gradient(to right, #ccc, #f0f0f0, #ccc);
-  border-radius: 6px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.8);
-  border: 1px solid #aaa;
-}
-
-.book-page {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  gap: 12px;
   z-index: 5;
-  position: relative;
-  height: 100%;
-  justify-content: center; /* Center items vertically if there are few */
+}
+
+/* Página derecha — detalle del caso seleccionado */
+.book-page-right {
+  position: absolute;
+  top: 8%;
+  right: 6%;
+  width: 40%;
+  height: 78%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px;
+  z-index: 5;
 }
 
 #categories-page-left-content,
@@ -3347,21 +3307,7 @@ body.student-mode {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
-}
-
-/* Horizontal lines for notebook feel */
-.book-page::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: repeating-linear-gradient(transparent, transparent 34px, rgba(0, 0, 0, 0.025) 35px);
-  background-size: 100% 35px;
-  pointer-events: none;
-  z-index: -1;
+  width: 100%;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3629,6 +3575,7 @@ body.student-mode {
   gap: 24px;
   white-space: nowrap;
 }
+
 .btn-book-nav {
   padding: 8px 20px;
   background: #ffffff;
@@ -3757,4 +3704,53 @@ body.student-mode {
 .btn-ghost-danger:hover {
   background: rgba(220, 38, 38, 0.05);
   border-color: rgba(220, 38, 38, 0.1);
+}
+
+/* Botones de categoría — estilo libro */
+.book-cat-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  background: rgba(150, 122, 161, 0.25);
+  border: 1.5px solid rgba(150, 122, 161, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.book-cat-btn:hover {
+  background: rgba(150, 122, 161, 0.45);
+  border-color: var(--mauve);
+  transform: translateY(-2px);
+}
+
+.book-cat-btn.selected {
+  background: rgba(150, 122, 161, 0.6);
+  border-color: var(--mauve);
+}
+
+.cat-btn-icon {
+  font-size: 1.6rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-cat-btn h3 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--light-text);
+  margin: 0;
+}
+
+.book-cat-btn .bp-start {
+  display: none;
 }
