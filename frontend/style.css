@@ -3253,23 +3253,23 @@ body.student-mode {
   position: relative;
   display: flex;
   justify-content: center;
-  margin: 20px auto;
-  max-width: 900px;
-  /* Background simulating an open book spreading */
-  background: #fafafa;
-  border-radius: 8px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 0 15px rgba(0, 0, 0, 0.02);
-  border: 1px solid #e2e8f0;
-  padding: 30px;
-  padding-top: 40px;
-  gap: 50px;
-  /* Space between pages */
-  min-height: 480px;
-  transition: transform 0.4s ease, opacity 0.3s;
+  margin: 40px auto;
+  max-width: 960px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 
+    0 15px 50px rgba(0, 0, 0, 0.12),
+    inset 0 0 40px rgba(0, 0, 0, 0.01),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 40px 50px;
+  gap: 60px;
+  min-height: 520px;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  overflow: visible;
 }
 
 .book-container.book-flip {
-  animation: pageTurn 0.5s ease;
+  animation: pageTurn 0.5s ease forwards;
 }
 
 @keyframes pageTurn {
@@ -3335,9 +3335,19 @@ body.student-mode {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   z-index: 5;
   position: relative;
+  height: 100%;
+  justify-content: center; /* Center items vertically if there are few */
+}
+
+#categories-page-left-content,
+#categories-page-right-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
 }
 
 /* Horizontal lines for notebook feel */
@@ -3348,8 +3358,8 @@ body.student-mode {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: repeating-linear-gradient(transparent, transparent 39px, rgba(0, 0, 0, 0.03) 40px);
-  background-size: 100% 40px;
+  background-image: repeating-linear-gradient(transparent, transparent 34px, rgba(0, 0, 0, 0.025) 35px);
+  background-size: 100% 35px;
   pointer-events: none;
   z-index: -1;
 }
@@ -3367,20 +3377,35 @@ body.student-mode {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 20px 14px 16px;
-  border-radius: 18px;
-
-  /* COLOR DE FONDO BASE — cámbialo aquí */
-  background: rgba(255, 255, 255, 0.92);
-
-  border: 1px solid #e2e8f0;
+  gap: 12px;
+  padding: 22px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #eef2f6;
   cursor: pointer;
-  transition: all 0.22s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   text-align: center;
-  min-height: 140px;
+  min-height: 125px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.book-patient-card .bp-icon {
+  width: 58px;
+  height: 58px;
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.book-patient-card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.book-patient-card .bp-start {
+  font-size: 0.75rem;
+  margin-top: 6px;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -3594,30 +3619,34 @@ body.student-mode {
 /* Pagination controls */
 .book-nav {
   position: absolute;
-  bottom: -60px;
-  right: 0;
+  bottom: -45px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  gap: 24px;
+  white-space: nowrap;
 }
-
 .btn-book-nav {
-  background: #fff;
-  border: 1px solid var(--border);
-  color: var(--teal);
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 8px 20px;
+  background: #ffffff;
+  color: var(--teal-deep);
+  border: 1.5px solid var(--teal);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .btn-book-nav:hover {
   background: var(--teal);
   color: #fff;
-  border-color: var(--teal);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(108, 193, 206, 0.3);
 }
 
 .book-page-indicator {

@@ -297,10 +297,18 @@ function scrollToSelectionFlow() {
   if (hero) hero.style.display = 'none';
   // Mostrar Vista A: libro de categorías
   const b = document.getElementById('step-categorias-wrap');
-  if (b) { b.style.display = 'block'; b.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  if (b) { 
+    b.style.display = 'block'; 
+    b.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+  }
   // Asegurar que Vista B esté oculta
   ['step-pacientes-header', 'step-pacientes-wrap']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  
+  // Renderizar por si los datos ya están cargados
+  if (allCategories.length > 0) {
+    renderCategoriesBook();
+  }
 }
 
 function closeSelectionFlow() {
@@ -428,8 +436,9 @@ function renderCategoriesBook() {
   const rightItems = paginated.slice(3, 6);
 
   const generateCardHTML = (cat) => {
+    if (!cat) return '';
     const emoji = getCategoryEmoji(cat);
-    const safeCat = cat.replace(/'/g, "\\'");
+    const safeCat = String(cat).replace(/'/g, "\\'");
     return `
           <div class="book-patient-card patient-case-leve" style="border-left-color: var(--teal); cursor:pointer;" onclick="selectCategoria('${safeCat}')">
             <div class="bp-icon" style="background:var(--card); font-size:1.5rem;">${emoji}</div>
@@ -440,29 +449,35 @@ function renderCategoriesBook() {
           </div>`;
   };
 
-  document.getElementById('categories-page-left').innerHTML = leftItems.map(generateCardHTML).join('');
-
-  const rightPageHTML = rightItems.map(generateCardHTML).join('');
+  const leftContainer = document.getElementById('categories-page-left-content');
+  const rightContainer = document.getElementById('categories-page-right-content');
   const navNode = document.getElementById('categories-book-nav');
-  document.getElementById('categories-page-right').innerHTML = rightPageHTML;
-  if (navNode) document.getElementById('categories-page-right').appendChild(navNode);
+
+  if (leftContainer) leftContainer.innerHTML = leftItems.map(generateCardHTML).join('');
+  if (rightContainer) rightContainer.innerHTML = rightItems.map(generateCardHTML).join('');
 
   const prevBtn = document.getElementById('btn-cat-prev');
   const nextBtn = document.getElementById('btn-cat-next');
   const indicator = document.getElementById('cat-page-indicator');
 
-  if (totalPages > 1) {
-    navNode.style.display = 'flex';
-    prevBtn.style.visibility = currentCatPage > 0 ? 'visible' : 'hidden';
-    nextBtn.style.visibility = currentCatPage < totalPages - 1 ? 'visible' : 'hidden';
-    indicator.textContent = `${currentCatPage + 1} / ${totalPages}`;
-  } else {
-    navNode.style.display = 'none';
+  if (navNode) {
+    if (totalPages > 1) {
+      navNode.style.display = 'flex';
+      if (prevBtn) prevBtn.style.visibility = currentCatPage > 0 ? 'visible' : 'hidden';
+      if (nextBtn) nextBtn.style.visibility = currentCatPage < totalPages - 1 ? 'visible' : 'hidden';
+      if (indicator) indicator.textContent = `${currentCatPage + 1} / ${totalPages}`;
+    } else {
+      navNode.style.display = 'none';
+    }
   }
 }
 
 function changeCatPage(dir) {
-  currentCatPage += dir;
+  const totalPages = Math.ceil(allCategories.length / 6); // ITEMS_PER_PAGE is 6
+  let newPage = currentCatPage + dir;
+  if (newPage < 0 || newPage >= totalPages) return;
+  
+  currentCatPage = newPage;
   const bc = document.getElementById('categories-book');
   if (bc) {
     bc.classList.remove('book-flip');

@@ -123,9 +123,11 @@
         <!-- TEXTO DEL LIBRO: Cambia 'Tipo de caso' por lo que desees mostrar como título de esta vista -->
         <div class="sf-book-label">Tipología de caso</div>
 
-        <div class="book-container anim" id="categories-book" style="display:none;">
+        <div id="categories-book">
           <div class="book-spine"></div>
-          <div class="book-page book-page-left" id="categories-page-left"></div>
+          <div class="book-page book-page-left">
+            <div id="categories-page-left-content"></div>
+          </div>
           <div class="book-rings">
             <div class="ring"></div>
             <div class="ring"></div>
@@ -136,7 +138,8 @@
             <div class="ring"></div>
             <div class="ring"></div>
           </div>
-          <div class="book-page book-page-right" id="categories-page-right">
+          <div class="book-page book-page-right">
+            <div id="categories-page-right-content"></div>
             <div class="book-nav" id="categories-book-nav">
               <button class="btn-book-nav" id="btn-cat-prev" onclick="changeCatPage(-1)">◀ Atrás</button>
               <span class="book-page-indicator" id="cat-page-indicator">1 / 1</span>
