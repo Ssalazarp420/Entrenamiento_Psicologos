@@ -2387,6 +2387,9 @@ async function guardarCaso() {
   const nombre = document.getElementById('ce-nombre').value.trim();
   if (!nombre) { showToast('El nombre del paciente es requerido', true); return; }
 
+  const catObj = adminData.categorias[selectedCatIndex] || adminData.categorias[0];
+  const categoriaName = (typeof catObj === 'object' ? catObj.nombre : catObj) || 'General';
+
   const payload = {
     name: nombre,
     age: Number(document.getElementById('ce-edad').value) || 0,
@@ -2395,7 +2398,7 @@ async function guardarCaso() {
     instruccion: document.getElementById('ce-instruccion').value.trim(),
     instruccion_feedback: document.getElementById('ce-feedback').value.trim(),
     avatar: document.getElementById('ce-avatar').value || '',
-    categoria: adminData.categorias[selectedCatIndex] || adminData.categorias[0] || 'General',
+    categoria: categoriaName,
   };
 
   if (!payload.instruccion) { showToast('Las instrucciones de comportamiento son requeridas', true); return; }
@@ -2425,7 +2428,9 @@ async function guardarCaso() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `Error ${res.status}`);
+      const detail = err.detail;
+      const errorMsg = typeof detail === 'object' ? JSON.stringify(detail) : (detail || `Error ${res.status}`);
+      throw new Error(errorMsg);
     }
 
     document.getElementById('caso-editor').style.display = 'none';
@@ -2524,7 +2529,9 @@ async function guardarCategoria() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `Error ${res.status}`);
+      const detail = err.detail;
+      const errorMsg = typeof detail === 'object' ? JSON.stringify(detail) : (detail || `Error ${res.status}`);
+      throw new Error(errorMsg);
     }
 
     await loadCasosAdmin();
