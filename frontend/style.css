@@ -64,7 +64,7 @@
 
 body {
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Playfair Display', serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -201,7 +201,7 @@ header {
   border: 1.5px solid rgba(255, 255, 255, 0.6);
   background: transparent;
   color: rgba(255, 255, 255, 0.9);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 500;
   transition: all .2s;
 }
@@ -501,6 +501,7 @@ main {
   color: var(--muted);
 }
 
+/* Botón de iniciar sesión */
 .btn-primary {
   width: 100%;
   padding: 13px;
@@ -933,6 +934,8 @@ main {
   line-height: 1.65;
   text-align: left;
   /* siempre alineado a la izquierda */
+  font-family: 'DM Sans', sans-serif;
+
 }
 
 .msg.patient .msg-bubble {
@@ -1008,6 +1011,7 @@ em {
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
 
+/* Barra de escritura */
 #user-input {
   flex: 1;
   background: var(--card);
@@ -1031,6 +1035,7 @@ em {
   color: var(--muted);
 }
 
+/* Botón de enviar */
 .btn {
   padding: 0 22px;
   border: none;
@@ -1295,6 +1300,7 @@ body.student-mode .screen#screen-historial {
   color: var(--yellow);
 }
 
+/* Botón de detalle */
 .btn-detail {
   padding: 5px 12px;
   border-radius: 8px;
@@ -1312,6 +1318,7 @@ body.student-mode .screen#screen-historial {
   color: var(--accent);
 }
 
+/* Botón de eliminar */
 .btn-danger {
   padding: 5px 12px;
   border-radius: 8px;
@@ -1553,6 +1560,7 @@ body.student-mode .screen#screen-historial {
   border-color: rgba(220, 38, 38, .3);
 }
 
+/* Botón de cerrar modal */
 .modal-close {
   width: 100%;
   padding: 13px;
@@ -1655,6 +1663,7 @@ body.student-mode .screen#screen-historial {
   font-weight: 600;
 }
 
+/* Barra lateral */
 .sidebar-item {
   width: 100%;
   padding: 9px 12px;
@@ -1857,7 +1866,7 @@ body.student-mode .screen#screen-historial {
   border: 1px solid rgba(91, 141, 238, .2);
 }
 
-/* Detail tabs */
+/* Botón de volver */
 .btn-back {
   background: transparent;
   border: none;
@@ -2087,7 +2096,7 @@ body.student-mode .screen#screen-historial {
   color: var(--accent);
 }
 
-/* Buttons */
+/* Botón de acento */
 .btn-accent {
   padding: 9px 18px;
   background: var(--accent);
@@ -2739,6 +2748,7 @@ body.student-mode #screen-selection {
   text-align: center;
 }
 
+/* Saludo */
 .hero-greeting {
   font-family: 'Playfair Display', serif;
   font-size: 2rem;
