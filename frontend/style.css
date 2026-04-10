@@ -799,7 +799,162 @@ main {
   margin-top: 6px;
 }
 
+/* DISEÑO VERTICAL: Detalle de Grupo Docente */
+.docente-detail-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 20px;
+  margin-bottom: 40px;
+  padding: 10px 0;
+}
+
+.ddh-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+
+.ddh-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem !important;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.1;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.ddh-sub {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.btn-back-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 22px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.btn-back-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(91, 141, 238, 0.12);
+}
+
+.add-student-box {
+  display: flex;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  width: 100%;
+  max-width: 580px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-student-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px rgba(91, 141, 238, 0.18);
+  transform: translateY(-2px);
+}
+
+.add-student-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  outline: none;
+  color: var(--text);
+}
+
+.add-student-box button {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.add-student-box button:hover {
+  background: var(--teal-deep);
+  box-shadow: 0 4px 15px rgba(16, 159, 178, 0.3);
+}
+
 /* CHAT */
+
+
+/* Imagen decorativa superior para la vista de detalle del grupo (Rompecabezas Cerebro) */
+#docente-grupo-detail {
+  position: relative;
+}
+
+/* Asegurar que el contenedor sea el elemento base para el before */
+#docente-grupo-detail::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 600px;
+  background-image: url('https://psicologiaiassets.blob.core.windows.net/assets/Rompecabezas_cerebro_NB.webp');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 120px;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+
+/* Fondo con logo para la tabla de estudiantes (Vista Docente) */
+#docente-grupo-detail .table-wrap {
+  position: relative;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)),
+    url('https://psicologiaiassets.blob.core.windows.net/assets/Caras_logo_psi_NB.webp');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 380px;
+}
+
+#docente-grupo-detail table {
+  background: transparent !important;
+}
+
+#docente-grupo-detail tbody tr:hover {
+  background: rgba(251, 253, 255, 0.6) !important;
+}
+
+
 .patient-card {
   /* ── Glass — sección 1: tarjeta paciente ── */
   background: rgba(255, 255, 255, 0.55);

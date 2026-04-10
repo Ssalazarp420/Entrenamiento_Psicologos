@@ -442,18 +442,26 @@
 
       <!-- Detalle de grupo seleccionado -->
       <div id="docente-grupo-detail" style="display:none;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-          <button class="btn-ghost" style="padding:7px 14px;" onclick="cerrarGrupoDetail()">← Volver</button>
-          <div>
-            <div class="section-title" id="dg-nombre" style="font-size:1.1rem;margin:0;"></div>
-            <div class="section-sub" id="dg-sub" style="margin:0;"></div>
+        <div class="docente-detail-vertical anim anim-1">
+          
+          <div class="ddh-title-group">
+            <h2 class="ddh-name" id="dg-nombre"></h2>
+            <div class="ddh-sub" id="dg-sub"></div>
           </div>
+
+          <button class="btn-back-pill" onclick="cerrarGrupoDetail()">
+            ← Volver a mis grupos
+          </button>
+
+          <div class="add-student-box">
+            <input id="dg-add-email" type="email" placeholder="Correo electrónico del estudiante..." />
+            <button onclick="docenteAgregarEstudiante()">
+              <span>+</span> Agregar al grupo
+            </button>
+          </div>
+
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:18px; max-width: 450px;">
-          <input id="dg-add-email" type="email" placeholder="Agregar estudiante por email..."
-            style="flex:1; padding:9px 14px; border-radius:9px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:.85rem;" />
-          <button class="btn-accent" style="padding:9px 18px;" onclick="docenteAgregarEstudiante()">Agregar</button>
-        </div>
+
         <div class="table-wrap anim anim-2">
           <table>
             <thead>
