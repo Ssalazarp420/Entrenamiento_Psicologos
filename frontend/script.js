@@ -1247,11 +1247,20 @@ async function quitarEstudianteGrupo(email) {
   });
 }
 
-// ── Ver sesiones de un estudiante (modal) ────────────────
+// ── Ver sesiones de un estudiante (nueva vista dedicada) ─────────
 let retroSesionActual = null;
 let retroEstudianteActual = null;
+let sesionReviewActual = null; // { sesion_id, estudiante_email, nombre }
 
 async function verSesionesEstudiante(email, nombre) {
+  retroEstudianteActual = { email, nombre };
+  // Mostrar la vista de sesiones con la tabla del estudiante
+  // Ahora al hacer clic en "Ver sesiones" mostramos la lista en un panel dedicado
+  document.getElementById('docente-grupo-detail').style.display = 'none';
+  document.getElementById('docente-sesion-review').style.display = 'none';
+
+  // Creamos o mostramos la vista de "lista de sesiones del estudiante"
+  // Reutilizamos el modal pero ahora lo ponemos en el flujo principal
   retroEstudianteActual = { email, nombre };
   document.getElementById('modal-ses-nombre').textContent = nombre;
   openAdminModal('modal-docente-sesiones');
@@ -1262,7 +1271,7 @@ async function verSesionesEstudiante(email, nombre) {
     const all = await res.json();
     const ses = all.filter(s => s.usuario_id === email);
     if (!ses.length) {
-      list.innerHTML = '<div class="ov-empty">Este estudiante no tiene sesiones completadas.</div>';
+      list.innerHTML = '<div class="ov-empty" style="padding:32px">Este estudiante no tiene sesiones completadas.</div>';
       return;
     }
     list.innerHTML = `<div class="table-wrap">
@@ -1281,6 +1290,7 @@ async function verSesionesEstudiante(email, nombre) {
           <td>
             <div class="hist-patient-cell">
               <strong>${s.patient_name || '—'}</strong>
+              ${s.alta ? '<span class="status-pill" style="background:rgba(5,150,105,.1);color:var(--green);border:1px solid rgba(5,150,105,.2);font-size:.7rem;padding:2px 8px;margin-left:8px;">Alta ✓</span>' : ''}
             </div>
           </td>
           <td style="font-size:.85rem;color:var(--muted);">${formatDate(s.inicio)}</td>
@@ -1288,15 +1298,15 @@ async function verSesionesEstudiante(email, nombre) {
           <td>
             <div style="display:flex; justify-content:center;">
               ${s.puntuacion != null
-        ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>`
-        : '<span class="hist-score-empty">—</span>'}
+              ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>`
+              : '<span class="hist-score-empty">—</span>'}
             </div>
           </td>
           <td>
             <div class="hist-actions">
-              <button class="btn-accent" style="padding:6px 12px; font-size:.78rem;"
-                onclick="abrirEscribirRetro('${s.sesion_id}','${(s.patient_name || '').replace(/'/g, "\\'")}')">
-                ✏️ Comentar
+              <button class="btn-accent" style="padding:6px 14px; font-size:.78rem; gap:6px; display:flex; align-items:center;"
+                onclick="closeAdminModal('modal-docente-sesiones'); abrirSesionReview('${s.sesion_id || s.id}','${(s.patient_name||'').replace(/'/g,"\\'")}','${nombre}','${email}')">
+                🔍 Ver detalle
               </button>
             </div>
           </td>
@@ -1340,7 +1350,168 @@ async function guardarRetroalimentacion() {
   }
 }
 
+// ── Abrir la vista de revisión completa de una sesión ────────────
+async function abrirSesionReview(sesionId, pacienteNombre, estudianteNombre, estudianteEmail) {
+  sesionReviewActual = { sesion_id: sesionId, estudiante_email: estudianteEmail, nombre: estudianteNombre };
+  retroSesionActual = sesionId;
+  retroEstudianteActual = { email: estudianteEmail, nombre: estudianteNombre };
+
+  // Ocultar grupo detail y mostrar la review
+  document.getElementById('docente-grupo-detail').style.display = 'none';
+  const reviewEl = document.getElementById('docente-sesion-review');
+  reviewEl.style.display = 'block';
+
+  // Título del encabezado
+  document.getElementById('dsr-title').textContent = `${estudianteNombre} · con ${pacienteNombre}`;
+  document.getElementById('dsr-sub').textContent = 'Cargando información de la sesión…';
+  document.getElementById('dsr-score-wrap').innerHTML = '';
+  document.getElementById('dsr-chat-box').innerHTML = '<div class="dsr-loading"><div class="spinner" style="margin:40px auto;"></div></div>';
+  document.getElementById('dsr-feedback-block').style.display = 'none';
+  document.getElementById('dsr-analisis-block').style.display = 'none';
+  document.getElementById('dsr-alta-block').style.display = 'none';
+  document.getElementById('dsr-analysis-empty').style.display = 'none';
+  document.getElementById('dsr-retros-previas').innerHTML = '';
+  document.getElementById('dsr-retro-input').value = '';
+
+  try {
+    const res = await fetch(`${API}/docente/sesion/${sesionId}/detalle`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    const data = await res.json();
+
+    // Encabezado / puntuación
+    const fecha = data.inicio ? formatDate(data.inicio) : '—';
+    const dur = formatDuration(data.inicio, data.fin);
+    document.getElementById('dsr-sub').textContent = `Sesión #${data.numero_sesion || '?'} · ${fecha} · Duración: ${dur}`;
+
+    if (data.puntuacion != null) {
+      const deg = Math.round(data.puntuacion * 3.6);
+      const colorGrad = data.puntuacion >= 75 ? 'var(--green)' : data.puntuacion >= 50 ? 'var(--accent)' : 'var(--red)';
+      document.getElementById('dsr-score-wrap').innerHTML = `
+        <div class="dsr-score-ring" style="background:conic-gradient(${colorGrad} ${deg}deg, rgba(0,0,0,0.07) ${deg}deg);">
+          <span class="dsr-score-num">${data.puntuacion}</span>
+          <span class="dsr-score-label">/100</span>
+        </div>`;
+    }
+
+    // Transcripción del chat
+    renderTranscripcionDocente(data.transcripcion, pacienteNombre, estudianteNombre);
+
+    // Análisis IA
+    if (data.feedback_paciente || data.analisis_objetivo) {
+      if (data.feedback_paciente) {
+        document.getElementById('dsr-feedback-text').innerHTML = data.feedback_paciente.replace(/\n/g, '<br>');
+        document.getElementById('dsr-feedback-block').style.display = 'block';
+      }
+      if (data.analisis_objetivo) {
+        document.getElementById('dsr-analisis-text').innerHTML = data.analisis_objetivo.replace(/\n/g, '<br>');
+        document.getElementById('dsr-analisis-block').style.display = 'block';
+      }
+      if (data.alta_reporte) {
+        document.getElementById('dsr-alta-text').innerHTML = data.alta_reporte.replace(/\n/g, '<br>');
+        document.getElementById('dsr-alta-block').style.display = 'block';
+      }
+    } else {
+      document.getElementById('dsr-analysis-empty').style.display = 'flex';
+    }
+
+    // Retroalimentaciones previas
+    renderRetrosPrevias(data.retroalimentaciones || []);
+
+  } catch (e) {
+    document.getElementById('dsr-chat-box').innerHTML = `<div class="dsr-empty-chat"><div>⚠️</div><div>Error al cargar la sesión: ${e.message}</div></div>`;
+  }
+}
+
+function renderTranscripcionDocente(transcripcion, pacienteNombre, estudianteNombre) {
+  const box = document.getElementById('dsr-chat-box');
+  if (!transcripcion || !transcripcion.trim()) {
+    box.innerHTML = '<div class="dsr-empty-chat"><div style="font-size:2rem;">💬</div><div>Esta sesión aún no tiene conversación registrada.</div></div>';
+    return;
+  }
+  const lines = transcripcion.split('\n').filter(l => l.trim());
+  box.innerHTML = lines.map(linea => {
+    if (linea.startsWith('Psicólogo:')) {
+      const texto = linea.replace('Psicólogo:', '').trim();
+      const inicial = estudianteNombre ? estudianteNombre.charAt(0).toUpperCase() : '🎓';
+      return `<div class="dsr-msg dsr-msg-psi">
+        <div class="dsr-msg-avatar dsr-avatar-psi">${inicial}</div>
+        <div class="dsr-msg-content">
+          <div class="dsr-msg-name">Psicólogo (${estudianteNombre || 'Estudiante'})</div>
+          <div class="dsr-msg-bubble dsr-bubble-psi">${texto}</div>
+        </div>
+      </div>`;
+    } else if (linea.startsWith(`${pacienteNombre}:`)) {
+      const texto = linea.replace(`${pacienteNombre}:`, '').trim();
+      return `<div class="dsr-msg dsr-msg-patient">
+        <div class="dsr-msg-avatar dsr-avatar-patient">${pacienteNombre.charAt(0)}</div>
+        <div class="dsr-msg-content">
+          <div class="dsr-msg-name">${pacienteNombre} (Paciente IA)</div>
+          <div class="dsr-msg-bubble dsr-bubble-patient">${texto}</div>
+        </div>
+      </div>`;
+    }
+    return '';
+  }).filter(Boolean).join('');
+}
+
+function renderRetrosPrevias(retros) {
+  const container = document.getElementById('dsr-retros-previas');
+  if (!retros.length) {
+    container.innerHTML = '<div class="dsr-no-retros">Aún no hay retroalimentaciones para esta sesión.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="dsr-retros-titulo">Comentarios enviados (${retros.length})</div>
+    ${retros.map(r => `
+      <div class="dsr-retro-item">
+        <div class="dsr-retro-meta">
+          <span class="dsr-retro-docente">✍️ ${r.docente_email || 'Docente'}</span>
+          <span class="dsr-retro-fecha">${formatDate(r.creado_en)}</span>
+        </div>
+        <div class="dsr-retro-texto">${(r.comentario || '').replace(/\n/g, '<br>')}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function cerrarSesionReview() {
+  document.getElementById('docente-sesion-review').style.display = 'none';
+  document.getElementById('docente-grupo-detail').style.display = 'block';
+  sesionReviewActual = null;
+}
+
+async function guardarRetroDesdeReview() {
+  const comentario = document.getElementById('dsr-retro-input').value.trim();
+  if (!comentario) { showToast('Escribe un comentario antes de enviar', true); return; }
+  const btn = document.getElementById('dsr-send-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const res = await fetch(`${API}/docente/retroalimentacion`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({
+        sesion_id: retroSesionActual,
+        estudiante_email: retroEstudianteActual.email,
+        comentario,
+      }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    showToast('Retroalimentación enviada ✓');
+    document.getElementById('dsr-retro-input').value = '';
+    // Recargar retros desde el backend
+    const detRes = await fetch(`${API}/docente/sesion/${retroSesionActual}/detalle`, { headers: authHeaders() });
+    if (detRes.ok) {
+      const data = await detRes.json();
+      renderRetrosPrevias(data.retroalimentaciones || []);
+    }
+  } catch (e) {
+    showToast('Error: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = '📤 Enviar retroalimentación';
+  }
+}
+
 function openCrearGrupoModal() {
+
   document.getElementById('ng-nombre').value = '';
   openAdminModal('modal-crear-grupo');
 }

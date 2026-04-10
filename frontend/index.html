@@ -478,7 +478,91 @@
         </div>
       </div>
 
+      <!-- ══ VISTA DE DETALLE DE SESIÓN (DOCENTE) ══ -->
+      <div id="docente-sesion-review" style="display:none;">
+
+        <!-- Encabezado de la vista -->
+        <div class="dsr-header anim anim-1">
+          <div class="dsr-back">
+            <button class="btn-back-pill" onclick="cerrarSesionReview()">
+              ← Volver a estudiantes
+            </button>
+          </div>
+          <div class="dsr-meta">
+            <h2 class="dsr-title" id="dsr-title">Revisión de sesión</h2>
+            <div class="dsr-sub" id="dsr-sub">Cargando…</div>
+          </div>
+          <div class="dsr-score-wrap" id="dsr-score-wrap"></div>
+        </div>
+
+        <!-- Cuerpo en 3 columnas -->
+        <div class="dsr-body">
+
+          <!-- Columna 1: Transcripción de la conversación -->
+          <div class="dsr-col dsr-col-transcript">
+            <div class="dsr-col-header">
+              <span class="dsr-col-icon">💬</span>
+              <span class="dsr-col-title">Transcripción de la sesión</span>
+            </div>
+            <div class="dsr-chat-box" id="dsr-chat-box">
+              <div class="dsr-loading"><div class="spinner" style="margin:40px auto;"></div></div>
+            </div>
+          </div>
+
+          <!-- Columna 2: Análisis IA -->
+          <div class="dsr-col dsr-col-analysis">
+            <div class="dsr-col-header">
+              <span class="dsr-col-icon">🤖</span>
+              <span class="dsr-col-title">Análisis IA del desempeño</span>
+            </div>
+            <div class="dsr-analysis-box">
+              <!-- Perspectiva del paciente -->
+              <div class="dsr-analysis-block" id="dsr-feedback-block" style="display:none;">
+                <div class="dsr-block-label">Perspectiva del paciente</div>
+                <div class="dsr-block-content" id="dsr-feedback-text"></div>
+              </div>
+              <!-- Análisis objetivo -->
+              <div class="dsr-analysis-block" id="dsr-analisis-block" style="display:none;">
+                <div class="dsr-block-label">Análisis clínico objetivo</div>
+                <div class="dsr-block-content" id="dsr-analisis-text"></div>
+              </div>
+              <!-- Reporte de alta (si aplica) -->
+              <div class="dsr-analysis-block dsr-alta-block" id="dsr-alta-block" style="display:none;">
+                <div class="dsr-block-label">📋 Informe de alta terapéutica</div>
+                <div class="dsr-block-content" id="dsr-alta-text"></div>
+              </div>
+              <!-- Vacío -->
+              <div class="dsr-empty-analysis" id="dsr-analysis-empty" style="display:none;">
+                <div style="font-size:2.5rem;margin-bottom:12px;">🧪</div>
+                <div>Esta sesión aún no tiene análisis generado por la IA.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna 3: Retroalimentación del docente -->
+          <div class="dsr-col dsr-col-retro">
+            <div class="dsr-col-header">
+              <span class="dsr-col-icon">✏️</span>
+              <span class="dsr-col-title">Retroalimentación docente</span>
+            </div>
+            <!-- Retroalimentaciones previas -->
+            <div class="dsr-retros-previas" id="dsr-retros-previas"></div>
+            <!-- Formulario de nueva retroalimentación -->
+            <div class="dsr-retro-form">
+              <div class="dsr-form-label">Nuevo comentario</div>
+              <textarea id="dsr-retro-input" class="dsr-retro-textarea"
+                placeholder="Escribe aquí tu retroalimentación para el estudiante…"></textarea>
+              <button class="dsr-send-btn" id="dsr-send-btn" onclick="guardarRetroDesdeReview()">
+                📤 Enviar retroalimentación
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
+
 
     <!-- PANEL ADMIN -->
     <div class="screen" id="screen-admin">

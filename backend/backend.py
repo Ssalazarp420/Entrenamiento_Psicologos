@@ -1705,13 +1705,18 @@ def sesiones_de_grupo(grupo_id: str, user=Depends(require_docente)):
         return []
 
     # Busca sesiones de cada estudiante del grupo
+    # Incluye c.id como fallback para sesiones que no tengan el campo sesion_id
     emails_str = ",".join([f"'{e}'" for e in estudiantes])
     query = f"""
-        SELECT c.sesion_id, c.usuario_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado
+        SELECT c.id, c.sesion_id, c.usuario_id, c.patient_name, c.inicio, c.fin, c.puntuacion, c.estado, c.alta
         FROM c WHERE c.usuario_id IN ({emails_str})
         ORDER BY c.inicio DESC
     """
     sesiones = list(c_sesiones.query_items(query, enable_cross_partition_query=True))
+    # Normalizar: si sesion_id está vacío, usar id como fallback
+    for s in sesiones:
+        if not s.get("sesion_id"):
+            s["sesion_id"] = s.get("id")
     return sesiones
 
 @app.post("/docente/retroalimentacion")
@@ -1746,6 +1751,69 @@ def retros_de_sesion(sesion_id: str, user=Depends(require_docente)):
         f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}'",
         enable_cross_partition_query=True))
     return items
+
+@app.get("/docente/sesion/{sesion_id}/detalle")
+def docente_detalle_sesion(sesion_id: str, user=Depends(require_docente)):
+    """
+    Permite al docente ver el detalle completo de la sesión de un estudiante
+    (transcripción, feedback del paciente, análisis IA y retroalimentaciones previas),
+    siempre que el estudiante pertenezca a alguno de los grupos del docente.
+    """
+    # Obtener la sesión para verificar a quién pertenece
+    # Busca primero por sesion_id, luego por id (compatibilidad con sesiones antiguas)
+    ses_items = list(c_sesiones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}' OR c.id = '{sesion_id}'",
+        enable_cross_partition_query=True))
+    if not ses_items:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    ses = ses_items[0]
+    # Normalizar sesion_id por si la sesión antigua solo tenía id
+    if not ses.get("sesion_id"):
+        ses["sesion_id"] = ses.get("id")
+        sesion_id = ses["sesion_id"]
+    estudiante_email = ses.get("usuario_id")
+
+    # Verificar que el estudiante pertenece a algún grupo del docente (o es admin)
+    if user["rol"] != "admin":
+        grupos = list(c_grupos.query_items(
+            f"SELECT * FROM c WHERE c.docente_email = '{user['email']}'",
+            enable_cross_partition_query=True))
+        todos_estudiantes = set()
+        for g in grupos:
+            todos_estudiantes.update(g.get("estudiantes", []))
+        if estudiante_email not in todos_estudiantes:
+            raise HTTPException(status_code=403, detail="No tienes acceso a esta sesión")
+
+    # Obtener el detalle (transcripción y análisis)
+    # También busca por id como fallback
+    det_items = list(c_detalle.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}' OR c.id = '{sesion_id}'",
+        enable_cross_partition_query=True))
+    detalle = det_items[0] if det_items else {}
+
+    # Obtener retroalimentaciones previas del docente sobre esta sesión
+    retros = list(c_retroalimentaciones.query_items(
+        f"SELECT * FROM c WHERE c.sesion_id = '{sesion_id}' OR c.sesion_id = '{ses.get('id', '')}'" ,
+        enable_cross_partition_query=True))
+    retros.sort(key=lambda r: r.get("creado_en") or "", reverse=True)
+
+    return {
+        "sesion_id": sesion_id,
+        "estudiante_email": estudiante_email,
+        "patient_name": ses.get("patient_name"),
+        "inicio": ses.get("inicio"),
+        "fin": ses.get("fin"),
+        "puntuacion": ses.get("puntuacion"),
+        "numero_sesion": ses.get("numero_sesion"),
+        "estado": ses.get("estado"),
+        "alta": ses.get("alta", False),
+        "transcripcion": detalle.get("transcripcion") or "",
+        "feedback_paciente": detalle.get("feedback_paciente") or "",
+        "analisis_objetivo": detalle.get("analisis_objetivo") or "",
+        "alta_reporte": detalle.get("alta_reporte") or "",
+        "retroalimentaciones": retros,
+    }
+
 
 # ---------------------------------------------------------------------------
 # ESTUDIANTE — endpoints propios
