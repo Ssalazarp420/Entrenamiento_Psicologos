@@ -139,13 +139,13 @@
                 <div class="cd-empty-icon">👈</div>
                 <div class="cd-empty-text">Selecciona una tipología para ver los detalles</div>
               </div>
-              
+
               <div id="cd-content" style="display:none;">
                 <div class="cd-header">
                   <div class="cd-icon" id="cd-header-emoji">😟</div>
                   <h2 class="cd-title" id="cd-header-name">Ansiedad</h2>
                 </div>
-                
+
                 <div class="cd-info-list">
                   <div class="cd-info-item">
                     <span class="cd-info-icon">👥</span>
@@ -443,7 +443,7 @@
       <!-- Detalle de grupo seleccionado -->
       <div id="docente-grupo-detail" style="display:none;">
         <div class="docente-detail-vertical anim anim-1">
-          
+
           <div class="ddh-title-group">
             <h2 class="ddh-name" id="dg-nombre"></h2>
             <div class="ddh-sub" id="dg-sub"></div>
@@ -505,7 +505,9 @@
               <span class="dsr-col-title">Transcripción de la sesión</span>
             </div>
             <div class="dsr-chat-box" id="dsr-chat-box">
-              <div class="dsr-loading"><div class="spinner" style="margin:40px auto;"></div></div>
+              <div class="dsr-loading">
+                <div class="spinner" style="margin:40px auto;"></div>
+              </div>
             </div>
           </div>
 
@@ -1129,6 +1131,288 @@
       </div><!-- /admin-layout -->
     </div><!-- /screen-admin -->
 
+    <!-- PANEL ENCARGADO DE FACULTAD -->
+    <div class="screen" id="screen-encargado">
+
+      <!-- HERO ENCARGADO -->
+      <div class="docente-hero" id="encargado-hero-section"
+        style="position:relative;overflow:visible;margin-bottom:24px;display:flex;justify-content:center;padding:20px;">
+        <div class="docente-hero-bg" style="position:absolute;top:-50px;bottom:-100px;left:50%;width:100vw;
+        transform:translateX(-50%);overflow:hidden;z-index:0;display:flex;align-items:center;
+        justify-content:center;opacity:1;pointer-events:none;">
+          <img src="https://psicologiaiassets.blob.core.windows.net/assets/mind_garden_NB.webp" alt="Background"
+            style="width:33.33%;min-width:300px;height:auto;object-fit:contain;transform:translate(-400px,160px);" />
+        </div>
+
+        <div
+          style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:1200px;position:relative;z-index:1;">
+          <div class="hero-greeting anim anim-1" id="encargado-hero-greeting"
+            style="color:var(--text);font-size:2.2rem;margin-bottom:32px;">Hola 👋</div>
+
+          <!-- 4 botones de acción principales -->
+          <div
+            style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;width:100%;max-width:1000px;">
+
+            <button class="encargado-action-card" onclick="encargadoNav('enc-panel-estudiantes')">
+              <div class="enc-card-icon">🎓</div>
+              <div class="enc-card-title">Estudiantes</div>
+              <div class="enc-card-sub">Ver, agregar, editar y eliminar estudiantes de la facultad</div>
+            </button>
+
+            <button class="encargado-action-card" onclick="encargadoNav('enc-panel-docentes')">
+              <div class="enc-card-icon">👩‍🏫</div>
+              <div class="enc-card-title">Docentes</div>
+              <div class="enc-card-sub">Gestionar docentes y ver sus retroalimentaciones</div>
+            </button>
+
+            <button class="encargado-action-card" onclick="encargadoNav('enc-panel-contrato')">
+              <div class="enc-card-icon">📄</div>
+              <div class="enc-card-title">Contrato</div>
+              <div class="enc-card-sub">Ver y gestionar el contrato firmado con la plataforma</div>
+            </button>
+
+            <button class="encargado-action-card" onclick="encargadoNav('enc-panel-suscripcion')">
+              <div class="enc-card-icon">💳</div>
+              <div class="enc-card-title">Suscripción</div>
+              <div class="enc-card-sub">Estado, costo y renovación de la suscripción activa</div>
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PANELES DEL ENCARGADO -->
+      <div id="enc-panels-wrap" style="display:none;">
+
+        <!-- Botón volver -->
+        <div style="margin-bottom:20px;">
+          <button class="btn-back-pill" onclick="encargadoVolver()">← Volver al inicio</button>
+        </div>
+
+        <!-- PANEL ESTUDIANTES -->
+        <div class="enc-panel" id="enc-panel-estudiantes">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">🎓 Estudiantes</div>
+              <div class="panel-sub">Gestión de estudiantes de la facultad</div>
+            </div>
+            <button class="btn-accent" onclick="openAdminModal('modal-enc-nuevo-estudiante')">+ Nuevo
+              estudiante</button>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="enc-est-search" placeholder="🔍 Buscar por nombre o correo..."
+              oninput="filtrarEncEstudiantes()" class="search-input" />
+          </div>
+          <!-- KPI promedio horas -->
+          <div class="contabilidad-kpis" style="margin-bottom:20px;">
+            <div class="ck-card">
+              <div class="ck-val" id="enc-est-total">—</div>
+              <div class="ck-lbl">Estudiantes totales</div>
+            </div>
+            <div class="ck-card">
+              <div class="ck-val" id="enc-est-sesiones">—</div>
+              <div class="ck-lbl">Sesiones realizadas</div>
+            </div>
+            <div class="ck-card">
+              <div class="ck-val" id="enc-est-prom-horas">—</div>
+              <div class="ck-lbl">Promedio horas/estudiante</div>
+            </div>
+          </div>
+          <div class="table-wrap anim anim-2">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Sesiones</th>
+                  <th>Horas en plataforma</th>
+                  <th>Último acceso</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="enc-estudiantes-tbody">
+                <tr>
+                  <td colspan="6" class="empty-table">Cargando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PANEL DOCENTES -->
+        <div class="enc-panel" id="enc-panel-docentes" style="display:none;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">👩‍🏫 Docentes</div>
+              <div class="panel-sub">Gestión de docentes y retroalimentaciones</div>
+            </div>
+            <button class="btn-accent" onclick="openAdminModal('modal-enc-nuevo-docente')">+ Nuevo docente</button>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="enc-doc-search" placeholder="🔍 Buscar por nombre o correo..."
+              oninput="filtrarEncDocentes()" class="search-input" />
+          </div>
+          <!-- KPI promedio horas docentes -->
+          <div class="contabilidad-kpis" style="margin-bottom:20px;">
+            <div class="ck-card">
+              <div class="ck-val" id="enc-doc-total">—</div>
+              <div class="ck-lbl">Docentes totales</div>
+            </div>
+            <div class="ck-card">
+              <div class="ck-val" id="enc-doc-retros">—</div>
+              <div class="ck-lbl">Retroalimentaciones dadas</div>
+            </div>
+            <div class="ck-card">
+              <div class="ck-val" id="enc-doc-prom-horas">—</div>
+              <div class="ck-lbl">Promedio horas/docente</div>
+            </div>
+          </div>
+          <div class="table-wrap anim anim-2">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Grupos</th>
+                  <th>Retroalimentaciones</th>
+                  <th>Horas en plataforma</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="enc-docentes-tbody">
+                <tr>
+                  <td colspan="6" class="empty-table">Cargando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PANEL CONTRATO -->
+        <div class="enc-panel" id="enc-panel-contrato" style="display:none;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">📄 Contrato</div>
+              <div class="panel-sub">Contrato de la facultad con la plataforma SimPsi</div>
+            </div>
+          </div>
+          <!-- Info visual del contrato -->
+          <div class="suscripcion-grid" style="margin-bottom:24px;">
+            <div class="suscripcion-status-card" id="enc-contrato-status-card">
+              <div class="sus-badge active-badge" id="enc-ct-badge">Vigente</div>
+              <div class="sus-plan-name" id="enc-ct-numero">—</div>
+              <div class="sus-dates">
+                <span>Firma: <strong id="enc-ct-fecha">—</strong></span>
+                <span>Vigencia: <strong id="enc-ct-vigencia">—</strong></span>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field"><label>N° de contrato</label><input type="text" id="enc-ct-numero-input"
+                  placeholder="CT-2026-001" /></div>
+              <div class="form-field"><label>Tipo de contrato</label>
+                <select id="enc-ct-tipo">
+                  <option value="licencia">Licencia de uso</option>
+                  <option value="servicio">Prestación de servicios</option>
+                  <option value="suscripcion">Suscripción educativa</option>
+                  <option value="piloto">Proyecto piloto</option>
+                </select>
+              </div>
+              <div class="form-field"><label>Fecha de firma</label><input type="date" id="enc-ct-fecha-input" /></div>
+              <div class="form-field"><label>Vigencia (meses)</label><input type="number" id="enc-ct-vigencia-input"
+                  placeholder="12" /></div>
+              <div class="form-field"><label>Representante legal firmante</label><input type="text" id="enc-ct-firmante"
+                  placeholder="Nombre del decano / rector" /></div>
+              <div class="form-field"><label>Estado del contrato</label>
+                <select id="enc-ct-estado">
+                  <option value="vigente">Vigente</option>
+                  <option value="vencido">Vencido</option>
+                  <option value="renovacion">En renovación</option>
+                  <option value="suspendido">Suspendido</option>
+                </select>
+              </div>
+              <div class="form-field" style="grid-column:1/-1"><label>Términos / descripción</label>
+                <textarea id="enc-ct-desc" rows="3" class="ai-textarea"
+                  placeholder="Resumen de las condiciones del contrato..."></textarea>
+              </div>
+              <div class="form-field" style="grid-column:1/-1"><label>Documento PDF firmado</label>
+                <div class="file-drop" onclick="document.getElementById('enc-contrato-file').click()">
+                  <span>📄</span><span id="enc-contrato-file-name">Haz clic para cargar el contrato PDF</span>
+                  <input type="file" id="enc-contrato-file" accept=".pdf" style="display:none"
+                    onchange="handleEncContratoFile(this)" />
+                </div>
+              </div>
+              <!-- Visor PDF si ya hay uno cargado -->
+              <div id="enc-ct-pdf-preview" style="grid-column:1/-1;display:none;">
+                <label>Vista previa del contrato</label>
+                <iframe id="enc-ct-pdf-iframe" src=""
+                  style="width:100%;height:400px;border-radius:10px;border:1px solid var(--border);"></iframe>
+              </div>
+            </div>
+          </div>
+          <button class="btn-accent" onclick="guardarEncContrato()">💾 Guardar contrato</button>
+        </div>
+
+        <!-- PANEL SUSCRIPCIÓN -->
+        <div class="enc-panel" id="enc-panel-suscripcion" style="display:none;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">💳 Suscripción</div>
+              <div class="panel-sub">Estado y detalles de la suscripción de la facultad</div>
+            </div>
+          </div>
+          <!-- Tarjeta de estado visual -->
+          <div class="suscripcion-grid" style="margin-bottom:24px;">
+            <div class="suscripcion-status-card">
+              <div class="sus-badge active-badge" id="enc-sus-badge">Activa</div>
+              <div class="sus-plan-name" id="enc-sus-plan">—</div>
+              <div class="sus-dates">
+                <span>Inicio: <strong id="enc-sus-inicio">—</strong></span>
+                <span>Vence: <strong id="enc-sus-vence">—</strong></span>
+              </div>
+              <div class="sus-monto">Costo: <strong id="enc-sus-monto">—</strong></div>
+              <!-- Barra de tiempo restante -->
+              <div style="margin-top:14px;">
+                <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px;">Tiempo restante</div>
+                <div style="background:var(--border);border-radius:999px;height:8px;overflow:hidden;">
+                  <div id="enc-sus-progress-bar"
+                    style="height:100%;border-radius:999px;background:var(--teal);width:0%;transition:width .6s;"></div>
+                </div>
+                <div id="enc-sus-dias-restantes"
+                  style="font-size:.82rem;color:var(--muted);margin-top:6px;text-align:right;">— días restantes</div>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field"><label>Plan</label>
+                <select id="enc-sus-plan-sel" disabled>
+                  <option>Básico (hasta 50 estudiantes)</option>
+                  <option>Profesional (hasta 200 estudiantes)</option>
+                  <option>Enterprise (ilimitado)</option>
+                </select>
+              </div>
+              <div class="form-field"><label>Fecha de inicio</label><input id="enc-sus-fecha-inicio" type="date"
+                  readonly /></div>
+              <div class="form-field"><label>Fecha de vencimiento</label><input id="enc-sus-fecha-fin" type="date"
+                  readonly /></div>
+              <div class="form-field"><label>Costo mensual (COP)</label><input id="enc-sus-monto-input" type="text"
+                  readonly placeholder="—" /></div>
+              <div class="form-field"><label>Estado</label><input id="enc-sus-estado-text" type="text" readonly
+                  placeholder="—" /></div>
+              <div class="form-field"><label>Notas</label><input id="enc-sus-notas-text" type="text" readonly
+                  placeholder="—" /></div>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;">
+            <div style="font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:10px;">ℹ️ ¿Quieres renovar o
+              cambiar tu plan?</div>
+            <div style="font-size:.83rem;color:var(--muted);line-height:1.6;">Contacta al equipo de SimPsi para
+              gestionar cambios en tu suscripción. Los datos de suscripción son actualizados por el administrador de la
+              plataforma.</div>
+          </div>
+        </div>
+
+      </div><!-- /enc-panels-wrap -->
+    </div><!-- /screen-encargado -->
+
 
     <!-- Modal sesiones de un estudiante -->
     <div class="modal-overlay" id="modal-docente-sesiones">
@@ -1254,27 +1538,27 @@
       <div class="modal-title" id="modal-cat-title">Nueva categoría</div>
       <div class="modal-subtitle">Agrupa los casos de pacientes por tipo o condición</div>
       <input type="hidden" id="nc-original-nombre" value="" />
-      
+
       <div class="form-field">
         <label>Nombre de la categoría</label>
         <input id="nc-nombre" type="text" placeholder="Ej: Ansiedad, Depresión..." />
       </div>
-      
+
       <div class="form-field">
         <label>Prevalencia</label>
         <input id="nc-prevalencia" type="text" placeholder="Ej: Alta, Media, Baja..." />
       </div>
-      
+
       <div class="form-field">
         <label>Tipo de Intervención</label>
         <input id="nc-intervencion" type="text" placeholder="Ej: TCC, Humanista, Psicodinámica..." />
       </div>
-      
+
       <div class="form-field">
         <label>Duración Estimada</label>
         <input id="nc-duracion" type="text" placeholder="Ej: 8 Sesiones, 12 Semanas..." />
       </div>
-      
+
       <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
         <button class="btn-ghost" onclick="closeAdminModal('modal-nueva-categoria')">Cancelar</button>
         <button class="btn-accent" id="btn-guardar-categoria" onclick="guardarCategoria()">Crear</button>
@@ -1380,6 +1664,77 @@
       <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
         <button class="btn-ghost" onclick="closeAdminModal('modal-registro-pago')">Cancelar</button>
         <button class="btn-accent" onclick="registrarPago()">Guardar pago</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal enc: nuevo estudiante -->
+  <div id="modal-enc-nuevo-estudiante" class="admin-modal-overlay"
+    onclick="closeAdminModal('modal-enc-nuevo-estudiante')">
+    <div class="admin-modal" onclick="event.stopPropagation()">
+      <div class="modal-title">Nuevo estudiante</div>
+      <div class="modal-subtitle">Registra un estudiante en la facultad</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Nombre completo</label><input id="enc-ne-nombre" type="text"
+            placeholder="Nombre completo" /></div>
+        <div class="form-field"><label>Correo</label><input id="enc-ne-email" type="email"
+            placeholder="estudiante@facultad.edu.co" /></div>
+        <div class="form-field"><label>Contraseña temporal</label><input id="enc-ne-password" type="password"
+            placeholder="Mínimo 8 caracteres" /></div>
+        <div class="form-field"><label>Género</label>
+          <select id="enc-ne-genero">
+            <option value="otro">Otro / Prefiero no decir</option>
+            <option value="mujer">Mujer</option>
+            <option value="hombre">Hombre</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="closeAdminModal('modal-enc-nuevo-estudiante')">Cancelar</button>
+        <button class="btn-accent" onclick="encCrearEstudiante()">Crear estudiante</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal enc: nuevo docente -->
+  <div id="modal-enc-nuevo-docente" class="admin-modal-overlay" onclick="closeAdminModal('modal-enc-nuevo-docente')">
+    <div class="admin-modal" onclick="event.stopPropagation()">
+      <div class="modal-title">Nuevo docente</div>
+      <div class="modal-subtitle">Registra un docente en la facultad</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Nombre completo</label><input id="enc-nd-nombre" type="text"
+            placeholder="Nombre completo" /></div>
+        <div class="form-field"><label>Correo</label><input id="enc-nd-email" type="email"
+            placeholder="docente@facultad.edu.co" /></div>
+        <div class="form-field"><label>Contraseña temporal</label><input id="enc-nd-password" type="password"
+            placeholder="Mínimo 8 caracteres" /></div>
+        <div class="form-field"><label>Género</label>
+          <select id="enc-nd-genero">
+            <option value="otro">Otro / Prefiero no decir</option>
+            <option value="mujer">Mujer</option>
+            <option value="hombre">Hombre</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="closeAdminModal('modal-enc-nuevo-docente')">Cancelar</button>
+        <button class="btn-accent" onclick="encCrearDocente()">Crear docente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal enc: ver retroalimentaciones de un docente -->
+  <div class="modal-overlay" id="modal-enc-retros-docente">
+    <div class="modal-box" style="width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">💬 Retroalimentaciones de <span id="enc-retro-doc-nombre">—</span></div>
+          <div class="modal-subtitle">Comentarios que este docente ha dejado a sus estudiantes.</div>
+        </div>
+        <button class="modal-close-x" onclick="closeAdminModal('modal-enc-retros-docente')">✕</button>
+      </div>
+      <div id="enc-retro-doc-list" style="overflow-y:auto;flex:1;padding:4px 0;">
+        <div class="spinner" style="margin:32px auto;"></div>
       </div>
     </div>
   </div>

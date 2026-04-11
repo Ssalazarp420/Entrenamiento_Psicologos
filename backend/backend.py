@@ -80,6 +80,11 @@ def require_admin(user=Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acceso solo para administradores")
     return user
 
+def require_encargado(user=Depends(get_current_user)):
+    if user["rol"] not in ["admin", "encargado"]:
+        raise HTTPException(status_code=403, detail="Acceso solo para encargados de facultad")
+    return user    
+
 # ---------------------------------------------------------------------------
 # MODELOS
 # ---------------------------------------------------------------------------
@@ -115,8 +120,11 @@ class SuscripcionUpdate(BaseModel):
 
 class ContratoUpdate(BaseModel):
     ct_numero: Optional[str] = None
+    ct_tipo: Optional[str] = None
     ct_fecha: Optional[str] = None
     ct_vigencia: Optional[int] = None
+    ct_firmante: Optional[str] = None
+    ct_estado: Optional[str] = None
     ct_desc: Optional[str] = None
 
 class CasoCreate(BaseModel):
@@ -1235,11 +1243,6 @@ def admin_sesiones_docente_detalle(email: str, user=Depends(require_admin)):
 # ---------------------------------------------------------------------------
 # ADMIN — USUARIOS
 # ---------------------------------------------------------------------------
-@app.get("/admin/usuarios")
-def listar_usuarios(user=Depends(require_admin)):
-    return list(c_usuarios.query_items(
-        "SELECT c.id, c.nombre, c.email, c.rol, c.creado_en, c.institucion_id, c.activo FROM c",
-        enable_cross_partition_query=True))
 
 @app.put("/admin/usuario/{email}")
 def editar_usuario(email: str, body: dict, user=Depends(require_admin)):
@@ -1880,6 +1883,168 @@ def eliminar_sesion(sesion_id: str, user=Depends(get_current_user)):
                 pass
 
     return {"mensaje": "Sesión eliminada completamente"}
+
+# ---------------------------------------------------------------------------
+# ENCARGADO DE FACULTAD
+# ---------------------------------------------------------------------------
+
+class EncContratoUpdate(BaseModel):
+    numero: Optional[str] = None
+    tipo: Optional[str] = None
+    fecha: Optional[str] = None
+    vigencia: Optional[int] = None
+    firmante: Optional[str] = None
+    estado: Optional[str] = None
+    descripcion: Optional[str] = None
+
+def _get_institucion_del_usuario(user: dict):
+    """Devuelve el documento de institución vinculado al usuario encargado."""
+    inst_id = user.get("institucion_id")
+    if not inst_id:
+        raise HTTPException(status_code=404, detail="Este usuario no tiene institución vinculada")
+    try:
+        return c_instituciones.read_item(item=inst_id, partition_key=inst_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Institución no encontrada")
+
+@app.get("/admin/usuarios")
+def listar_usuarios_con_filtro(rol: Optional[str] = None, user=Depends(get_current_user)):
+    """
+    Admin: lista todos. Encargado: solo los de su institución.
+    Acepta ?rol=estudiante o ?rol=docente para filtrar.
+    """
+    if user["rol"] == "admin":
+        query = "SELECT c.id, c.nombre, c.email, c.rol, c.creado_en, c.institucion_id, c.activo FROM c"
+        if rol:
+            query += f" WHERE c.rol = '{rol}'"
+        return list(c_usuarios.query_items(query, enable_cross_partition_query=True))
+    elif user["rol"] == "encargado":
+        inst_id = user.get("institucion_id")
+        if not inst_id:
+            return []
+        if rol:
+            query = f"SELECT c.id, c.nombre, c.email, c.rol, c.creado_en, c.activo FROM c WHERE c.institucion_id = '{inst_id}' AND c.rol = '{rol}'"
+        else:
+            query = f"SELECT c.id, c.nombre, c.email, c.rol, c.creado_en, c.activo FROM c WHERE c.institucion_id = '{inst_id}'"
+        return list(c_usuarios.query_items(query, enable_cross_partition_query=True))
+    else:
+        raise HTTPException(status_code=403, detail="Sin permiso")
+
+@app.post("/admin/usuarios")
+def crear_usuario_encargado(req: RegisterRequest, user=Depends(require_encargado)):
+    """Encargado crea un estudiante o docente vinculado a su institución."""
+    query = f"SELECT * FROM c WHERE c.email = '{req.email}'"
+    if list(c_usuarios.query_items(query, enable_cross_partition_query=True)):
+        raise HTTPException(status_code=400, detail="El email ya está registrado")
+    inst_id = user.get("institucion_id")
+    nuevo = {
+        "id": str(uuid.uuid4()), "email": req.email, "nombre": req.nombre,
+        "password": hash_password(req.password), "rol": req.rol,
+        "genero": req.genero, "creado_en": datetime.utcnow().isoformat(),
+        "institucion_id": inst_id, "activo": True,
+    }
+    c_usuarios.create_item(nuevo)
+    return {"mensaje": "Usuario creado correctamente"}
+
+@app.patch("/admin/usuarios/{usuario_id}")
+def editar_usuario_encargado(usuario_id: str, body: dict, user=Depends(require_encargado)):
+    """Encargado edita nombre (y opcionalmente password) de un usuario de su institución."""
+    items = list(c_usuarios.query_items(
+        f"SELECT * FROM c WHERE c.id = '{usuario_id}'",
+        enable_cross_partition_query=True))
+    if not items:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u = items[0]
+    # Encargado solo puede editar usuarios de su institución
+    if user["rol"] == "encargado" and u.get("institucion_id") != user.get("institucion_id"):
+        raise HTTPException(status_code=403, detail="Sin permiso sobre este usuario")
+    for campo in ["nombre", "activo"]:
+        if campo in body:
+            u[campo] = body[campo]
+    if body.get("password"):
+        u["password"] = hash_password(body["password"])
+    c_usuarios.upsert_item(u)
+    return {"mensaje": "Usuario actualizado"}
+
+@app.delete("/admin/usuarios/{usuario_id}")
+def eliminar_usuario_encargado(usuario_id: str, user=Depends(require_encargado)):
+    """Encargado elimina un usuario de su institución."""
+    items = list(c_usuarios.query_items(
+        f"SELECT * FROM c WHERE c.id = '{usuario_id}'",
+        enable_cross_partition_query=True))
+    if not items:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u = items[0]
+    if user["rol"] == "encargado" and u.get("institucion_id") != user.get("institucion_id"):
+        raise HTTPException(status_code=403, detail="Sin permiso sobre este usuario")
+    c_usuarios.delete_item(item=u["id"], partition_key=u["id"])
+    return {"mensaje": "Usuario eliminado"}
+
+@app.get("/facultad/contrato")
+def get_facultad_contrato(user=Depends(require_encargado)):
+    """Devuelve el contrato de la institución del encargado."""
+    doc = _get_institucion_del_usuario(user)
+    return {
+        "numero":      doc.get("ct_numero"),
+        "tipo":        doc.get("ct_tipo"),
+        "fecha":       doc.get("ct_fecha"),
+        "vigencia":    doc.get("ct_vigencia"),
+        "firmante":    doc.get("ct_firmante"),
+        "estado":      doc.get("ct_estado", "vigente"),
+        "descripcion": doc.get("ct_desc"),
+        "pdf_url":     doc.get("ct_pdf_url"),
+    }
+
+@app.post("/facultad/contrato")
+def save_facultad_contrato(req: EncContratoUpdate, user=Depends(require_encargado)):
+    """Guarda/actualiza el contrato de la institución del encargado."""
+    doc = _get_institucion_del_usuario(user)
+    if req.numero    is not None: doc["ct_numero"]   = req.numero
+    if req.tipo      is not None: doc["ct_tipo"]     = req.tipo
+    if req.fecha     is not None: doc["ct_fecha"]    = req.fecha
+    if req.vigencia  is not None: doc["ct_vigencia"] = req.vigencia
+    if req.firmante  is not None: doc["ct_firmante"] = req.firmante
+    if req.estado    is not None: doc["ct_estado"]   = req.estado
+    if req.descripcion is not None: doc["ct_desc"]   = req.descripcion
+    c_instituciones.upsert_item(doc)
+    return {"mensaje": "Contrato guardado correctamente"}
+
+@app.get("/facultad/suscripcion")
+def get_facultad_suscripcion(user=Depends(require_encargado)):
+    """Devuelve los datos de suscripción de la institución del encargado (solo lectura)."""
+    doc = _get_institucion_del_usuario(user)
+    return {
+        "plan":          doc.get("plan"),
+        "estado":        doc.get("suscripcion_estado", "activa"),
+        "fecha_inicio":  doc.get("sus_inicio"),
+        "fecha_fin":     doc.get("sus_fin"),
+        "monto":         doc.get("sus_monto"),
+        "notas":         doc.get("sus_notas"),
+    }
+
+@app.get("/docentes/{docente_id}/retroalimentaciones")
+def get_retros_de_docente(docente_id: str, user=Depends(require_encargado)):
+    """Lista todas las retroalimentaciones dadas por un docente específico."""
+    # Primero obtenemos el email del docente por su id
+    items = list(c_usuarios.query_items(
+        f"SELECT * FROM c WHERE c.id = '{docente_id}'",
+        enable_cross_partition_query=True))
+    if not items:
+        raise HTTPException(status_code=404, detail="Docente no encontrado")
+    docente_email = items[0]["email"]
+    retros = list(c_retroalimentaciones.query_items(
+        f"SELECT * FROM c WHERE c.docente_email = '{docente_email}'",
+        enable_cross_partition_query=True))
+    # Enriquecer con nombre del estudiante
+    result = []
+    for r in retros:
+        est_email = r.get("estudiante_email", "")
+        est_items = list(c_usuarios.query_items(
+            f"SELECT c.nombre FROM c WHERE c.email = '{est_email}'",
+            enable_cross_partition_query=True))
+        r["estudiante_nombre"] = est_items[0]["nombre"] if est_items else est_email
+        result.append(r)
+    return result
 
 # ---------------------------------------------------------------------------
 # HEALTH

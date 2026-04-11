@@ -217,6 +217,11 @@ function setupHeader() {
     if (greetDocente) greetDocente.textContent = `Hola ${currentUser.nombre} \uD83D\uDC4B`;
   }
 
+  if (currentUser.rol === 'encargado') {
+    const greetEnc = document.getElementById('encargado-hero-greeting');
+    if (greetEnc) greetEnc.textContent = `Hola ${currentUser.nombre} \uD83D\uDC4B`;
+  }
+
 
   const tabs = document.getElementById('nav-tabs');
   tabs.innerHTML = '';
@@ -232,6 +237,9 @@ function setupHeader() {
     admin: [
       { id: 'screen-admin', label: 'Panel Admin', action: () => { showScreen('screen-admin'); loadAdmin(); } },
       { id: 'screen-docente', label: 'Sesiones', action: () => { showScreen('screen-docente'); loadDocente(); } },
+    ],
+    encargado: [
+      { id: 'screen-encargado', label: 'Panel Facultad', action: () => { showScreen('screen-encargado'); loadEncargado(); } },
     ],
   };
 
@@ -1298,14 +1306,14 @@ async function verSesionesEstudiante(email, nombre) {
           <td>
             <div style="display:flex; justify-content:center;">
               ${s.puntuacion != null
-              ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>`
-              : '<span class="hist-score-empty">—</span>'}
+        ? `<div class="hist-score">${s.puntuacion}<small>/100</small></div>`
+        : '<span class="hist-score-empty">—</span>'}
             </div>
           </td>
           <td>
             <div class="hist-actions">
               <button class="btn-accent" style="padding:6px 14px; font-size:.78rem; gap:6px; display:flex; align-items:center;"
-                onclick="closeAdminModal('modal-docente-sesiones'); abrirSesionReview('${s.sesion_id || s.id}','${(s.patient_name||'').replace(/'/g,"\\'")}','${nombre}','${email}')">
+                onclick="closeAdminModal('modal-docente-sesiones'); abrirSesionReview('${s.sesion_id || s.id}','${(s.patient_name || '').replace(/'/g, "\\'")}','${nombre}','${email}')">
                 🔍 Ver detalle
               </button>
             </div>
@@ -3304,3 +3312,345 @@ document.addEventListener('keydown', e => {
     if (onChat && document.activeElement.id === 'user-input') { e.preventDefault(); sendMessage(); }
   }
 });
+
+// ══════════════════════════════════════════════════════
+// ROL ENCARGADO DE FACULTAD
+// ══════════════════════════════════════════════════════
+
+function loadEncargado() {
+  // Reset: ocultar paneles, mostrar hero
+  document.getElementById('enc-panels-wrap').style.display = 'none';
+  document.querySelectorAll('.enc-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('encargado-hero-section').style.display = 'flex';
+}
+
+function encargadoNav(panelId) {
+  document.getElementById('encargado-hero-section').style.display = 'none';
+  document.getElementById('enc-panels-wrap').style.display = 'block';
+  document.querySelectorAll('.enc-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById(panelId);
+  if (panel) panel.style.display = 'block';
+
+  // Cargar datos según panel
+  if (panelId === 'enc-panel-estudiantes') loadEncEstudiantes();
+  if (panelId === 'enc-panel-docentes') loadEncDocentes();
+  if (panelId === 'enc-panel-contrato') loadEncContrato();
+  if (panelId === 'enc-panel-suscripcion') loadEncSuscripcion();
+}
+
+function encargadoVolver() {
+  document.getElementById('enc-panels-wrap').style.display = 'none';
+  document.getElementById('encargado-hero-section').style.display = 'flex';
+}
+
+// ── ESTUDIANTES ──────────────────────────────────────
+async function loadEncEstudiantes() {
+  const tbody = document.getElementById('enc-estudiantes-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:20px auto;"></div></td></tr>';
+  try {
+    const res = await fetch(`${API}/admin/usuarios?rol=estudiante`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const usuarios = Array.isArray(data) ? data : (data.usuarios || []);
+    document.getElementById('enc-est-total').textContent = usuarios.length;
+    const totalSesiones = usuarios.reduce((s, u) => s + (u.sesiones || 0), 0);
+    document.getElementById('enc-est-sesiones').textContent = totalSesiones;
+    const totalMin = usuarios.reduce((s, u) => s + (u.minutos_plataforma || 0), 0);
+    const promHoras = usuarios.length ? (totalMin / usuarios.length / 60).toFixed(1) : '0';
+    document.getElementById('enc-est-prom-horas').textContent = promHoras + ' h';
+    renderEncEstudiantes(usuarios);
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Error al cargar estudiantes</td></tr>';
+  }
+}
+
+function renderEncEstudiantes(usuarios) {
+  const tbody = document.getElementById('enc-estudiantes-tbody');
+  if (!usuarios.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin estudiantes registrados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = usuarios.map(u => `
+    <tr>
+      <td><strong>${u.nombre || '—'}</strong></td>
+      <td style="color:var(--muted);font-size:.83rem;">${u.email}</td>
+      <td style="text-align:center;">${u.sesiones || 0}</td>
+      <td style="text-align:center;">${u.minutos_plataforma ? (u.minutos_plataforma / 60).toFixed(1) + ' h' : '—'}</td>
+      <td style="font-size:.8rem;color:var(--muted);">${u.ultimo_acceso ? new Date(u.ultimo_acceso).toLocaleDateString('es-CO') : '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-accent-sm" onclick="encEditarEstudiante('${u.id}','${u.nombre}','${u.email}')">✏️ Editar</button>
+          <button class="btn-danger-sm" onclick="encEliminarUsuario('${u.id}','${u.nombre}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filtrarEncEstudiantes() {
+  const q = document.getElementById('enc-est-search').value.toLowerCase();
+  document.querySelectorAll('#enc-estudiantes-tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+async function encCrearEstudiante() {
+  const nombre = document.getElementById('enc-ne-nombre').value.trim();
+  const email = document.getElementById('enc-ne-email').value.trim();
+  const password = document.getElementById('enc-ne-password').value;
+  const genero = document.getElementById('enc-ne-genero').value;
+  if (!nombre || !email || !password) { alert('Completa todos los campos.'); return; }
+  try {
+    const res = await fetch(`${API}/admin/usuarios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ nombre, email, password, rol: 'estudiante', genero })
+    });
+    if (!res.ok) throw new Error();
+    closeAdminModal('modal-enc-nuevo-estudiante');
+    loadEncEstudiantes();
+  } catch (e) { alert('Error al crear el estudiante.'); }
+}
+
+async function encEditarEstudiante(id, nombre, email) {
+  const nuevoNombre = prompt('Nuevo nombre:', nombre);
+  if (!nuevoNombre) return;
+  try {
+    await fetch(`${API}/admin/usuarios/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ nombre: nuevoNombre })
+    });
+    loadEncEstudiantes();
+  } catch (e) { alert('Error al editar.'); }
+}
+
+async function encEliminarUsuario(id, nombre) {
+  if (!confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`)) return;
+  try {
+    await fetch(`${API}/admin/usuarios/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    loadEncEstudiantes();
+  } catch (e) { alert('Error al eliminar.'); }
+}
+
+// ── DOCENTES ──────────────────────────────────────────
+async function loadEncDocentes() {
+  const tbody = document.getElementById('enc-docentes-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-table"><div class="spinner" style="margin:20px auto;"></div></td></tr>';
+  try {
+    const res = await fetch(`${API}/admin/usuarios?rol=docente`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const usuarios = Array.isArray(data) ? data : (data.usuarios || []);
+    document.getElementById('enc-doc-total').textContent = usuarios.length;
+    const totalRetros = usuarios.reduce((s, u) => s + (u.retroalimentaciones || 0), 0);
+    document.getElementById('enc-doc-retros').textContent = totalRetros;
+    const totalMin = usuarios.reduce((s, u) => s + (u.minutos_plataforma || 0), 0);
+    const promHoras = usuarios.length ? (totalMin / usuarios.length / 60).toFixed(1) : '0';
+    document.getElementById('enc-doc-prom-horas').textContent = promHoras + ' h';
+    renderEncDocentes(usuarios);
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Error al cargar docentes</td></tr>';
+  }
+}
+
+function renderEncDocentes(usuarios) {
+  const tbody = document.getElementById('enc-docentes-tbody');
+  if (!usuarios.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin docentes registrados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = usuarios.map(u => `
+    <tr>
+      <td><strong>${u.nombre || '—'}</strong></td>
+      <td style="color:var(--muted);font-size:.83rem;">${u.email}</td>
+      <td style="text-align:center;">${u.grupos || 0}</td>
+      <td style="text-align:center;">${u.retroalimentaciones || 0}</td>
+      <td style="text-align:center;">${u.minutos_plataforma ? (u.minutos_plataforma / 60).toFixed(1) + ' h' : '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-accent-sm" onclick="encVerRetrosDocente('${u.id}','${u.nombre}')">💬 Retros</button>
+          <button class="btn-accent-sm" onclick="encEditarDocente('${u.id}','${u.nombre}','${u.email}')">✏️ Editar</button>
+          <button class="btn-danger-sm" onclick="encEliminarDocente('${u.id}','${u.nombre}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filtrarEncDocentes() {
+  const q = document.getElementById('enc-doc-search').value.toLowerCase();
+  document.querySelectorAll('#enc-docentes-tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+async function encCrearDocente() {
+  const nombre = document.getElementById('enc-nd-nombre').value.trim();
+  const email = document.getElementById('enc-nd-email').value.trim();
+  const password = document.getElementById('enc-nd-password').value;
+  const genero = document.getElementById('enc-nd-genero').value;
+  if (!nombre || !email || !password) { alert('Completa todos los campos.'); return; }
+  try {
+    const res = await fetch(`${API}/admin/usuarios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ nombre, email, password, rol: 'docente', genero })
+    });
+    if (!res.ok) throw new Error();
+    closeAdminModal('modal-enc-nuevo-docente');
+    loadEncDocentes();
+  } catch (e) { alert('Error al crear el docente.'); }
+}
+
+async function encEditarDocente(id, nombre, email) {
+  const nuevoNombre = prompt('Nuevo nombre:', nombre);
+  if (!nuevoNombre) return;
+  try {
+    await fetch(`${API}/admin/usuarios/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ nombre: nuevoNombre })
+    });
+    loadEncDocentes();
+  } catch (e) { alert('Error al editar.'); }
+}
+
+async function encEliminarDocente(id, nombre) {
+  if (!confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`)) return;
+  try {
+    await fetch(`${API}/admin/usuarios/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    loadEncDocentes();
+  } catch (e) { alert('Error al eliminar.'); }
+}
+
+async function encVerRetrosDocente(docenteId, docenteNombre) {
+  document.getElementById('enc-retro-doc-nombre').textContent = docenteNombre;
+  document.getElementById('enc-retro-doc-list').innerHTML = '<div class="spinner" style="margin:32px auto;"></div>';
+  openAdminModal('modal-enc-retros-docente');
+  try {
+    const res = await fetch(`${API}/docentes/${docenteId}/retroalimentaciones`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const retros = Array.isArray(data) ? data : (data.retroalimentaciones || []);
+    const container = document.getElementById('enc-retro-doc-list');
+    if (!retros.length) {
+      container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);">Este docente aún no ha dejado retroalimentaciones.</div>';
+      return;
+    }
+    container.innerHTML = retros.map(r => `
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">
+          Para: <strong>${r.estudiante_nombre || r.estudiante_email || '—'}</strong> · ${r.fecha ? new Date(r.fecha).toLocaleDateString('es-CO') : '—'}
+        </div>
+        <div style="font-size:.88rem;line-height:1.5;">${r.comentario || '—'}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('enc-retro-doc-list').innerHTML = '<div style="padding:24px;text-align:center;color:var(--red);">Error al cargar retroalimentaciones.</div>';
+  }
+}
+
+// ── CONTRATO ──────────────────────────────────────────
+async function loadEncContrato() {
+  try {
+    const res = await fetch(`${API}/facultad/contrato`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const ct = await res.json();
+    if (ct.numero) document.getElementById('enc-ct-numero-input').value = ct.numero;
+    if (ct.tipo) document.getElementById('enc-ct-tipo').value = ct.tipo;
+    if (ct.fecha) document.getElementById('enc-ct-fecha-input').value = ct.fecha.split('T')[0];
+    if (ct.vigencia) document.getElementById('enc-ct-vigencia-input').value = ct.vigencia;
+    if (ct.firmante) document.getElementById('enc-ct-firmante').value = ct.firmante;
+    if (ct.estado) document.getElementById('enc-ct-estado').value = ct.estado;
+    if (ct.descripcion) document.getElementById('enc-ct-desc').value = ct.descripcion;
+    // Actualizar tarjeta resumen
+    document.getElementById('enc-ct-numero').textContent = ct.numero || '—';
+    document.getElementById('enc-ct-fecha').textContent = ct.fecha ? new Date(ct.fecha).toLocaleDateString('es-CO') : '—';
+    document.getElementById('enc-ct-vigencia').textContent = ct.vigencia ? ct.vigencia + ' meses' : '—';
+    document.getElementById('enc-ct-badge').textContent = ct.estado || 'Vigente';
+    if (ct.pdf_url) {
+      document.getElementById('enc-ct-pdf-iframe').src = ct.pdf_url;
+      document.getElementById('enc-ct-pdf-preview').style.display = 'block';
+      document.getElementById('enc-contrato-file-name').textContent = 'Contrato cargado ✓';
+    }
+  } catch (e) { /* Sin contrato aún, no es error */ }
+}
+
+function handleEncContratoFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('enc-contrato-file-name').textContent = file.name;
+  const url = URL.createObjectURL(file);
+  document.getElementById('enc-ct-pdf-iframe').src = url;
+  document.getElementById('enc-ct-pdf-preview').style.display = 'block';
+}
+
+async function guardarEncContrato() {
+  const body = {
+    numero: document.getElementById('enc-ct-numero-input').value,
+    tipo: document.getElementById('enc-ct-tipo').value,
+    fecha: document.getElementById('enc-ct-fecha-input').value,
+    vigencia: document.getElementById('enc-ct-vigencia-input').value,
+    firmante: document.getElementById('enc-ct-firmante').value,
+    estado: document.getElementById('enc-ct-estado').value,
+    descripcion: document.getElementById('enc-ct-desc').value,
+  };
+  try {
+    await fetch(`${API}/facultad/contrato`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    // Actualizar resumen visual
+    document.getElementById('enc-ct-numero').textContent = body.numero || '—';
+    document.getElementById('enc-ct-fecha').textContent = body.fecha ? new Date(body.fecha).toLocaleDateString('es-CO') : '—';
+    document.getElementById('enc-ct-vigencia').textContent = body.vigencia ? body.vigencia + ' meses' : '—';
+    document.getElementById('enc-ct-badge').textContent = body.estado || 'Vigente';
+    alert('Contrato guardado correctamente.');
+  } catch (e) { alert('Error al guardar el contrato.'); }
+}
+
+// ── SUSCRIPCIÓN ───────────────────────────────────────
+async function loadEncSuscripcion() {
+  try {
+    const res = await fetch(`${API}/facultad/suscripcion`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const sus = await res.json();
+    document.getElementById('enc-sus-plan').textContent = sus.plan || '—';
+    document.getElementById('enc-sus-badge').textContent = sus.estado || 'Activa';
+    document.getElementById('enc-sus-inicio').textContent = sus.fecha_inicio ? new Date(sus.fecha_inicio).toLocaleDateString('es-CO') : '—';
+    document.getElementById('enc-sus-vence').textContent = sus.fecha_fin ? new Date(sus.fecha_fin).toLocaleDateString('es-CO') : '—';
+    document.getElementById('enc-sus-monto').textContent = sus.monto ? `$${Number(sus.monto).toLocaleString('es-CO')} COP/mes` : '—';
+    document.getElementById('enc-sus-monto-input').value = sus.monto ? `$${Number(sus.monto).toLocaleString('es-CO')}` : '—';
+    document.getElementById('enc-sus-estado-text').value = sus.estado || '—';
+    document.getElementById('enc-sus-notas-text').value = sus.notas || '—';
+    // Barra de tiempo restante
+    if (sus.fecha_inicio && sus.fecha_fin) {
+      const inicio = new Date(sus.fecha_inicio);
+      const fin = new Date(sus.fecha_fin);
+      const hoy = new Date();
+      const total = fin - inicio;
+      const restante = fin - hoy;
+      const pct = Math.max(0, Math.min(100, (restante / total) * 100));
+      document.getElementById('enc-sus-progress-bar').style.width = pct + '%';
+      document.getElementById('enc-sus-progress-bar').style.background = pct < 20 ? 'var(--red)' : pct < 50 ? 'var(--accent2)' : 'var(--teal)';
+      const dias = Math.max(0, Math.ceil(restante / (1000 * 60 * 60 * 24)));
+      document.getElementById('enc-sus-dias-restantes').textContent = `${dias} días restantes`;
+    }
+    // Selector plan (readonly visual)
+    const planSel = document.getElementById('enc-sus-plan-sel');
+    if (sus.plan) {
+      for (let i = 0; i < planSel.options.length; i++) {
+        if (planSel.options[i].text.toLowerCase().includes(sus.plan.toLowerCase())) {
+          planSel.selectedIndex = i; break;
+        }
+      }
+    }
+    if (sus.fecha_inicio) document.getElementById('enc-sus-fecha-inicio').value = sus.fecha_inicio.split('T')[0];
+    if (sus.fecha_fin) document.getElementById('enc-sus-fecha-fin').value = sus.fecha_fin.split('T')[0];
+  } catch (e) { /* Sin suscripción aún */ }
+}

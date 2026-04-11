@@ -814,7 +814,9 @@ main {
   flex-wrap: wrap;
 }
 
-.dsr-back { flex-shrink: 0; }
+.dsr-back {
+  flex-shrink: 0;
+}
 
 .dsr-meta {
   flex: 1;
@@ -835,7 +837,9 @@ main {
 }
 
 /* Score ring en el encabezado */
-.dsr-score-wrap { flex-shrink: 0; }
+.dsr-score-wrap {
+  flex-shrink: 0;
+}
 
 .dsr-score-ring {
   width: 72px;
@@ -846,7 +850,7 @@ main {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: conic-gradient(var(--accent) 0deg, rgba(0,0,0,0.07) 0deg);
+  background: conic-gradient(var(--accent) 0deg, rgba(0, 0, 0, 0.07) 0deg);
 }
 
 .dsr-score-ring::before {
@@ -906,7 +910,9 @@ main {
   flex-shrink: 0;
 }
 
-.dsr-col-icon { font-size: 1.1rem; }
+.dsr-col-icon {
+  font-size: 1.1rem;
+}
 
 .dsr-col-title {
   font-size: 0.8rem;
@@ -925,12 +931,18 @@ main {
   flex-direction: column;
   gap: 12px;
   background:
-    linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)),
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
     url('https://psicologiaiassets.blob.core.windows.net/assets/Fondo_chat_2.webp') center / cover no-repeat;
 }
 
-.dsr-chat-box::-webkit-scrollbar { width: 4px; }
-.dsr-chat-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.dsr-chat-box::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dsr-chat-box::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .dsr-msg {
   display: flex;
@@ -951,10 +963,20 @@ main {
   color: #fff;
 }
 
-.dsr-avatar-psi { background: linear-gradient(135deg, var(--teal), var(--teal-deep)); }
-.dsr-avatar-patient { background: linear-gradient(135deg, #6b7280, #374151); }
+.dsr-avatar-psi {
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+}
 
-.dsr-msg-content { display: flex; flex-direction: column; gap: 3px; max-width: calc(100% - 44px); }
+.dsr-avatar-patient {
+  background: linear-gradient(135deg, #6b7280, #374151);
+}
+
+.dsr-msg-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: calc(100% - 44px);
+}
 
 .dsr-msg-name {
   font-size: 0.7rem;
@@ -1005,8 +1027,14 @@ main {
   gap: 14px;
 }
 
-.dsr-analysis-box::-webkit-scrollbar { width: 4px; }
-.dsr-analysis-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.dsr-analysis-box::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dsr-analysis-box::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .dsr-analysis-block {
   background: var(--bg, #fbfbfb);
@@ -1073,8 +1101,14 @@ main {
   gap: 10px;
 }
 
-.dsr-retros-previas::-webkit-scrollbar { width: 4px; }
-.dsr-retros-previas::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.dsr-retros-previas::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dsr-retros-previas::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .dsr-retros-titulo {
   font-size: 0.7rem;
@@ -1202,7 +1236,10 @@ main {
     grid-template-columns: 1fr;
     height: auto;
   }
-  .dsr-col { height: 480px; }
+
+  .dsr-col {
+    height: 480px;
+  }
 }
 
 /* DISEÑO VERTICAL: Detalle de Grupo Docente */
@@ -1230,7 +1267,7 @@ main {
   color: var(--text);
   margin: 0;
   line-height: 1.1;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
 }
 
 .ddh-sub {
@@ -1254,7 +1291,7 @@ main {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .btn-back-pill:hover {
@@ -1270,7 +1307,7 @@ main {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 6px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 580px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -4635,4 +4672,66 @@ body.student-mode {
   justify-content: center;
   /* Centra todos los hijos verticalmente en la página */
   padding: 20px;
+}
+
+/* ══════════════════════════════════════
+   ROL ENCARGADO DE FACULTAD
+══════════════════════════════════════ */
+
+.encargado-action-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.encargado-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-color: var(--teal);
+}
+
+.enc-card-icon {
+  font-size: 2.8rem;
+}
+
+.enc-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.enc-card-sub {
+  font-size: .82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.enc-panel {
+  animation: fadeIn .3s ease;
+}
+
+.btn-danger-sm {
+  padding: 4px 10px;
+  font-size: .78rem;
+  border-radius: 8px;
+  border: 1px solid var(--red);
+  background: rgba(239, 68, 68, .1);
+  color: var(--red);
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-danger-sm:hover {
+  background: rgba(239, 68, 68, .2);
 }
