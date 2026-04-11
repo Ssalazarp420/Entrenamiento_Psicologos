@@ -4684,19 +4684,20 @@ body.student-mode {
    ══════════════════════════════════════════════════════════════════════════ */
 .encargado-action-card {
   /* ESTILOS GENERALES (Aplica a todas las tarjetas) */
-  background: rgba(101, 192, 205, 0.5); 
-  padding: 32px 20px;
-  position: relative; /* Mantiene la capacidad de moverse individualmente */
-  
+  background: rgba(101, 192, 205, 0.8);
+  padding: 1px 1px;
+  position: relative;
+  /* Mantiene la capacidad de moverse individualmente */
+
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(226, 232, 240, 0.7);
   border-radius: 20px;
   text-align: center;
   cursor: pointer;
-  
+
   transition: transform .2s, box-shadow .2s, border-color .2s;
-  
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4705,7 +4706,7 @@ body.student-mode {
 }
 
 .encargado-action-card:hover {
-  transform: translateY(-4px); 
+  transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
   border-color: var(--teal);
 }
@@ -4716,31 +4717,39 @@ body.student-mode {
 
 /* 1. Tarjeta ESTUDIANTES */
 #enc-btn-estudiantes {
-  /* background: rgba(101, 192, 205, 0.5); */ /* Color individual */
-  /* width: 250px; */ /* Ajustar ancho individual */
-  /* top: 0px; */   /* Mover arriba/abajo */
-  /* left: 0px; */  /* Mover izquierda/derecha */
+  /* background: rgba(101, 192, 205, 0.5); */
+  /* Color individual */
+  width: 180px;
+  /* Ajustar ancho individual */
+  top: 40px;
+  /* Mover arriba/abajo */
+  left: 200px;
+  /* Mover izquierda/derecha */
 }
 
 /* 2. Tarjeta DOCENTES */
 #enc-btn-docentes {
   /* background: rgba(101, 192, 205, 0.5); */
-  /* top: 0px; */
-  /* left: 0px; */
+  width: 180px;
+  /* Ajustar ancho individual */
+  top: -20px;
+  left: 280px;
 }
 
 /* 3. Tarjeta CONTRATO */
 #enc-btn-contrato {
   /* background: rgba(101, 192, 205, 0.5); */
-  /* top: 0px; */
-  /* left: 0px; */
+  width: 180px;
+  top: 180px;
+  left: -50px;
 }
 
 /* 4. Tarjeta SUSCRIPCIÓN */
 #enc-btn-suscripcion {
   /* background: rgba(101, 192, 205, 0.5); */
-  /* top: 0px; */
-  /* left: 0px; */
+  width: 180px;
+  top: 210px;
+  left: 220px;
 }
 
 .enc-card-icon {
